@@ -1,13 +1,23 @@
-from typing import List, Dict
+import abc
+from typing import List, Dict, Any
 
 from env_util.environment import openagents_env
-from tinyllm.llm_provider import LLMProvider, OpenAIProvider
+from tinyllm.provider import LLMProvider, OpenAIProvider
 
 
 class LLMService:
     def __init__(self,
                  providers: Dict[str, LLMProvider] = None):
         self.providers = providers
+
+    @abc.abstractmethod
+    def load(self,
+             provider_name: str,
+             model_name: str,
+             model_params: Dict[str, Any]):
+        self.providers[provider_name].load(model_name=model_name,
+                                           model_params=model_params)
+        pass
 
     def add_provider(self,
                      model: LLMProvider):
@@ -27,6 +37,3 @@ class LLMService:
         return self.providers[provider_name].call(model_name,
                                                   model_input,
                                                   model_params)
-
-
-
