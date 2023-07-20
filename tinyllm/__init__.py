@@ -14,7 +14,7 @@ class Operators:
 
 
 class Chains:
-    SEQUENTIAL = 'sequential'
+    CHAIN = 'chain'
     PARALLEL = 'parallel'
 
 

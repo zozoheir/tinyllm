@@ -1,24 +1,26 @@
 import asyncio
 
-from tinyllm import Chains
-from tinyllm.chain import Chain
+from tinyllm.chain import ParallelChain
 from tinyllm.operator import Operator
 
 
-class EchoOperator(Operator):
-    async def get_output(self, **kwargs):
-        return {"id": self.id, "name": self.name, "output": "test output"}
+class SleepOperator(Operator):
+    def __init__(self, name: str, sleep_time: float):
+        super().__init__(name)
+        self.sleep_time = sleep_time
 
-# Create child operators
-child1 = EchoOperator(name="Child Operator")
-child2 = EchoOperator(name="Child Operator")
-child3 = EchoOperator(name="Child Operator")
+    async def get_output(self, *args, **kwargs):
+        print(kwargs)
+        await asyncio.sleep(self.sleep_time)
+        return {self.name: f"Slept for {self.sleep_time} seconds"}
 
-# Create a parent operator that executes the children in parallel
-parent = Chain(name="ParentChain",
-               type=Chains.SEQUENTIAL,
-               children=[child1, child2, child3])
+async def main():
+    op1 = SleepOperator("Op1", 2)
+    op2 = SleepOperator("Op2", 5)
+    chain = ParallelChain("TestParallel", [op1, op2])
 
-# Run the parent operator
-result = asyncio.run(parent(data="Hello"))
-print(result)
+    result = await chain([{}, {}])
+    print(result)
+
+if __name__ == "__main__":
+    asyncio.run(main())
