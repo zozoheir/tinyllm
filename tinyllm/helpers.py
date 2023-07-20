@@ -1,28 +1,7 @@
 from typing import List, Dict, Any, Optional
 import re
 
-# A dictionary for OpenAI context token sizes.
-open_ai_max_context_tokens = {
-    "gpt-4": 8192,
-    "gpt-4-0314": 8192,
-    "gpt-4-32k": 32768,
-    "gpt-4-32k-0314": 32768,
-    "gpt-3.5-turbo": 4096,
-    "gpt-3.5-turbo-0301": 4096,
-    "text-ada-001": 2049,
-    "ada": 2049,
-    "text-babbage-001": 2040,
-    "babbage": 2049,
-    "text-curie-001": 2049,
-    "curie": 2049,
-    "davinci": 2049,
-    "text-davinci-003": 4097,
-    "text-davinci-002": 4097,
-    "code-davinci-002": 8001,
-    "code-davinci-001": 8001,
-    "code-cushman-002": 2048,
-    "code-cushman-001": 2048,
-}
+from tinyllm.stores import open_ai_max_context_tokens
 
 
 def concatenate_strings(paragraphs: List[str]) -> str:
@@ -129,14 +108,13 @@ def get_allowed_n_input_tokens(llm: Any,
     empty_prompt = prompt_template.format(**{input_variable: "" for input_variable in prompt_template.input_variables})
 
     prompt_template_n_tokens = llm.get_num_tokens(empty_prompt)
-    max_token_size = open_ai_max_context_tokens[llm.model_name]
+    max_token_size = open_ai_max_context_tokens[llm.llm_name]
     return max_token_size - prompt_template_n_tokens - completion_tokens
 
 def remove_imports(code: str) -> str:
     lines = code.split('\n')
     lines = [line for line in lines if not line.lstrip().startswith(('import', 'from'))]
     return '\n'.join(lines)
-
 
 
 def extract_markdown_python(text: str):

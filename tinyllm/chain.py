@@ -1,65 +1,50 @@
-import abc
-import logging
-from typing import Any
+import uuid
+import asyncio
+from typing import List
 
-from tinyllm.service import LLMService
-from tinyllm.prompt import Prompt
+from tinyllm import States, Chains, Operators
+from tinyllm.exceptions import InvalidInput, InvalidOutput, OperatorError
+from tinyllm.operator import Operator
 
-logger = logging.getLogger(__name__)
 
 
-class Chain(abc.ABC):
 
-    def __init__(self,
-                 llm_service: LLMService,
-                 prompt: Prompt = None):
-        super().__init__()
-        self.llm_service = llm_service
-        self.current_model_name = None
-        self.current_model_params = None
-        self.prompt = prompt
+class Chain(Operator):
+    def __init__(self, name: str, type: Chains, children: List['Operator'] = None, parent_id=None):
+        super().__init__(name=name,
+                         type=type,
+                         parent_id=parent_id)
+        self.children = children if children else []
+        self.state = States.INIT
 
-    @abc.abstractmethod
-    def parse_output(self, output: Any) -> Any:
-        return output
 
-    @abc.abstractmethod
-    def process_output(self, output: Any) -> Any:
-        return output
+    async def __call__(self, **kwargs):
+        try:
+            self.transition(States.INPUT_VALIDATION)
+            if not await self.validate_input(**kwargs):
+                raise InvalidInput("Invalid chain input")
 
-    def load(self,
-             provider_name: str,
-             model_name: str,
-             model_params: dict = {}):
-        self.current_provider = provider_name
-        self.llm_service.providers[provider_name].load(model_name=model_name,
-                                                       model_params=model_params)
+            self.transition(States.RUNNING)
+            output = None
+            if self.type == Chains.SEQUENTIAL:
+                for child in self.children:
+                    output = await child(**kwargs)
+                    kwargs = output
+            elif self.type == Chains.PARALLEL:
+                output = await asyncio.gather(*(child(**kwargs) for child in self.children))
 
-    def validate_model(self,
-                       provider_name,
-                       model_name: str) -> Exception:
-        if provider_name not in self.llm_service.providers.keys():
-            raise ValueError(f"No provider found with name: {provider_name}")
-        else:
-            if model_name not in self.llm_service.providers[provider_name].llms.keys():
-                raise ValueError(f"No model for provider '{provider_name}' and model '{model_name}'")
+            if not await self.validate_output(**output):
+                raise InvalidOutput(self, "Invalid chain output")
 
-    def get_output(self,
-                   **kwargs):
-        self.prompt.validate_inputs(**kwargs)
-        model_input = self.prompt.get()
-        current_model = self.llm_service.providers[self.current_provider]
-        result = current_model.call(model_input=model_input)
-        if self.validate_output(result):
-            self.process_output(self.parse_output(result))
-        else:
-            logger.warning("Output validation failed.")
-        return result
+            self.transition(States.COMPLETE)
+            return output
+        except Exception as e:
+            self.transition(States.FAILED)
+            raise OperatorError(self, f"Chain error error: {e}")
 
-    def run_chain(self,
-                  **kwargs
-                  ):
-        output = self.get_output(**kwargs)
-        self.validate_output(output)
-        parsed_output = self.parse_output(output)
-        return self.process_output(parsed_output)
+    async def validate_input(self, **kwargs):
+        return True
+
+    async def validate_output(self, **kwargs):
+        return True
+

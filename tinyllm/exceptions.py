@@ -1,26 +1,20 @@
+class CustomException(Exception):
+    def __init__(self, operator, message: str):
+        self.operator = operator
+        super(CustomException, self).__init__(f"{operator.tag} - {message}")
 
-# Prompt exceptions
-class InvalidPromptInputException(Exception):
+class OperatorError(CustomException):
     pass
 
-class PromptSectionValidationException(Exception):
+class InvalidStateTransition(CustomException):
     pass
 
-class UserInputValidationException(Exception):
+class InvalidInput(CustomException):
     pass
 
-
-class UserInputMissingException(Exception):
-    pass
-
-
-# Chain exceptions
-class ChainOutputValidationException(Exception):
+class InvalidOutput(CustomException):
     pass
 
 
-class InvalidChainOutputException(ValueError):
-    pass
-
-class OutputParsingException(ValueError):
+class MissingLLM(CustomException):
     pass

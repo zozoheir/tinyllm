@@ -1,57 +1,20 @@
-import abc
-from enum import Enum
-from typing import Dict, Any, List
+from typing import Dict, Any
+from tinyllm.operator import Operator
+from tinyllm.model_cache import ModelCache
+from tinyllm.stores.openai import OpenAILLM
 
-from langchain import OpenAI
 
-
-class LLMProvider(abc.ABC):
-    def __init__(self,
-                 name: str):
+class Store(Operator):
+    def __init__(self, name: str, llm_base: OpenAILLM, provider_kwargs: Dict[str, Any]):
         self.name = name
-        self.llms = {}
+        self.llm_base = llm_base
+        self.provider_kwargs = provider_kwargs
+        self.model_cache = ModelCache()
 
-    @abc.abstractmethod
-    def load(self,
-             model_name: str,
-             model_params: Dict[str, Any]) -> Any:
-        pass
-
-    @abc.abstractmethod
-    def parse_call(self, result: Any) -> Dict[str, Any]:
-        pass
-
-    @abc.abstractmethod
-    def call(self,
-             model_input: str,
-             model_params: Dict) -> Any:
-        pass
-
-
-class OpenAIProvider(LLMProvider):
-
-    def __init__(self,
-                 openai_api_key: str):
-        super().__init__(name='openai')
-        self.openai_api_key = openai_api_key
-
-    def load(self,
-             model_name: str = None,
-             model_params: Dict[str, Any] = {}) -> Any:
-        self.llms[model_name] = OpenAI(model_name=model_name,
-                                       openai_api_key=self.openai_api_key,
-                                       **model_params)
-        self.current_model = self.llms[model_name]
-
-    def call(self,
-             model_input: str) -> Any:
-        if not self.current_model:
-            raise ValueError("No model loaded.")
-        return self.current_model.predict(model_input)
-
-    def parse_call(self, result: Any) -> Dict[str, Any]:
-        pass
-
-
-class LLMProviders:
-    OPENAI = OpenAIProvider
+    def get_model(self, llm_name: str, llm_params: Dict[str, Any]) -> Operator:
+        if (llm_name, llm_params) in self.model_cache.index:
+            return self.llm_base(llm_name=llm_name, llm_params=llm_params,
+                                 provider_kwargs=self.provider_kwargs)
+        else:
+            model = self.llm_base(llm_name=llm_name, llm_params=llm_params, provider_kwargs=self.provider_kwargs)
+            self.model_cache.add(model=model)
