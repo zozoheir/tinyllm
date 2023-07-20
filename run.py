@@ -1,6 +1,6 @@
 import asyncio
 
-from tinyllm.chain import ParallelChain
+from tinyllm.chain import ParallelChain, SequentialChain
 from tinyllm.operator import Operator
 
 
@@ -12,15 +12,18 @@ class SleepOperator(Operator):
     async def get_output(self, *args, **kwargs):
         print(kwargs)
         await asyncio.sleep(self.sleep_time)
-        return {self.name: f"Slept for {self.sleep_time} seconds"}
+        return kwargs
+
 
 async def main():
-    op1 = SleepOperator("Op1", 2)
-    op2 = SleepOperator("Op2", 5)
-    chain = ParallelChain("TestParallel", [op1, op2])
+    op1 = SleepOperator("Op1", 30)
+    op2 = SleepOperator("Op2", 30)
+    parallel_chain = ParallelChain("TestParallel", [op1, op2])
+    sequential_chain = SequentialChain("TestParallel", [op1, op2])
 
-    result = await chain([{}, {}])
+    result = await parallel_chain([{}, {}])
+    result2 = await sequential_chain({'time': 10})
     print(result)
-
-if __name__ == "__main__":
     asyncio.run(main())
+
+

@@ -4,8 +4,9 @@ from abc import abstractmethod
 from datetime import datetime
 from typing import Any
 
-from tinyllm import Operators, States, ALLOWED_TRANSITIONS
 from tinyllm.exceptions import InvalidOutput, InvalidInput, InvalidStateTransition
+from tinyllm.fsm import Operators, States, ALLOWED_TRANSITIONS
+
 
 class Operator:
 
@@ -17,7 +18,7 @@ class Operator:
         self.children = []
         self.state = States.INIT
         self.verbose = verbose
-        logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
+        logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s', level=logging.DEBUG)
         self.logger = logging.getLogger(__name__)
 
     async def __call__(self, **kwargs):
@@ -48,7 +49,7 @@ class Operator:
         if new_state not in ALLOWED_TRANSITIONS[self.state]:
             raise InvalidStateTransition(self, f"Invalid state transition from {self.state} to {new_state}")
         self.state = new_state
-        self.log(f"Transitioned to state {new_state} {self.__dict__}")
+        self.log(f"transitioned to: {new_state}")
 
     def log(self, message, level='info'):
         if self.verbose:
@@ -59,12 +60,12 @@ class Operator:
             else:
                 self.logger.info(log_message)
 
-    async def validate_input(self, *args, **kwargs) -> InvalidInput:
+    async def validate_input(self, *args, **kwargs) -> bool:
         return True
 
     @abstractmethod
-    async def get_output(self, *args, **kwargs):
+    async def get_output(self, *args, **kwargs) -> Any:
         pass
 
-    async def validate_output(self, *args, **kwargs: Any) -> InvalidOutput:
+    async def validate_output(self, *args, **kwargs: Any) -> bool:
         return True

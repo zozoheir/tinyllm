@@ -1,7 +1,7 @@
 from typing import List, Dict, Any, Optional
 import re
 
-from tinyllm.stores import open_ai_max_context_tokens
+from smartpy.utility import os_util
 
 
 def concatenate_strings(paragraphs: List[str]) -> str:
@@ -96,7 +96,8 @@ def split_texts_for_prompt(input_texts: List[str],
 
 def get_allowed_n_input_tokens(llm: Any,
                                completion_tokens: int,
-                               prompt_template: int) -> int:
+                               prompt_template: int,
+                               max_token_size:int ) -> int:
     """
     Gets the allowed number of input tokens.
 
@@ -108,8 +109,8 @@ def get_allowed_n_input_tokens(llm: Any,
     empty_prompt = prompt_template.format(**{input_variable: "" for input_variable in prompt_template.input_variables})
 
     prompt_template_n_tokens = llm.get_num_tokens(empty_prompt)
-    max_token_size = open_ai_max_context_tokens[llm.llm_name]
     return max_token_size - prompt_template_n_tokens - completion_tokens
+
 
 def remove_imports(code: str) -> str:
     lines = code.split('\n')
@@ -121,3 +122,30 @@ def extract_markdown_python(text: str):
     pattern = r"```python(.*?)```"
     python_codes = re.findall(pattern, text, re.DOTALL)
     return "\n".join(python_codes)
+
+
+def get_recursive_content(file_list,
+                          format):
+    code_context = []
+    for file_name in file_list:
+        if os_util.isDirPath(file_name):
+            for file in os_util.listDir(file_name, recursive=True, format=format):
+                try:
+                    with open(file, 'r') as file:
+                        content = file.read()
+                        code_context.append(f'\n \nFILE: This is the content of the file {file_name}:\n \n {content}\n')
+                        code_context.append(f'\n------------------------\n')
+                except FileNotFoundError:
+                    print(f'File {file_name} not found in the directory')
+
+        else:
+            try:
+                with open(file_name, 'r') as file:
+                    content = file.read()
+                    code_context.append(f'\n \nFILE: This is the content of the file {file_name}:\n \n {content}\n')
+                    code_context.append(f'\n------------------------\n')
+            except FileNotFoundError:
+                print(f'File {file_name} not found in the directory')
+
+    final_prompt = '\n'.join(code_context)
+    return final_prompt
