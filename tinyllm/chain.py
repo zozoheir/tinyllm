@@ -1,34 +1,44 @@
-from typing import List, Union, Dict
+from typing import List, Union, Dict, Type, Any
 
 from enforce_typing import enforce_types
 
 from tinyllm.exceptions import InvalidInput, InvalidOutput
 from tinyllm.function import Function
 from tinyllm.types import States
+from tinyllm.validator import Validator
+
+
+class ChainValidator(Validator):
+    children: List[Union[Function, Type[Function]]]
+
+
+class ChainInputValidator(Validator):
+    inputs: Dict
+
 
 
 class Chain(Function):
 
     @enforce_types
-    def __init__(self, children: List[Function] = None, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self,
+                 children,
+                 **kwargs):
+        super().__init__(input_validator=ChainInputValidator,
+                         output_validator=Validator,
+                         **kwargs)
         self.children = children if children else []
 
     @enforce_types
-    async def __call__(self, input: Dict):
+    async def __call__(self, **kwargs):
         self.transition(States.INPUT_VALIDATION)
-        if not await self.validate_input(**input):
+        if not await self.validate_input(**kwargs):
             raise InvalidInput(self, "Invalid sequential chain input")
         self.transition(States.RUNNING)
         output = None
         for child in self.children:
-            output = await child(**input)
+            output = await child(**kwargs)
             kwargs = output
         if not await self.validate_output(**output):
             raise InvalidOutput(self, "Invalid sequential chain output")
         self.transition(States.COMPLETE)
         return output
-
-    @enforce_types
-    async def validate_input(self, input: Union[dict, List] = None) -> bool:
-        return True

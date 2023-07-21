@@ -6,6 +6,13 @@ from tinyllm.types import Functions
 from tinyllm.function import Function
 
 
+import logging
+
+logging.basicConfig(level=logging.DEBUG,
+                    format='%(asctime)s %(levelname)s %(name)s %(message)s')
+
+
+
 class SleepOperator(Function):
     def __init__(self, sleep_time: float, **kwargs):
         super().__init__(function_type=Functions.OPERATOR, **kwargs)
@@ -17,24 +24,17 @@ class SleepOperator(Function):
         self.log("Done sleeping")
         return kwargs
 
-
-import logging
-
-logging.basicConfig(level=logging.DEBUG,
-                    format='%(asctime)s %(levelname)s %(name)s %(message)s')
-
-
 async def main():
     op1 = SleepOperator(name="SleeperTest1", sleep_time=5)
     op2 = SleepOperator(name="SleeperTest1", sleep_time=5)
-    parallel_chain = Parallel(name="TestParallel", children=[op1, op2])
-    result1 = await parallel_chain(inputs=[{'time': 10},
+    parallel_dag = Parallel(name="TestParallel", children=[op1, op2])
+    result1 = await parallel_dag(inputs=[{'time': 10},
                                            {'time': 10}])
 
     op3 = SleepOperator(name="SleeperTest2", sleep_time=5)
     op4 = SleepOperator(name="SleeperTest2", sleep_time=5)
-    sequential_chain = Chain(name="TestSequential", children=[op3, op4])
-    result2 = await sequential_chain(inputs={'time': 10})
+    chain_dag = Chain(name="TestSequential", children=[op3, op4])
+    result2 = await chain_dag(inputs={'time': 10})
 
 
 if __name__ == '__main__':

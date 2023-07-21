@@ -1,24 +1,11 @@
 import uuid
 import logging
 from abc import abstractmethod
-from datetime import datetime
 from typing import Any, Callable, Optional, Type
-
-from pydantic import BaseModel, ValidationError
 
 from tinyllm.exceptions import InvalidStateTransition
 from tinyllm.types import Functions, States, ALLOWED_TRANSITIONS
-
-
-class Validator(BaseModel):
-    def __init__(self, **data: Any):
-        if not data:
-            raise ValidationError("At least one argument is required")
-        super().__init__(**data)
-
-    class Config:
-        extra = 'allow'
-        arbitrary_types_allowed = True
+from tinyllm.validator import Validator
 
 
 class FunctionValidator(Validator):
@@ -55,7 +42,7 @@ class Function:
         self.run = run_function if run_function is not None else self.get_output
         self.operator_type = type
         self.parent_id = parent_id
-        logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s', level=log_level)
+        logging.basicConfig(format='%(asctime)s - %(message)s', level=log_level)
         self.logger = logging.getLogger(__name__)
         self.state = None
         self.transition(States.INIT)
@@ -82,7 +69,7 @@ class Function:
 
     @property
     def tag(self):
-        return f"[{self.parent_id}]->{self.name}[{self.id}]"
+        return f""
 
     def transition(self, new_state: States):
         if new_state not in ALLOWED_TRANSITIONS[self.state]:
@@ -91,8 +78,7 @@ class Function:
         self.log(f"transition to: {new_state}")
 
     def log(self, message, level='info'):
-        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        log_message = f"{self.tag}-{timestamp} - {self.__class__.__name__}: {message}"
+        log_message = f"{self.name}[id:{self.id}]: {message}"
         if level == 'error':
             self.logger.error(log_message)
         else:
