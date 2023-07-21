@@ -3,20 +3,18 @@ import logging
 from abc import abstractmethod
 from typing import Any, Callable, Optional, Type
 
+from tinyllm.config import APP_CONFIG
 from tinyllm.exceptions import InvalidStateTransition
-from tinyllm.logger import default_logger
-from tinyllm.types import Functions, States, ALLOWED_TRANSITIONS
+from tinyllm.types import States, ALLOWED_TRANSITIONS
 from tinyllm.validator import Validator
 
-
-class FunctionValidator(Validator):
+class FunctionConfigValidator(Validator):
     type: str
     name: str
     input_validator: Optional[Type[Validator]]
     output_validator: Optional[Type[Validator]]
     run_function: Optional[Callable]
     parent_id: Optional[str]
-    logger: logging.Logger
 
 
 class Function:
@@ -27,26 +25,25 @@ class Function:
                  input_validator=Validator,
                  output_validator=Validator,
                  run_function=None,
-                 parent_id=None,
-                 logger=default_logger):
-        w = FunctionValidator(
+                 parent_id=None):
+        w = FunctionConfigValidator(
             type=type,
             name=name,
             input_validator=input_validator,
             output_validator=output_validator,
             run_function=run_function,
-            parent_id=parent_id,
-            logger=logger)
+            parent_id=parent_id)
         self.id = str(uuid.uuid4())
+        self.logger = APP_CONFIG.logging['default']
         self.name = name
         self.input_validator = input_validator
         self.output_validator = output_validator
         self.run = run_function if run_function is not None else self.get_output
         self.type = type
         self.parent_id = parent_id
-        self.logger = logger
         self.state = None
         self.transition(States.INIT)
+
 
     async def __call__(self, **kwargs):
         try:
@@ -79,6 +76,8 @@ class Function:
         self.log(f"transition to: {new_state}")
 
     def log(self, message, level='info'):
+        if self.logger is None:
+            return
         log_message = f"{self.name}[id:{self.id}]: {message}"
         if level == 'error':
             self.logger.error(log_message)

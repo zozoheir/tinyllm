@@ -1,14 +1,12 @@
 import asyncio
 
+from env_util.environment import openagents_env
 from tinyllm.chain import Chain
+from tinyllm.config import AppConfig
+from tinyllm.logger import get_logger
 from tinyllm.parallel import Parallel
 from tinyllm.types import Functions
 from tinyllm.function import Function
-
-import logging
-
-logging.basicConfig(level=logging.DEBUG,
-                    format='%(asctime)s %(levelname)s %(name)s %(message)s')
 
 
 class SleepOperator(Function):
@@ -25,6 +23,13 @@ class SleepOperator(Function):
 
 
 async def main():
+    APP_CONFIG = AppConfig()
+
+    APP_CONFIG.set_provider('openai', {
+        "api_key":
+            openagents_env.configs.OPENAI_API_KEY
+    })
+
     op1 = SleepOperator(name="SleeperTest1", sleep_time=5)
     op2 = SleepOperator(name="SleeperTest1", sleep_time=5)
     parallel_dag = Parallel(name="TestParallel", children=[op1, op2])

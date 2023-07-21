@@ -1,7 +1,6 @@
 import asyncio
 from typing import List, Type, Union, Any
 
-from tinyllm.exceptions import InvalidOutput, InvalidInput
 from tinyllm.types import Chains, States
 from tinyllm.function import Function, Validator
 
@@ -33,12 +32,10 @@ class Parallel(Function):
 
     async def __call__(self, **kwargs):
         self.transition(States.INPUT_VALIDATION)
-        if not await self.validate_input(**kwargs):
-            raise InvalidInput(self, "Invalid parallel chain input")
+        await self.validate_input(**kwargs)
         self.transition(States.RUNNING)
         tasks = [child.__call__(**kwargs['inputs'][i]) for i, child in enumerate(self.children)]
         output = await asyncio.gather(*tasks)
-        if not await self.validate_output(ouputs=output):
-            raise InvalidOutput(self, "Invalid parallel chain output")
+        await self.validate_output(ouputs=output)
         self.transition(States.COMPLETE)
         return output
