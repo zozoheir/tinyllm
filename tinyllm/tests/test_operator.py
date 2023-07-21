@@ -1,12 +1,12 @@
 import unittest
 
-from tinyllm.fsm import Operators
+from tinyllm.types import Operators
 from tinyllm.operator import Operator
 
 
 class AddOne(Operator):
-    def __init__(self, name: str, type: Operators = Operators.OPERATOR, parent_id=None, verbose=True):
-        super().__init__(name, type, parent_id, verbose)
+    def __init__(self, name: str, operator_type: Operators = Operators.OPERATOR, parent_id=None, verbose=True):
+        super().__init__(name, operator_type, parent_id, verbose)
 
     async def validate_input(self, *args, **kwargs) -> bool:
         if 'number' in kwargs and isinstance(kwargs['number'], int):

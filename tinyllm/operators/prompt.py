@@ -13,7 +13,7 @@ class PromptComponent(Operator):
     def __init__(self, name: str, input):
         super().__init__(name,
                          input=input,
-                         type=Objects.PROMPT_COMPONENT)
+                         operator_type=Objects.PROMPT_COMPONENT)
 
     def validate_input(self, **kwargs) -> Exception:
         if not isinstance(value, str):

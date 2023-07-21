@@ -2,7 +2,7 @@ import asyncio
 from typing import List
 
 from tinyllm.exceptions import InvalidOutput, InvalidInput
-from tinyllm.fsm import Chains, States
+from tinyllm.types import Chains, States
 from tinyllm.operator import Operator
 
 class ParallelChain(Operator):
@@ -10,20 +10,20 @@ class ParallelChain(Operator):
         super().__init__(name, Chains.PARALLEL, parent_id)
         self.children = children if children else []
 
-    async def __call__(self, *args, **kwargs):
+    async def __call__(self, **kwargs):
         self.transition(States.INPUT_VALIDATION)
-        if not await self.validate_input(*args):
+        if not await self.validate_input(**kwargs):
             raise InvalidInput(self, "Invalid parallel chain input")
         self.transition(States.RUNNING)
-        output = await asyncio.gather(*(child(**args[0][i]) for i, child in enumerate(self.children)))
+        inputs = kwargs['inputs']
+        tasks = [child.__call__(**inputs[i]) for i, child in enumerate(self.children)]
+        output = await asyncio.gather(*tasks)
         if not await self.validate_output(*output):
             raise InvalidOutput(self, "Invalid parallel chain output")
         self.transition(States.COMPLETE)
         return output
 
-    async def validate_input(self, *args, **kwargs):
-        if not isinstance(args[0], list) or not all(isinstance(i, dict) for i in args[0]):
-            raise InvalidInput(self, "Invalid input type. Expected list of dictionaries.")
+    async def validate_input(self, **kwargs):
         return True
 
 class SequentialChain(Operator):

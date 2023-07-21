@@ -4,17 +4,17 @@ from abc import abstractmethod
 from datetime import datetime
 from typing import Any
 
-from tinyllm.exceptions import InvalidOutput, InvalidInput, InvalidStateTransition
-from tinyllm.fsm import Operators, States, ALLOWED_TRANSITIONS
+from tinyllm.exceptions import InvalidStateTransition
+from tinyllm.types import Operators, States, ALLOWED_TRANSITIONS
 
 
 class Operator:
 
-    def __init__(self, name: str, type: Operators = Operators.OPERATOR, parent_id=None, log_level=logging.INFO):
+    def __init__(self, name: str, operator_type: Operators = Operators.OPERATOR, parent_id=None, log_level=logging.INFO):
 
         self.id = str(uuid.uuid4())
         self.name = name
-        self.type = type
+        self.type = operator_type
         self.parent_id = parent_id
         logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s', level=log_level)
         self.logger = logging.getLogger(__name__)
@@ -49,7 +49,7 @@ class Operator:
         if new_state not in ALLOWED_TRANSITIONS[self.state]:
             raise InvalidStateTransition(self, f"Invalid state transition from {self.state} to {new_state}")
         self.state = new_state
-        self.log(f"transitioned to: {new_state}")
+        self.log(f"transition to: {new_state}")
 
     def log(self, message, level='info'):
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
