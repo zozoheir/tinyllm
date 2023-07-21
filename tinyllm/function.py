@@ -4,46 +4,47 @@ from abc import abstractmethod
 from typing import Any, Callable, Optional, Type
 
 from tinyllm.exceptions import InvalidStateTransition
+from tinyllm.logger import default_logger
 from tinyllm.types import Functions, States, ALLOWED_TRANSITIONS
 from tinyllm.validator import Validator
 
 
 class FunctionValidator(Validator):
+    type: str
     name: str
-    input_validator: Optional[Type[Validator]] = None
-    output_validator: Optional[Type[Validator]] = None
-    run_function: Optional[Callable] = None
-    operator_type: Optional[Functions] = Functions.OPERATOR
-    parent_id: Optional[str] = None
-    log_level: Optional[int] = logging.INFO
+    input_validator: Optional[Type[Validator]]
+    output_validator: Optional[Type[Validator]]
+    run_function: Optional[Callable]
+    parent_id: Optional[str]
+    logger: logging.Logger
 
 
 class Function:
 
     def __init__(self,
-                 name: str,
+                 type,
+                 name,
                  input_validator=Validator,
                  output_validator=Validator,
-                 run_function: Callable = None,
-                 function_type=Functions.OPERATOR,
+                 run_function=None,
                  parent_id=None,
-                 log_level=logging.INFO):
-        w = FunctionValidator(name=name,
-                              input_validator=input_validator,
-                              output_validator=output_validator,
-                              run_function=run_function,
-                              function_type=function_type,
-                              parent_id=parent_id,
-                              log_level=log_level)
+                 logger=default_logger):
+        w = FunctionValidator(
+            type=type,
+            name=name,
+            input_validator=input_validator,
+            output_validator=output_validator,
+            run_function=run_function,
+            parent_id=parent_id,
+            logger=logger)
         self.id = str(uuid.uuid4())
         self.name = name
         self.input_validator = input_validator
         self.output_validator = output_validator
         self.run = run_function if run_function is not None else self.get_output
-        self.operator_type = type
+        self.type = type
         self.parent_id = parent_id
-        logging.basicConfig(format='%(asctime)s - %(message)s', level=log_level)
-        self.logger = logging.getLogger(__name__)
+        self.logger = logger
         self.state = None
         self.transition(States.INIT)
 

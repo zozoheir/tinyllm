@@ -4,7 +4,7 @@ from enforce_typing import enforce_types
 
 from tinyllm.exceptions import InvalidInput, InvalidOutput
 from tinyllm.function import Function
-from tinyllm.types import States
+from tinyllm.types import States, Functions
 from tinyllm.validator import Validator
 
 
@@ -23,7 +23,8 @@ class Chain(Function):
     def __init__(self,
                  children,
                  **kwargs):
-        super().__init__(input_validator=ChainInputValidator,
+        super().__init__(type=Functions.CHAIN,
+                         input_validator=ChainInputValidator,
                          output_validator=Validator,
                          **kwargs)
         self.children = children if children else []

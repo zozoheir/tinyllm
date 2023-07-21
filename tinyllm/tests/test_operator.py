@@ -5,7 +5,7 @@ from tinyllm.function import Function
 
 
 class AddOne(Function):
-    def __init__(self, name: str, type: Functions = Functions.OPERATOR, parent_id=None, verbose=True):
+    def __init__(self, name: str, type: Functions = Functions.BASE, parent_id=None, verbose=True):
         super().__init__(name, type, parent_id, verbose)
 
     async def validate_input(self, *args, **kwargs) -> bool:
@@ -29,7 +29,7 @@ class AddOne(Function):
 class TestAddOne(unittest.TestCase):
 
     async def test_add_one(self):
-        add_one = AddOne("AddOne", Functions.OPERATOR, None, True)
+        add_one = AddOne("AddOne", Functions.BASE, None, True)
         output = await add_one(number=5)
         self.assertEqual(output['number'], 6)
 

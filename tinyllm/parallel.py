@@ -27,7 +27,7 @@ class Parallel(Function):
                               output_validator=ParallelOutputValidator,
                               **kwargs)
 
-        super().__init__(function_type=Chains.PARALLEL,
+        super().__init__(type=Chains.PARALLEL,
                          **kwargs)
         self.children = children if children else []
 

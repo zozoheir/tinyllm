@@ -1,6 +1,7 @@
 class Functions:
-    OPERATOR = 'operator'
+    BASE = 'base_function'
     CHAIN = 'chain'
+    PARALLEL = 'chain'
 
     # APIs
     STORE = 'store'
@@ -10,6 +11,8 @@ class Functions:
     LLM_PROVIDER = 'llm_provider'
     LLM_STORE = 'llm_store'
     LLM = 'llm'
+
+type(Functions.BASE)
 
 
 class Chains:

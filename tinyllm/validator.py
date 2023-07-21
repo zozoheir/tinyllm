@@ -1,9 +1,10 @@
-from typing import Any
+from typing import Any, Type
 
 from pydantic import BaseModel, ValidationError
 
 
 class Validator(BaseModel):
+
     def __init__(self, **data: Any):
         if not data:
             raise ValidationError("At least one argument is required")

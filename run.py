@@ -5,17 +5,16 @@ from tinyllm.parallel import Parallel
 from tinyllm.types import Functions
 from tinyllm.function import Function
 
-
 import logging
 
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s %(levelname)s %(name)s %(message)s')
 
 
-
 class SleepOperator(Function):
     def __init__(self, sleep_time: float, **kwargs):
-        super().__init__(function_type=Functions.OPERATOR, **kwargs)
+        super().__init__(type=Functions.BASE,
+                         **kwargs)
         self.sleep_time = sleep_time
 
     async def get_output(self, *args, **kwargs):
@@ -24,12 +23,13 @@ class SleepOperator(Function):
         self.log("Done sleeping")
         return kwargs
 
+
 async def main():
     op1 = SleepOperator(name="SleeperTest1", sleep_time=5)
     op2 = SleepOperator(name="SleeperTest1", sleep_time=5)
     parallel_dag = Parallel(name="TestParallel", children=[op1, op2])
     result1 = await parallel_dag(inputs=[{'time': 10},
-                                           {'time': 10}])
+                                         {'time': 10}])
 
     op3 = SleepOperator(name="SleeperTest2", sleep_time=5)
     op4 = SleepOperator(name="SleeperTest2", sleep_time=5)
