@@ -1,6 +1,6 @@
 from typing import Dict, Any
 
-from tinyllm.operator import Operator
+from tinyllm.function import Function
 
 
 class ModelCache:
@@ -9,7 +9,7 @@ class ModelCache:
         self.last_model = None
 
     def add(self,
-            model: Operator):
+            model: Function):
         self.models[str((model.llm_name, model.llm_params))] = model
 
     def get(self,

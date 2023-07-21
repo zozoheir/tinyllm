@@ -4,16 +4,16 @@ from collections import OrderedDict
 from tinyllm import Objects
 from tinyllm.exceptions import PromptComponentValidationException, UserInputValidationException, \
     InvalidPromptInputException, UnknownPromptInputException
-from tinyllm.operator import Operator
+from tinyllm.function import Function
 
 logger = logging.getLogger(__name__)
 
 
-class PromptComponent(Operator):
+class PromptComponent(Function):
     def __init__(self, name: str, input):
         super().__init__(name,
                          input=input,
-                         operator_type=Objects.PROMPT_COMPONENT)
+                         type=Objects.PROMPT_COMPONENT)
 
     def validate_input(self, **kwargs) -> Exception:
         if not isinstance(value, str):

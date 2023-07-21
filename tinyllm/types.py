@@ -1,4 +1,4 @@
-class Operators:
+class Functions:
     OPERATOR = 'operator'
     CHAIN = 'chain'
 

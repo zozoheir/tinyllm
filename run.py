@@ -1,13 +1,14 @@
 import asyncio
 
-from tinyllm.collection import ParallelChain, SequentialChain
-from tinyllm.types import Operators
-from tinyllm.operator import Operator
+from tinyllm.chain import Chain
+from tinyllm.parallel import Parallel
+from tinyllm.types import Functions
+from tinyllm.function import Function
 
 
-class SleepOperator(Operator):
+class SleepOperator(Function):
     def __init__(self, sleep_time: float, **kwargs):
-        super().__init__(operator_type=Operators.OPERATOR, **kwargs)
+        super().__init__(function_type=Functions.OPERATOR, **kwargs)
         self.sleep_time = sleep_time
 
     async def get_output(self, *args, **kwargs):
@@ -26,14 +27,14 @@ logging.basicConfig(level=logging.DEBUG,
 async def main():
     op1 = SleepOperator(name="SleeperTest1", sleep_time=5)
     op2 = SleepOperator(name="SleeperTest1", sleep_time=5)
-    parallel_chain = ParallelChain(name="TestParallel", children=[op1, op2])
+    parallel_chain = Parallel(name="TestParallel", children=[op1, op2])
     result1 = await parallel_chain(inputs=[{'time': 10},
                                            {'time': 10}])
 
     op3 = SleepOperator(name="SleeperTest2", sleep_time=5)
     op4 = SleepOperator(name="SleeperTest2", sleep_time=5)
-    sequential_chain = SequentialChain(name="TestSequential", children=[op3, op4])
-    result2 = await sequential_chain(time=10)
+    sequential_chain = Chain(name="TestSequential", children=[op3, op4])
+    result2 = await sequential_chain(inputs={'time': 10})
 
 
 if __name__ == '__main__':

@@ -2,7 +2,7 @@ from typing import Any, Dict
 
 from langchain import OpenAI
 
-from tinyllm.operator import Operator
+from tinyllm.function import Function
 from tinyllm.provider import Store
 
 
@@ -30,7 +30,7 @@ open_ai_max_context_tokens = {
 
 
 # Open AI model and provider
-class OpenAILLM(Operator):
+class OpenAILLM(Function):
     def __init__(self,
                  llm_name,
                  llm_params,
