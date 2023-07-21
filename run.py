@@ -5,25 +5,31 @@ from tinyllm.operator import Operator
 
 
 class SleepOperator(Operator):
-    def __init__(self, name: str, sleep_time: float):
-        super().__init__(name)
+    def __init__(self, sleep_time: float, **kwargs):
+        super().__init__(**kwargs)
         self.sleep_time = sleep_time
 
     async def get_output(self, *args, **kwargs):
-        print(kwargs)
+        self.log("Sleeping for {} seconds".format(self.sleep_time))
         await asyncio.sleep(self.sleep_time)
+        self.log("Done sleeping")
         return kwargs
 
 
 async def main():
-    op1 = SleepOperator("Op1", 30)
-    op2 = SleepOperator("Op2", 30)
-    parallel_chain = ParallelChain("TestParallel", [op1, op2])
-    sequential_chain = SequentialChain("TestParallel", [op1, op2])
 
+    op1 = SleepOperator(name="SleeperTest1", sleep_time=5)
+    op2 = SleepOperator(name="SleeperTest1", sleep_time=5)
+    parallel_chain = ParallelChain(name="TestParallel", children=[op1, op2])
     result = await parallel_chain([{}, {}])
-    result2 = await sequential_chain({'time': 10})
+
+
+    op3 = SleepOperator(name="SleeperTest2", sleep_time=5)
+    op4 = SleepOperator(name="SleeperTest2", sleep_time=5)
+    sequential_chain = SequentialChain(name="TestSequential", children=[op3, op4])
+    result2 = await sequential_chain(time=10)
     print(result)
+
+
+if __name__ == '__main__':
     asyncio.run(main())
-
-

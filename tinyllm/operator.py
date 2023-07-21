@@ -10,20 +10,20 @@ from tinyllm.fsm import Operators, States, ALLOWED_TRANSITIONS
 
 class Operator:
 
-    def __init__(self, name: str, type: Operators = Operators.OPERATOR, parent_id=None, verbose=True):
+    def __init__(self, name: str, type: Operators = Operators.OPERATOR, parent_id=None, log_level=logging.INFO):
+
         self.id = str(uuid.uuid4())
         self.name = name
         self.type = type
         self.parent_id = parent_id
-        self.children = []
-        self.state = States.INIT
-        self.verbose = verbose
-        logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s', level=logging.DEBUG)
+        logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s', level=log_level)
         self.logger = logging.getLogger(__name__)
+        self.state = None
+        self.transition(States.INIT)
 
     async def __call__(self, **kwargs):
         try:
-            self.state = States.INPUT_VALIDATION
+            self.transition(States.INPUT_VALIDATION)
             self.input = kwargs
             if await self.validate_input(**kwargs):
                 self.transition(States.RUNNING)
@@ -52,13 +52,12 @@ class Operator:
         self.log(f"transitioned to: {new_state}")
 
     def log(self, message, level='info'):
-        if self.verbose:
-            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            log_message = f"{self.tag}-{timestamp} - {self.__class__.__name__}: {message}"
-            if level == 'error':
-                self.logger.error(log_message)
-            else:
-                self.logger.info(log_message)
+        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        log_message = f"{self.tag}-{timestamp} - {self.__class__.__name__}: {message}"
+        if level == 'error':
+            self.logger.error(log_message)
+        else:
+            self.logger.info(log_message)
 
     async def validate_input(self, *args, **kwargs) -> bool:
         return True

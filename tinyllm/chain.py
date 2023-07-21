@@ -1,8 +1,8 @@
 import asyncio
 from typing import List
 
-from tinyllm import States, Chains
 from tinyllm.exceptions import InvalidOutput, InvalidInput
+from tinyllm.fsm import Chains, States
 from tinyllm.operator import Operator
 
 class ParallelChain(Operator):
@@ -27,8 +27,9 @@ class ParallelChain(Operator):
         return True
 
 class SequentialChain(Operator):
-    def __init__(self, name: str, children: List['Operator'] = None, parent_id=None):
-        super().__init__(name, Chains.CHAIN, children, parent_id)
+    def __init__(self, children: List['Operator'] = None, **kwargs):
+        super().__init__(**kwargs)
+        self.children = children if children else []
 
     async def __call__(self, **kwargs):
         self.transition(States.INPUT_VALIDATION)
