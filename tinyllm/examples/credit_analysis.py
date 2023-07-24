@@ -35,9 +35,6 @@ class FurtherAnalysis(Function):
         return {'further_analysis': 'done'}
 
 
-
-
-
 async def main():
     credit_decision = CreditBucketDecision(name="CreditClassification",
                                            choices=['good', 'bad'])
