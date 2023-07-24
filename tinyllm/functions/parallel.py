@@ -3,7 +3,6 @@ from typing import List, Type, Union, Any
 
 from tinyllm.types import States
 from tinyllm.functions.function import Function, Validator
-from pydantic import field_validator
 
 
 class ParallelValidator(Validator):

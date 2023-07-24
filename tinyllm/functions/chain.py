@@ -1,6 +1,5 @@
 from typing import List, Union, Dict, Type
 
-from enforce_typing import enforce_types
 
 from tinyllm.functions.function import Function
 from tinyllm.types import States
@@ -13,7 +12,6 @@ class ChainValidator(Validator):
 
 class Chain(Function):
 
-    @enforce_types
     def __init__(self,
                  children,
                  **kwargs):
@@ -21,7 +19,6 @@ class Chain(Function):
                          **kwargs)
         self.children = children if children else []
 
-    @enforce_types
     async def __call__(self, **kwargs):
         self.transition(States.INPUT_VALIDATION)
         kwargs = await self.validate_input(**kwargs)

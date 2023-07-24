@@ -2,8 +2,7 @@ from typing import Dict
 
 from tinyllm.logger import get_logger
 
-
-class AppConfig:
+class App:
     def __init__(self):
         self.logging = {
         }
@@ -15,12 +14,19 @@ class AppConfig:
             }
         }
 
-    def set_logging(self, key, value):
-        self.logging[key] = value
+
+    def set_logging(self, function_name: str, logger):
+        """
+        Set logging for a given Function name, or set the 'default' logger.
+        :param function_name: Function name
+        :param logger: logger
+
+        """
+        self.logging[function_name] = logger
 
     def set_provider(self, name, config: Dict):
         self.providers[name] = config
 
 
-APP_CONFIG = AppConfig()
+APP_CONFIG = App()
 APP_CONFIG.set_logging('default', get_logger(name='default'))

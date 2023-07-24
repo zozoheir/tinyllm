@@ -34,7 +34,7 @@ class Function:
         self.name = name
         self.input_validator = input_validator
         self.output_validator = output_validator
-        self.run = run_function if run_function is not None else self.get_output
+        self.run = run_function if run_function is not None else self.run
         self.type = type
         self.parent_id = parent_id
         self.state = None
@@ -79,5 +79,5 @@ class Function:
         return self.output_validator(**kwargs).model_dump()
 
     @abstractmethod
-    async def get_output(self, **kwargs) -> Any:
+    async def run(self, **kwargs) -> Any:
         pass

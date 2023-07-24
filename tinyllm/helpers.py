@@ -1,7 +1,6 @@
+import os
 from typing import List, Dict, Any, Optional
 import re
-
-from smartpy.utility import os_util
 
 
 def concatenate_strings(paragraphs: List[str]) -> str:
@@ -26,19 +25,19 @@ def generate_string_from_key_value(key: str, value: Any) -> str:
 
 
 def string_format_dict(news_dict: Dict[str, Any],
-                       ommit_keys: Optional[List[str]] = None) -> str:
+                       ignore_keys: Optional[List[str]] = None) -> str:
     """
     Formats a dictionary into a string with a specific format.
 
     :param news_dict: A dictionary to format.
-    :param ommit_keys: A list of keys to omit. Default is None.
+    :param ignore_keys: A list of keys to ignore. Default is None.
     :return: A formatted string.
     """
-    ommit_keys = ommit_keys or []
+    ignore_keys = ignore_keys or []
     all_strings = []
     for key, value in news_dict.items():
 
-        if key in ommit_keys or value is None or key is None:
+        if key in ignore_keys or value is None or key is None:
             continue
 
         if key in ['created_at', 'updated_at', 'timestamp']:
@@ -51,18 +50,18 @@ def string_format_dict(news_dict: Dict[str, Any],
 
 def dicts_to_string(text_header: str,
                     dicts: List[Dict[str, Any]],
-                    ommit_keys: Optional[List[str]] = None) -> str:
+                    ignore_keys: Optional[List[str]] = None) -> str:
     """
     Transforms a list of dictionaries to a single string.
 
     :param text_header: The header of the text.
     :param dicts: A list of dictionaries to transform.
-    :param ommit_keys: A list of keys to omit. Default is None.
+    :param ignore_keys: A list of keys to omit. Default is None.
     :return: A formatted string.
     """
-    ommit_keys = ommit_keys or []
+    ignore_keys = ignore_keys or []
     return text_header.upper() + '\n' + concatenate_strings(
-        [string_format_dict(data_dict, ommit_keys) for data_dict in dicts])
+        [string_format_dict(data_dict, ignore_keys) for data_dict in dicts])
 
 
 def split_texts_for_prompt(input_texts: List[str],
@@ -97,7 +96,7 @@ def split_texts_for_prompt(input_texts: List[str],
 def get_allowed_n_input_tokens(llm: Any,
                                completion_tokens: int,
                                prompt_template: int,
-                               max_token_size:int ) -> int:
+                               max_token_size: int) -> int:
     """
     Gets the allowed number of input tokens.
 
@@ -124,14 +123,46 @@ def extract_markdown_python(text: str):
     return "\n".join(python_codes)
 
 
+def isDirPath(path):
+    split_path = str(path).split('/')
+    return '.' not in split_path[len(split_path) - 1]
+
+
+def joinPaths(paths: list):
+    # Remove '/' at the beginning of all paths
+    paths = [path[1:] if path.startswith('/') and i != 0 else path for i, path in enumerate(paths)]
+    return os.path.join(*paths)
+
+
+def listDir(path, format='', recursive=False):
+    if recursive is True:
+        # create a list of file and sub directories
+        # coin_names in the given directory
+        listOfFile = os.listdir(path)
+        allFiles = list()
+        # Iterate over all the entries
+        for entry in listOfFile:
+            # Create full path
+            fullPath = os.path.join(path, entry)
+            # If entry is a directory then get the list of files in this directory
+            if os.path.isdir(fullPath):
+                allFiles = allFiles + listDir(fullPath, recursive=recursive, format=format)
+            else:
+                if fullPath.endswith(format):
+                    allFiles.append(fullPath)
+        return allFiles
+    else:
+        return [joinPaths([path, i]) for i in os.listdir(path) if i.endswith(format)]
+
+
 def get_recursive_content(file_list,
                           format):
     code_context = []
     for file_name in file_list:
-        if os_util.isDirPath(file_name):
-            for file in os_util.listDir(file_name, recursive=True, format=format):
+        if isDirPath(file_name):
+            for file_path in listDir(file_name, recursive=True, format=format):
                 try:
-                    with open(file, 'r') as file:
+                    with open(file_path, 'r') as file:
                         content = file.read()
                         code_context.append(f'\n \nFILE: This is the content of the file {file_name}:\n \n {content}\n')
                         code_context.append(f'\n------------------------\n')

@@ -1,11 +1,17 @@
 import asyncio
 
-from tinyllm.config import AppConfig, APP_CONFIG
+from tinyllm.config import App, APP_CONFIG
 from tinyllm.functions.chain import Chain
 from tinyllm.functions.decision import Decision
 from tinyllm.functions.parallel import Parallel
 from tinyllm.functions.function import Function
 from tinyllm.logger import get_logger
+from tinyllm.stores.openai import OpenAILLM
+
+openai_llm = OpenAILLM(
+    llm_name='gpt-3.5-turbo',
+    llm_params={'temparature': 0.9},
+)
 
 
 class CreditBucketDecision(Decision):
@@ -13,7 +19,7 @@ class CreditBucketDecision(Decision):
         super().__init__(choices=choices,
                          **kwargs)
 
-    async def get_output(self, **kwargs):
+    async def run(self, **kwargs):
         text = kwargs.get('text')
         credit_class = 'good' if 'good' in text else 'bad'
         print(f"Credit score classification done on: {credit_class}")
@@ -22,14 +28,14 @@ class CreditBucketDecision(Decision):
 
 class EmailNotification(Function):
 
-    async def get_output(self, **kwargs):
+    async def run(self, **kwargs):
         print(f"Sending Email to management with credit score: {kwargs.get('decision')}")
         return {'success':True}
 
 
 class FurtherAnalysis(Function):
 
-    async def get_output(self, **kwargs):
+    async def run(self, **kwargs):
         text = kwargs.get('text')
         print(f"Further analysis done on: {text}")
         return {'further_analysis': 'done'}

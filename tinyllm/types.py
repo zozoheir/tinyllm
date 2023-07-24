@@ -1,7 +1,6 @@
 from enum import Enum
 
 
-
 class States(Enum):
     INIT = 'init'
     READY = 'ready'
