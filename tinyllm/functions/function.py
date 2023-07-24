@@ -1,6 +1,6 @@
 import uuid
 from abc import abstractmethod
-from typing import Any, Callable, Optional, Type
+from typing import Any, Callable, Optional, Type, Dict
 
 from tinyllm.config import APP_CONFIG
 from tinyllm.exceptions import InvalidStateTransition
@@ -47,21 +47,26 @@ class Function:
             kwargs = await self.validate_input(**kwargs)
             self.transition(States.RUNNING)
             output = await self.run(**kwargs)
-            outputs = await self.validate_output(**output)
+            self.transition(States.OUTPUT_VALIDATION)
+            output = await self.validate_output(**output)
+            self.transition(States.PROCESSING_OUTPUT)
+            output = await self.process_output(**output)
             self.transition(States.COMPLETE)
-            return outputs
+            return output
         except Exception as e:
-            self.transition(States.FAILED)
+            self.transition(States.FAILED,
+                            msg=str(e))
 
     @property
     def tag(self):
         return f""
 
-    def transition(self, new_state: States):
+    def transition(self, new_state: States,
+                   msg: Optional[str] = None):
         if new_state not in ALLOWED_TRANSITIONS[self.state]:
             raise InvalidStateTransition(self, f"Invalid state transition from {self.state} to {new_state}")
         self.state = new_state
-        self.log(f"transition to: {new_state}")
+        self.log(f"transition to: {new_state}"+(f" ({msg})" if msg is not None else ""))
 
     def log(self, message, level='info'):
         if self.logger is None:
@@ -72,12 +77,15 @@ class Function:
         else:
             self.logger.info(log_message)
 
-    async def validate_input(self, **kwargs: int) -> bool:
+    async def validate_input(self, **kwargs):
         return self.input_validator(**kwargs).model_dump()
 
-    async def validate_output(self, **kwargs) -> bool:
+    async def validate_output(self, **kwargs):
         return self.output_validator(**kwargs).model_dump()
 
     @abstractmethod
     async def run(self, **kwargs) -> Any:
         pass
+
+    async def process_output(self, **kwargs):
+        return kwargs
