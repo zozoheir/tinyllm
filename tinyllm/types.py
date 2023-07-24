@@ -1,26 +1,8 @@
-class Functions:
-    BASE = 'base_function'
-    CHAIN = 'chain'
-    PARALLEL = 'chain'
-
-    # APIs
-    STORE = 'store'
-    PROVIDER = 'provider'
-    PROVIDER_CACHE = 'provider_cache'
-
-    LLM_PROVIDER = 'llm_provider'
-    LLM_STORE = 'llm_store'
-    LLM = 'llm'
-
-type(Functions.BASE)
+from enum import Enum
 
 
-class Chains:
-    CHAIN = 'chain'
-    PARALLEL = 'parallel'
 
-
-class States:
+class States(Enum):
     INIT = 'init'
     READY = 'ready'
     INPUT_VALIDATION = 'input validation'

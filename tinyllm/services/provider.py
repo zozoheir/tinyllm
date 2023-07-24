@@ -1,6 +1,6 @@
 from typing import Dict, Any
-from tinyllm.function import Function
-from tinyllm.store_cache import ModelCache
+from tinyllm.functions.function import Function
+from tinyllm.services.store_cache import ModelCache
 from tinyllm.stores.openai import OpenAILLM
 
 

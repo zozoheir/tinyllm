@@ -1,15 +1,13 @@
 import uuid
-import logging
 from abc import abstractmethod
 from typing import Any, Callable, Optional, Type
 
 from tinyllm.config import APP_CONFIG
 from tinyllm.exceptions import InvalidStateTransition
 from tinyllm.types import States, ALLOWED_TRANSITIONS
-from tinyllm.validator import Validator
+from tinyllm.functions.validator import Validator
 
-class FunctionConfigValidator(Validator):
-    type: str
+class FunctionInitValidator(Validator):
     name: str
     input_validator: Optional[Type[Validator]]
     output_validator: Optional[Type[Validator]]
@@ -20,14 +18,12 @@ class FunctionConfigValidator(Validator):
 class Function:
 
     def __init__(self,
-                 type,
                  name,
                  input_validator=Validator,
                  output_validator=Validator,
                  run_function=None,
                  parent_id=None):
-        w = FunctionConfigValidator(
-            type=type,
+        w = FunctionInitValidator(
             name=name,
             input_validator=input_validator,
             output_validator=output_validator,
@@ -48,22 +44,14 @@ class Function:
     async def __call__(self, **kwargs):
         try:
             self.transition(States.INPUT_VALIDATION)
-            self.input = kwargs
-            if await self.validate_input(**kwargs):
-                self.transition(States.RUNNING)
-                output = await self.run(**kwargs)
-                if await self.validate_output(**output):
-                    self.transition(States.COMPLETE)
-                    self.output = output
-                else:
-                    self.transition(States.FAILED)
-            else:
-                self.transition(States.FAILED)
+            kwargs = await self.validate_input(**kwargs)
+            self.transition(States.RUNNING)
+            output = await self.run(**kwargs)
+            outputs = await self.validate_output(**output)
+            self.transition(States.COMPLETE)
+            return outputs
         except Exception as e:
             self.transition(States.FAILED)
-            self.log("Exception occurred", level='error')
-            raise e
-        return output
 
     @property
     def tag(self):
@@ -85,13 +73,10 @@ class Function:
             self.logger.info(log_message)
 
     async def validate_input(self, **kwargs: int) -> bool:
-        self.input_validator(**kwargs)
-        dir(Validator)
-        return True
+        return self.input_validator(**kwargs).model_dump()
 
     async def validate_output(self, **kwargs) -> bool:
-        self.output_validator(**kwargs)
-        return True
+        return self.output_validator(**kwargs).model_dump()
 
     @abstractmethod
     async def get_output(self, **kwargs) -> Any:

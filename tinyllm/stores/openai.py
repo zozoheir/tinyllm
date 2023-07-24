@@ -2,8 +2,8 @@ from typing import Any, Dict
 
 from langchain import OpenAI
 
-from tinyllm.function import Function
-from tinyllm.provider import Store
+from tinyllm.functions.function import Function
+from tinyllm.services.provider import Store
 
 
 open_ai_max_context_tokens = {

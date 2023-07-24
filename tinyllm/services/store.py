@@ -1,6 +1,6 @@
 from typing import Dict, Any
 
-from tinyllm.function import Function
+from tinyllm.functions.function import Function
 
 class Service(Function):
     def __init__(self, name, config: Dict[str, Any] = {}):

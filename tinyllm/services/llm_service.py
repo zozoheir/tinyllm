@@ -2,7 +2,7 @@ from typing import Dict, Any
 
 from tinyllm.stores import LLMProviders
 from tinyllm.stores.openai import OpenAILLM
-from tinyllm.store import Service
+from tinyllm.services.store import Service
 
 
 class LLMService(Service):
