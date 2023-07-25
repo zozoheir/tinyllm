@@ -20,8 +20,8 @@ The TinyLLM library consists of several key components that work together to fac
 * **Function**: The base class for all LLM functions. It handles the execution of the LLM and the transition between different states in the LLM's lifecycle.
 * **Validator**: A utility class used to validate input and output data for LLM functions.
 * **Chain**: A function that allows the chaining of multiple LLM functions together to form a pipeline of calls.
-* **Concurrent**: A function that enables concurrent execution of multiple LLM functions, useful for processing data concurrently.
-* **Decision**: A function that represents a decision point in the pipeline, allowing different paths to be taken based on the output of a previous LLM function.
+* **Concurrent**: A function that enables concurrent execution of multiple LLM functions, useful for ensembling/comparing from different LLMs or speeding up IO bound task execution.
+* **Decision**: A function that represents a decision point in the chain, allowing different paths to be taken based on the output of a previous LLM function.
 * **LLMCall**: A function for making API calls to external language model services.
 * **Prompt**: A function for generating prompts from templates and user inputs.
 
