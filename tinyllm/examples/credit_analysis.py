@@ -12,7 +12,6 @@ from tinyllm.functions.function import Function
 from tinyllm.functions.prompts.openai_chat.system import OpenAISystemMessage
 from tinyllm.functions.prompts.template import OpenAIPromptTemplate
 from tinyllm.functions.prompts.user_input import OpenAIUserMessage
-from tinyllm.logger import get_logger
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
@@ -25,23 +24,23 @@ manageable level of existing debt. Overall, the applicant's solid credit standin
 this loan application an appealing opportunity for potential lenders.
 """
 
-openai_chat = OpenAIChat(name='openai_chat',
-                         model_name='gpt-3.5-turbo',
+openai_chat = OpenAIChat(name='OpenAI-GPT model',
+                         llm_name='gpt-3.5-turbo',
                          temperature=0,
                          n=1)
 
-loan_officer_role = OpenAISystemMessage(name="Role",
-                                        content="You will be provided with a loan application."
-                                                "Your role is to classify if as as good or bad. Your output should be one one of these 2 words:[good, bad]")
+loan_classifier_role = OpenAISystemMessage(name="Role",
+                                           content="You will be provided with a loan application."
+                                                   "Your role is to classify if as as good or bad. Your output should be one one of these 2 words:[good, bad]")
 
 loan_classifier_template = OpenAIPromptTemplate(name="Loan Classifier Template",
                                                 sections=[
-                                                    loan_officer_role,
-                                                    OpenAIUserMessage(name="name"),
+                                                    loan_classifier_role,
+                                                    OpenAIUserMessage(name="User Message"),
                                                 ])
 
 
-class CreditClassifier(Decision):
+class LoanClassifier(Decision):
     def __init__(self, choices, **kwargs):
         super().__init__(choices=choices,
                          **kwargs)
@@ -69,21 +68,22 @@ class FurtherAnalysis(Function):
 
 
 async def main():
-    credit_classifier = CreditClassifier(name="CreditClassification",
-                                         choices=['good', 'bad'])
+    credit_classifier = LoanClassifier(name="Loan classifier Chain",
+                                       choices=['good', 'bad'])
     email_notification = EmailNotification(name="EmailNotification")
     further_analysis = FurtherAnalysis(name="FurtherAnalysis")
 
-    credit_analysis_chain = Chain(name="Credit analysis",
+    credit_analysis_chain = Chain(name="Credit analysis Chain",
                                   children=[
                                       credit_classifier,
-                                      Parallel(name="Bad credit analysis",
+                                      Parallel(name="Bad credit analysis Chain",
                                                children=[email_notification,
-                                                         further_analysis])])
+                                                         further_analysis])],
+                                  verbose=True)
 
     result = await credit_analysis_chain(loan_application=good_loan_application_example)
+    credit_analysis_chain.graph()
 
 
 if __name__ == '__main__':
-    APP_CONFIG.set_logging('default', get_logger(name='default'))
     asyncio.run(main())

@@ -1,4 +1,4 @@
-from typing import Union, List, Any, Dict
+from abc import abstractmethod
 
 import openai
 
@@ -19,8 +19,9 @@ class LLMCall(Function):
         self.provider_name = provider_name
 
     async def run(self, **kwargs):
-        response = await openai.ChatCompletion.acreate(
-            model=self.model_name,
-            **kwargs
-        )
-        return response['choices'][0]['content']
+        return await self.llm_call(**kwargs)
+
+    @abstractmethod
+    async def llm_call(self, **kwargs):
+        self.api_response = await self.provider(**kwargs)
+        return self.api_response

@@ -2,10 +2,15 @@ import uuid
 from abc import abstractmethod
 from typing import Any, Callable, Optional, Type, Dict
 
+import networkx as nx
+from matplotlib import pyplot as plt
+
 from tinyllm.config import APP_CONFIG
 from tinyllm.exceptions import InvalidStateTransition
+from tinyllm.functions.graph import populate_graph
 from tinyllm.types import States, ALLOWED_TRANSITIONS
 from tinyllm.functions.validator import Validator
+
 
 class FunctionInitValidator(Validator):
     name: str
@@ -13,6 +18,7 @@ class FunctionInitValidator(Validator):
     output_validator: Optional[Type[Validator]]
     run_function: Optional[Callable]
     parent_id: Optional[str]
+    verbose: bool
 
 
 class Function:
@@ -22,13 +28,15 @@ class Function:
                  input_validator=Validator,
                  output_validator=Validator,
                  run_function=None,
-                 parent_id=None):
+                 parent_id=None,
+                 verbose=False):
         w = FunctionInitValidator(
             name=name,
             input_validator=input_validator,
             output_validator=output_validator,
             run_function=run_function,
-            parent_id=parent_id)
+            parent_id=parent_id,
+            verbose=verbose)
         self.id = str(uuid.uuid4())
         self.logger = APP_CONFIG.logging['default']
         self.name = name
@@ -37,9 +45,9 @@ class Function:
         self.run = run_function if run_function is not None else self.run
         self.type = type
         self.parent_id = parent_id
+        self.verbose = verbose
         self.state = None
         self.transition(States.INIT)
-
 
     async def __call__(self, **kwargs):
         try:
@@ -57,19 +65,16 @@ class Function:
             self.transition(States.FAILED,
                             msg=str(e))
 
-    @property
-    def tag(self):
-        return f""
 
     def transition(self, new_state: States,
                    msg: Optional[str] = None):
         if new_state not in ALLOWED_TRANSITIONS[self.state]:
             raise InvalidStateTransition(self, f"Invalid state transition from {self.state} to {new_state}")
         self.state = new_state
-        self.log(f"transition to: {new_state}"+(f" ({msg})" if msg is not None else ""))
+        self.log(f"transition to: {new_state}" + (f" ({msg})" if msg is not None else ""))
 
     def log(self, message, level='info'):
-        if self.logger is None:
+        if self.logger is None or self.verbose is False:
             return
         log_message = f"{self.name}[id:{self.id}]: {message}"
         if level == 'error':
@@ -89,3 +94,16 @@ class Function:
 
     async def process_output(self, **kwargs):
         return kwargs
+
+    def graph(self):
+        G = nx.DiGraph()
+        populate_graph(G, self)
+        for layer, nodes in enumerate(nx.topological_generations(G)):
+            for node in nodes:
+                G.nodes[node]["layer"] = layer
+        pos = nx.multipartite_layout(G, subset_key="layer")
+        fig, ax = plt.subplots()
+        nx.draw_networkx(G, pos=pos, ax=ax)
+        ax.set_title(f"{self.name} compute graph")
+        fig.tight_layout()
+        plt.show()

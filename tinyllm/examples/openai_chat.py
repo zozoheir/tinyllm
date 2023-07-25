@@ -6,7 +6,7 @@ from tinyllm.functions.prompts.template import OpenAIPromptTemplate
 from tinyllm.functions.prompts.user_input import OpenAIUserMessage
 
 openai_chat = OpenAIChat(name='openai_chat',
-                         model_name='gpt-3.5-turbo',
+                         llm_name='gpt-3.5-turbo',
                          temperature=0,
                          n=1)
 
