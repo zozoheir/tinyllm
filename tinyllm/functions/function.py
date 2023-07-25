@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 
 from tinyllm.config import APP_CONFIG
 from tinyllm.exceptions import InvalidStateTransition
-from tinyllm.functions.graph import populate_graph
+from tinyllm.helpers import populate_graph
 from tinyllm.types import States, ALLOWED_TRANSITIONS
 from tinyllm.functions.validator import Validator
 
@@ -42,7 +42,7 @@ class Function:
         self.name = name
         self.input_validator = input_validator
         self.output_validator = output_validator
-        self.run = run_function if run_function is not None else self.run
+        self.run_function = run_function if run_function is not None else self.run
         self.type = type
         self.parent_id = parent_id
         self.verbose = verbose
@@ -54,7 +54,7 @@ class Function:
             self.transition(States.INPUT_VALIDATION)
             kwargs = await self.validate_input(**kwargs)
             self.transition(States.RUNNING)
-            output = await self.run(**kwargs)
+            output = await self.run_function(**kwargs)
             self.transition(States.OUTPUT_VALIDATION)
             output = await self.validate_output(**output)
             self.transition(States.PROCESSING_OUTPUT)
@@ -88,7 +88,6 @@ class Function:
     async def validate_output(self, **kwargs):
         return self.output_validator(**kwargs).model_dump()
 
-    @abstractmethod
     async def run(self, **kwargs) -> Any:
         pass
 

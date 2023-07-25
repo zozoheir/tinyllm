@@ -2,8 +2,8 @@ import unittest
 import asyncio
 
 from tinyllm.functions.chain import Chain
-from tinyllm.functions.parallel import Parallel
 from tinyllm.functions.function import Function
+from tinyllm.functions.parallel import Concurrent
 
 
 class SleepOperator(Function):
@@ -24,16 +24,16 @@ class TestSleepOperator(unittest.TestCase):
 
     def test_parallel_dag(self):
 
-        op1 = SleepOperator(name="SleeperTest1", sleep_time=5)
-        op2 = SleepOperator(name="SleeperTest1", sleep_time=5)
-        parallel_dag = Parallel(name="TestParallel", children=[op1, op2])
-        result1 = self.loop.run_until_complete(parallel_dag(inputs=[{'time': 10},
-                                                                   {'time': 10}]))
+        op1 = SleepOperator(name="SleeperTest1", sleep_time=2)
+        op2 = SleepOperator(name="SleeperTest1", sleep_time=2)
+        concurrent_dag = Concurrent(name="TestParallel", children=[op1, op2])
+        result1 = self.loop.run_until_complete(concurrent_dag(inputs=[{'time': 2},
+                                                                   {'time': 2}]))
         self.assertIsNotNone(result1)
 
     def test_chain_dag(self):
-        op3 = SleepOperator(name="SleeperTest2", sleep_time=5)
-        op4 = SleepOperator(name="SleeperTest2", sleep_time=5)
+        op3 = SleepOperator(name="SleeperTest2", sleep_time=2)
+        op4 = SleepOperator(name="SleeperTest2", sleep_time=2)
         chain_dag = Chain(name="TestSequential", children=[op3, op4])
         result2 = self.loop.run_until_complete(chain_dag(inputs={'time': 10}))
         self.assertIsNotNone(result2)

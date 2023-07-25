@@ -1,6 +1,18 @@
 import os
 from typing import List, Dict, Any, Optional
 import re
+import matplotlib
+
+matplotlib.use('Qt5Agg')
+
+def populate_graph(graph, parent):
+    for child in parent.children:
+        graph.add_edge(parent.name, child.name)
+        if getattr(child, 'children', None) is None:
+            continue
+        else:
+            if len(child.children) > 0:
+                populate_graph(graph, child)
 
 
 def concatenate_strings(paragraphs: List[str]) -> str:

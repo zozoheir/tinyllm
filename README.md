@@ -37,13 +37,43 @@ This tends to be confusing vocabulary but let's clarify it for this context:
 A good design for the LLM layer of an application would be an LLM models microservice. This allows abstracting away the design choices of LLM providers (OpenAI, hugging face...) and LLM libraries and have a single IO interface to call any tinyllm LLMCall. This interface will be used for LLM IO validation, logging, caching, data persistence and monitoring.
 
 ## Examples
-*  [Generating jokes](https://github.com/zozoheir/tiny-llm/blob/main/tinyllm/examples/credit_analysis.py): a basic role/character
-*  [Classifying a credit application](https://github.com/zozoheir/tiny-llm/blob/main/tinyllm/examples/credit_analysis.py): automating a business process with an LLM function call
-*  **Graphing a chain in 1 line of code**:
+* #### Instantiating a tinyllm Function instance
+  * Functions have 3 components:
+    * run_function: takes in a dictionary of inputs and returns a dictionary of outputs 
+    * input_validator: validates the input dictionary
+    * output_validator: validates the output dictionary
+```python
+class SentimentClassifierInput(Validator):
+    content: str
+class SentimentClassifierOutput(Validator):
+    sentiment: float
+    
+async def classify_content_sentiment(**kwargs):
+    content = kwargs['content']
+    sentiment = 0 if 'bad' in content else 1
+    return {'sentiment':sentiment}
+
+sentiment_classifier = Function(
+    name="Sentiment classifier",
+    run_function=classify_content_sentiment,
+    input_validator=SentimentClassifierInput,
+    output_validator=SentimentClassifierOutput
+)
+```
+
+
+### Chaining
+* #### [Generating jokes](https://github.com/zozoheir/tiny-llm/blob/main/tinyllm/examples/credit_analysis.py): a basic role/character
+
+* ####  [Classifying a credit application](https://github.com/zozoheir/tiny-llm/blob/main/tinyllm/examples/credit_analysis.py): automating a business process with an LLM function call
+
+* #### Graphing a chain in 1 line of code:
 ```python
 chain.graph()
 ```
 ![Figure_1](https://github.com/zozoheir/tiny-llm/assets/42655961/c49669dd-a1b1-4a9c-ab9c-2029628a6b3c)
+
+
 
 
 ## Todos:
