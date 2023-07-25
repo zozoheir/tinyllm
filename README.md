@@ -1,4 +1,4 @@
-#### What is tiny-llm
+# tiny-llm
 Tiny-llm is a lightweight framework for managing LLM powered applications at scale. It is designed based on a Finite State Machine and Compute graph model. 
 
 #### Benefits
