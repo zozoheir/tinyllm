@@ -3,7 +3,6 @@ import os
 
 import openai
 
-from tinyllm.config import APP_CONFIG
 from tinyllm.functions.chain import Chain
 from tinyllm.functions.decision import Decision
 from tinyllm.functions.llms.openai_chat import OpenAIChat
@@ -12,6 +11,7 @@ from tinyllm.functions.function import Function
 from tinyllm.functions.prompts.openai_chat.system import OpenAISystemMessage
 from tinyllm.functions.prompts.template import OpenAIPromptTemplate
 from tinyllm.functions.prompts.user_input import OpenAIUserMessage
+from tinyllm.graph import graph_chain
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
@@ -55,34 +55,37 @@ loan_classifier = Decision(
     verbose=True
 )
 
+async def send_email(**kwargs):
+    print("Sending email notification...")
+    return {'success': True}
 
-class EmailNotification(Function):
-    async def run(self, **kwargs):
-        print("Sending email notification...")
-        return {'success': True}
+email_notification = Function(
+    name="EmailNotification",
+    run_function=send_email
+)
 
+async def further_analysis(**kwargs):
+    print("Performing further analysis...")
+    return {'further_analysis': 'Completed'}
 
-class FurtherAnalysis(Function):
-
-    async def run(self, **kwargs):
-        print("Performing further analysis...")
-        return {'further_analysis': 'Completed'}
-
+further_analysis_on_good_credit = Function(
+    name="FurtherAnalysisOnGoodCredit",
+    run_function=further_analysis,
+)
 
 async def main():
-    email_notification = EmailNotification(name="EmailNotification")
-    further_analysis = FurtherAnalysis(name="FurtherAnalysis")
 
     credit_analysis_chain = Chain(name="Credit analysis Chain",
                                   children=[
                                       loan_classifier,
                                       Concurrent(name="Bad credit analysis Chain",
                                                  children=[email_notification,
-                                                           further_analysis])],
+                                                           further_analysis_on_good_credit])],
                                   verbose=True)
 
     result = await credit_analysis_chain(loan_application=good_loan_application_example)
-    credit_analysis_chain.graph()
+    graph_chain(credit_analysis_chain)
+
 
 
 if __name__ == '__main__':

@@ -37,7 +37,7 @@ class Concurrent(Function):
         tasks = [child.__call__(**kwargs['inputs'][i]) for i, child in enumerate(self.children)]
         output = await asyncio.gather(*tasks)
         self.transition(States.OUTPUT_VALIDATION)
-        output = await self.validate_output(ouputs=output)
+        output = await self.validate_output(output=output)
         self.transition(States.COMPLETE)
         return output
 

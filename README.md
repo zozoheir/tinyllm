@@ -1,7 +1,7 @@
 ![Screenshot 2023-07-25 at 2 41 40 AM](https://github.com/zozoheir/tiny-llm/assets/42655961/73ab8f68-faaf-4bda-96cb-0703bc8a911a)
 
 # 🕸️ tinyllm
-tinyllm is a lightweight framework for developing, debugging and monitoring LLM powered applications at scale. It is designed based on a Finite State Machine and Compute graph model. 
+tinyllm is a lightweight framework for developing, debugging and monitoring LLM powered applications at scale. It is designed based on a Finite State Machine and Compute graph_chain model. 
 
 ## ⚡ Goal of the library
 Many of the LLM libraries today (langchain, llama-index, deep pavlov...) have made serious software design commitments which I believe were too early to make given the infancy of the industry. The goal of tiny LLM is to 2 fold:
@@ -42,7 +42,7 @@ on a GPU/CPU level and should be abstracted away using an LLM microservice.
 Tinyllm only cares about Concurrency, Chaining and organizing IO Bound tasks.
 
 
-## Examples
+## ⚡ Examples
 * #### Instantiating a tinyllm Function instance
   * Functions have 3 components:
     * run_function: takes in a dictionary of inputs and returns a dictionary of outputs 
@@ -74,8 +74,9 @@ sentiment_classifier = Function(
 * ####  [Classifying a credit application](https://github.com/zozoheir/tiny-llm/blob/main/tinyllm/examples/credit_analysis.py): automating a business process with an LLM function call
 
 * #### Graphing a chain in 1 line of code:
+
 ```python
-chain.graph()
+chain.graph_chain()
 ```
 ![Figure_1](https://github.com/zozoheir/tiny-llm/assets/42655961/c49669dd-a1b1-4a9c-ab9c-2029628a6b3c)
 
@@ -85,7 +86,7 @@ chain.graph()
 ## Todos:
 * [ ] More tests
 * [ ] Add .from_params() method to Functions for easy initialization
-* [ ] Prettify graph visualization (concurrent vs parallel chaining + styling)
+* [ ] Prettify graph_chain visualization (concurrent vs parallel chaining + styling)
 * [ ] Implement backend database 
 * [ ] Implement redis caching
 * [ ] Dockerize backend db + cache

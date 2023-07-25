@@ -1,13 +1,8 @@
 import uuid
-from abc import abstractmethod
 from typing import Any, Callable, Optional, Type, Dict
-
-import networkx as nx
-from matplotlib import pyplot as plt
 
 from tinyllm.config import APP_CONFIG
 from tinyllm.exceptions import InvalidStateTransition
-from tinyllm.helpers import populate_graph
 from tinyllm.types import States, ALLOWED_TRANSITIONS
 from tinyllm.functions.validator import Validator
 
@@ -93,16 +88,3 @@ class Function:
 
     async def process_output(self, **kwargs):
         return kwargs
-
-    def graph(self):
-        G = nx.DiGraph()
-        populate_graph(G, self)
-        for layer, nodes in enumerate(nx.topological_generations(G)):
-            for node in nodes:
-                G.nodes[node]["layer"] = layer
-        pos = nx.multipartite_layout(G, subset_key="layer")
-        fig, ax = plt.subplots()
-        nx.draw_networkx(G, pos=pos, ax=ax)
-        ax.set_title(f"{self.name} compute graph")
-        fig.tight_layout()
-        plt.show()
