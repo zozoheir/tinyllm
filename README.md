@@ -18,6 +18,7 @@ tinyllm.helper("Write a chain to automate the following business process: etc...
 tinyllm is based on the following principles:
 * A Function has Finite States
 * LLM calls are Compute graphs
+
 Since an LLM Call is itself a Function, LLM chains are thus Finite State Compute graphs that can be tracked, logged and debugged as such. While Graphs have nice properties, they need have a specific way to be implemented from a software perspective (data storage, visualization, logging etc...).
 On top of being Compute graphs, LLM Chains calls can be non deterministic (1 input can have more than 1 output) and interact through natural language. This is a new and unique paradigm for production software that hasn't been fully figured out yet. This is where tinyllm comes in.
 
