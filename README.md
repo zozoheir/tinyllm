@@ -24,23 +24,6 @@ The TinyLLM library consists of several key components that work together to fac
 #### Credit application classification
 
 ```python
-import asyncio
-import os
-
-import openai
-
-from tinyllm.config import APP_CONFIG
-from tinyllm.functions.chain import Chain
-from tinyllm.functions.decision import Decision
-from tinyllm.functions.llms.openai_chat import OpenAIChat
-from tinyllm.functions.parallel import Parallel
-from tinyllm.functions.function import Function
-from tinyllm.functions.prompts.openai_chat.system import OpenAISystemMessage
-from tinyllm.functions.prompts.template import OpenAIPromptTemplate
-from tinyllm.functions.prompts.user_input import OpenAIUserMessage
-from tinyllm.logger import get_logger
-
-openai.api_key = os.getenv("OPENAI_API_KEY")
 
 good_loan_application_example = """
 The loan application showcases a commendable financial profile with an excellent credit history. The applicant's credit score
@@ -56,13 +39,13 @@ openai_chat = OpenAIChat(name='openai_chat',
                          temperature=0,
                          n=1)
 
-loan_officer_role = OpenAISystemMessage(name="Role",
-                                        content="You will be provided with a loan application."
+loan_classifier_role = OpenAISystemMessage(name="Role",
+                                           content="You will be provided with a loan application."
                                                 "Your role is to classify if as as good or bad. Your output should be one one of these 2 words:[good, bad]")
 
 loan_classifier_template = OpenAIPromptTemplate(name="Loan Classifier Template",
                                                 sections=[
-                                                    loan_officer_role,
+                                                    loan_classifier_role,
                                                     OpenAIUserMessage(name="name"),
                                                 ])
 
