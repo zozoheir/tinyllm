@@ -5,6 +5,7 @@ from tinyllm.functions.chain import Chain
 from tinyllm.functions.decision import Decision
 from tinyllm.functions.parallel import Concurrent
 
+
 def graph_chain(chain):
     G = nx.DiGraph()
     populate_graph(G, chain)
@@ -12,11 +13,44 @@ def graph_chain(chain):
         for node in nodes:
             G.nodes[node]["layer"] = layer
     pos = nx.multipartite_layout(G, subset_key="layer")
+
+    # Calculate new positions for the labels to add a bottom margin
+    label_pos = {node: (coords[0], coords[1] + 0.02) for node, coords in pos.items()}  # Adjust as necessary
+
     fig, ax = plt.subplots()
-    nx.draw_networkx(G, pos=pos, ax=ax)
+
+    # Define colors and shapes for different node types
+    colors = {
+        "Decision": "#254bc1",
+        "Chain": "#8d9bc4",
+        "Concurrent": "#bcbcbc",
+        "default": "#000000",
+    }
+    shapes = {
+        "Decision": "s",  # square
+        "Chain": "h",  # triangle
+        "Concurrent": "o",  # circle
+        "default": "^",  # hexagon
+    }
+
+    # Draw nodes with their respective colors and shapes
+    for node in G.nodes:
+        node_type = node.split(":")[0]
+        color = colors.get(node_type, colors["default"])
+        shape = shapes.get(node_type, shapes["default"])
+        nx.draw_networkx_nodes(G, pos, nodelist=[node], node_color=color, node_shape=shape, ax=ax)
+
+    # Draw edges
+    nx.draw_networkx_edges(G, pos, ax=ax)
+
+    # Draw node labels with the adjusted positions
+    node_labels = {node: node for node in G.nodes()}
+    nx.draw_networkx_labels(G, label_pos, labels=node_labels, verticalalignment='bottom', ax=ax)
+
     ax.set_title(f"{chain.name} compute graph")
     fig.tight_layout()
     plt.show()
+
 
 def get_node_name(node):
     if node.__class__ in [Decision, Chain, Concurrent]:
