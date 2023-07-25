@@ -15,6 +15,7 @@ from tinyllm.graph import graph_chain
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
+# This is an example summary of a loan application. In practice, you'd need a larger chain to digest PDF files, bank account records etc
 good_loan_application_example = """
 The loan application showcases a commendable financial profile with an excellent credit history. The applicant's credit score
 demonstrates a history of timely payments, responsible credit usage, and a low utilization rate, reflecting a consistent
