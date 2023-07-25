@@ -5,25 +5,25 @@ from tinyllm.types import States
 from tinyllm.functions.function import Function, Validator
 
 
-class ParallelValidator(Validator):
+class ConcurrentValidator(Validator):
     children: List[Union[Function, Type[Function]]]
 
 
-class ParallelInputValidator(Validator):
+class ConcurrentInputValidator(Validator):
     inputs: List[Any]
 
 
-class ParallelOutputValidator(Validator):
+class ConcurrentOutputValidator(Validator):
     outputs: List[Any]
 
 
-class Parallel(Function):
+class Concurrent(Function):
     def __init__(self,
                  children: List['Function'] = None,
                  **kwargs):
-        m = ParallelValidator(children=children,
-                              input_validator=ParallelInputValidator,
-                              output_validator=ParallelOutputValidator,
+        m = ConcurrentValidator(children=children,
+                              input_validator=ConcurrentInputValidator,
+                              output_validator=ConcurrentOutputValidator,
                               **kwargs)
 
         super().__init__(**kwargs)

@@ -7,7 +7,7 @@ from tinyllm.config import APP_CONFIG
 from tinyllm.functions.chain import Chain
 from tinyllm.functions.decision import Decision
 from tinyllm.functions.llms.openai_chat import OpenAIChat
-from tinyllm.functions.parallel import Parallel
+from tinyllm.functions.parallel import Concurrent
 from tinyllm.functions.function import Function
 from tinyllm.functions.prompts.openai_chat.system import OpenAISystemMessage
 from tinyllm.functions.prompts.template import OpenAIPromptTemplate
@@ -76,7 +76,7 @@ async def main():
     credit_analysis_chain = Chain(name="Credit analysis Chain",
                                   children=[
                                       credit_classifier,
-                                      Parallel(name="Bad credit analysis Chain",
+                                      Concurrent(name="Bad credit analysis Chain",
                                                children=[email_notification,
                                                          further_analysis])],
                                   verbose=True)
