@@ -3,6 +3,7 @@ tinyllm is a lightweight framework for developing, debugging and monitoring LLM 
 
 ![Screenshot 2023-07-25 at 3 48 43 AM](https://github.com/zozoheir/tiny-llm/assets/42655961/f2db0c02-c18c-45a8-8054-6cd4da474e1e)
 
+
 ## ⚡ Background and goals
 Many of the LLM libraries today (langchain, llama-index, deep pavlov...) have made serious software design commitments which I believe were too early to make given the infancy of the industry.
 The goals of tinyllm are:
@@ -12,6 +13,13 @@ The goals of tinyllm are:
 ```
 tinyllm.helper("Write a chain to automate the following business process: etc...")
 ```
+
+## ⚡ LLMs as Finite State Compute graphs
+tinyllm is based on the following principles:
+* A Function has Finite States
+* LLM calls are Compute graphs
+Since an LLM Call is itself a Function, LLM chains are thus Finite State Compute graphs that can be tracked, logged and debugged as such. While Graphs have nice properties, they need have a specific way to be implemented from a software perspective (data storage, visualization, logging etc...).
+On top of being Compute graphs, LLM Chains calls can be non deterministic (1 input can have more than 1 output) and interact through natural language. This is a new and unique paradigm for production software that hasn't been fully figured out yet. This is where tinyllm comes in.
 
 
 ## ⚡ Features
