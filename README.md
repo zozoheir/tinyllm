@@ -28,8 +28,8 @@ The TinyLLM library consists of several key components that work together to fac
 
 ## Concurrent vs Parallel execution
 This tends to be confusing vocabulary but let's clarify it for this context:
-- Parallel execution: This means more than 1 Python process running at a time. This means compute/calculations are being performed on more than 1 process on the same machine. This is what model providers do using large GPU clusters (Nvidia, AMD...). This is used for "CPU Bound" tasks.
-- Concurrent execution: This means more than 1 IO request (to the web) at a time. Just like you can download 10 files on your web browser, you can call 10 APIs concurrently.
+- Parallel execution: This means compute/calculations are being performed on more than 1 process/CPU Core on the same machine. This is what model providers like OpenAI do using large GPU clusters (Nvidia, AMD...). This is used for "CPU Bound" tasks.
+- Concurrent execution: This means more than 1 IO request at a time. Just like you can download 10 files on your web browser, you can call 10 APIs concurrently.
 
 A good design for the LLM layer of an application would be an LLM models microservice. This allows abstracting away the design choices of LLM providers (OpenAI, hugging face...) and LLM libraries and have a single IO interface to call any tinyllm LLMCall. This interface will be used for logging, caching, data persistence and monitoring.
 
