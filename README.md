@@ -42,3 +42,13 @@ chain.graph()
 ![Figure_1](https://github.com/zozoheir/tiny-llm/assets/42655961/c49669dd-a1b1-4a9c-ab9c-2029628a6b3c)
 
 
+## Todos:
+* [ ] More tests
+* [ ] Add .from_params() method to Functions for easy initialization
+* [ ] Prettify graph visualization (concurrent vs parallel chaining + styling)
+* [ ] Implement backend database 
+* [ ] Implement redis caching
+* [ ] Dockerize backend db + cache
+* [ ] Dockerize tinyllm microservice
+* [ ] Write docker compose
+* [ ] Create tinyllm trained AI powered helpers
