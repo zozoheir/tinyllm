@@ -1,3 +1,5 @@
+![Screenshot 2023-07-25 at 2 41 40 AM](https://github.com/zozoheir/tiny-llm/assets/42655961/73ab8f68-faaf-4bda-96cb-0703bc8a911a)
+
 # 🕸️ tinyllm
 tinyllm is a lightweight framework for developing, debugging and monitoring LLM powered applications at scale. It is designed based on a Finite State Machine and Compute graph model. 
 
@@ -22,7 +24,6 @@ The TinyLLM library consists of several key components that work together to fac
 * **Decision**: A function that represents a decision point in the pipeline, allowing different paths to be taken based on the output of a previous LLM function.
 * **LLMCall**: A function for making API calls to external language model services.
 
-![Screenshot 2023-07-25 at 2 41 40 AM](https://github.com/zozoheir/tiny-llm/assets/42655961/73ab8f68-faaf-4bda-96cb-0703bc8a911a)
 
 
 ## Concurrent vs Parallel execution
