@@ -23,7 +23,7 @@ The TinyLLM library consists of several key components that work together to fac
 * **Concurrent**: A function that enables concurrent execution of multiple LLM functions, useful for processing data concurrently.
 * **Decision**: A function that represents a decision point in the pipeline, allowing different paths to be taken based on the output of a previous LLM function.
 * **LLMCall**: A function for making API calls to external language model services.
-
+* **Prompt**: A function for generating prompts from templates and user inputs.
 
 
 ## Concurrent vs Parallel execution
@@ -52,4 +52,5 @@ chain.graph()
 * [ ] Dockerize backend db + cache
 * [ ] Dockerize tinyllm microservice
 * [ ] Write docker compose
+* [ ] Implement visualization/monitoring layer
 * [ ] Create tinyllm trained AI powered helpers
