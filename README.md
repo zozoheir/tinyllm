@@ -1,5 +1,5 @@
-# tiny-llm
-Tiny-llm is a lightweight framework for managing LLM powered applications at scale. It is designed based on a Finite State Machine and Compute graph model. 
+# tinyllm
+tinyllm is a lightweight framework for managing LLM powered applications at scale. It is designed based on a Finite State Machine and Compute graph model. 
 
 #### Benefits
 Many of the LLM libraries today (langchain, llama-index, deep pavlov...) have made serious software design commitments which I believe were too early to make given the infancy of the industry. The goal of tiny LLM is to 2 fold:
@@ -21,7 +21,8 @@ The TinyLLM library consists of several key components that work together to fac
 
 
 ## Examples
-#### Credit application classification
+[A loan officer receives and classifies a loan application](https://github.com/zozoheir/tiny-llm/blob/main/tinyllm/examples/credit_analysis.py)
+[Generating jokes](https://github.com/zozoheir/tiny-llm/blob/main/tinyllm/examples/credit_analysis.py)
 
 ```python
 
