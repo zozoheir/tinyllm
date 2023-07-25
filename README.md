@@ -3,14 +3,16 @@
 # 🕸️ tinyllm
 tinyllm is a lightweight framework for developing, debugging and monitoring LLM powered applications at scale. It is designed based on a Finite State Machine and Compute graph_chain model. 
 
-## ⚡ Goal of the library
-Many of the LLM libraries today (langchain, llama-index, deep pavlov...) have made serious software design commitments which I believe were too early to make given the infancy of the industry. The goal of tiny LLM is to 2 fold:
-* Solve painpoints from current libraries: lack of composability (within + between libraries), complex software designs, code readability, debugging and logging.
-* Stay as universal and general as possible, with the fewest lines of code and requirements as possible.
-* Make code as readable and writable as possible for LLMs to enable AI powered and autonomous chain development. e.g:
+## ⚡ Background and goals
+Many of the LLM libraries today (langchain, llama-index, deep pavlov...) have made serious software design commitments which I believe were too early to make given the infancy of the industry.
+The goals of tinyllm are:
+* **Solve painpoints from current libraries**: lack of composability (within + between libraries), complex software designs, code readability, debugging and logging.
+* **High level, robust abstractions**: tinyllm is designed to be as simple as possible to use and integrate with existing and living codebases.
+* **Human and machine readable code** to enable AI powered and autonomous chain development. e.g:
 ```
 tinyllm.helper("Write a chain to automate the following business process: etc...")
 ```
+
 
 ## ⚡ Features
 * Integrate tiny-llm with any LLM library or existing python code or pipelines
