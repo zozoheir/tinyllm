@@ -27,6 +27,7 @@ class Chain(Function):
         for child in self.children:
             output = await child(**kwargs)
             kwargs = output
-        is_valid = await self.validate_output(**output)
+        self.transition(States.OUTPUT_VALIDATION)
+        output = await self.validate_output(**output)
         self.transition(States.COMPLETE)
         return output

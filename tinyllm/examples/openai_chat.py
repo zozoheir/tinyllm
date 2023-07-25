@@ -1,7 +1,5 @@
 import asyncio
 
-import openai
-
 from tinyllm.functions.llms.openai_chat import OpenAIChat
 
 model_name = 'gpt-3.5-turbo'
@@ -16,14 +14,11 @@ messages = [
     }
 ]
 
-openai.api_key = "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"
 openai_chat = OpenAIChat(name='openai_chat',
                          model_name='gpt-3.5-turbo',
                          temperature=0,
                          n=1)
 
-# Call the function with the provided messages
 response = asyncio.run(openai_chat(messages=messages))
 
-# Print the response
 print(response)

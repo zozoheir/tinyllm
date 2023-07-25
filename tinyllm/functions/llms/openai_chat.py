@@ -1,10 +1,10 @@
+import os
 from typing import Union, List, Any, Dict
 
 import openai
 
 from tinyllm.functions.function import Function
 from tinyllm.functions.validator import Validator
-
 
 class OpenAIChatInitValidator(Validator):
     model_name: str

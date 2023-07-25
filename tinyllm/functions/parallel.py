@@ -36,6 +36,7 @@ class Parallel(Function):
         self.transition(States.RUNNING)
         tasks = [child.__call__(**kwargs['inputs'][i]) for i, child in enumerate(self.children)]
         output = await asyncio.gather(*tasks)
+        self.transition(States.OUTPUT_VALIDATION)
         output = await self.validate_output(ouputs=output)
         self.transition(States.COMPLETE)
         return output
@@ -45,3 +46,4 @@ class Parallel(Function):
         # If inputs list not provided, we create it
         if 'inputs' not in kwargs: kwargs['inputs'] = [kwargs for _ in range(len(self.children))]
         return kwargs
+
