@@ -23,4 +23,3 @@ The TinyLLM library consists of several key components that work together to fac
 ## Examples
 *  [A loan officer receives and classifies a loan application](https://github.com/zozoheir/tiny-llm/blob/main/tinyllm/examples/credit_analysis.py)
 *  [Generating jokes](https://github.com/zozoheir/tiny-llm/blob/main/tinyllm/examples/credit_analysis.py)
-
