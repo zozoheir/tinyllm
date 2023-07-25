@@ -3,7 +3,7 @@
 # 🕸️ tinyllm
 tinyllm is a lightweight framework for developing, debugging and monitoring LLM powered applications at scale. It is designed based on a Finite State Machine and Compute graph model. 
 
-## Goal of the library
+## ⚡ Goal of the library
 Many of the LLM libraries today (langchain, llama-index, deep pavlov...) have made serious software design commitments which I believe were too early to make given the infancy of the industry. The goal of tiny LLM is to 2 fold:
 * Solve painpoints from current libraries: lack of composability (within + between libraries), complex software designs, code readability, debugging and logging.
 * Stay as universal and general as possible, with the fewest lines of code and requirements as possible.
@@ -18,7 +18,7 @@ tinyllm.helper("Write a chain to automate the following business process: etc...
 * Visualize chains in 1 line of code
 * High level abstraction of LLM/API chaining/interactions through a standardized I/O interface
 
-## Architecture
+## ⚡ Architecture
 The TinyLLM library consists of several key components that work together to facilitate the creation and management of Language Model Microservices (LLMs):
 * **Function**: The base class for all LLM functions. It handles the execution of the LLM and the transition between different states in the LLM's lifecycle.
 * **Validator**: A utility class used to validate input and output data for LLM functions.
@@ -29,12 +29,18 @@ The TinyLLM library consists of several key components that work together to fac
 * **Prompt**: A function for generating prompts from templates and user inputs.
 
 
-## Concurrent vs Parallel execution
-This tends to be confusing vocabulary but let's clarify it for this context:
-- Parallel execution: This means compute/calculations are being performed on more than 1 process/CPU Core on the same machine. This is what model providers like OpenAI do using large GPU clusters (Nvidia, AMD...). This is used for "CPU Bound" tasks.
-- Concurrent execution: This means more than 1 IO request at a time. Just like you can download 10 files on your web browser, you can call 10 APIs concurrently.
+## ⚡ Concurrency vs Parallelism vs Chaining
+These tend to be confusing across the board. Here's a quick explanation:
+- **Concurrency** : This means more than 1 Input/Ouput request at a time. Just like you can download 10 files 
+concurrently on your web browser, you can call 10 APIs concurrently.
+- **Chaining** : An ordered list of Functions where a Function's output is the input of the next Function in the chain.
+- **Parallelism** : compute/calculations being performed on more than 1 process/CPU Core on the same machine. This is what 
+model providers like OpenAI do using large GPU clusters (Nvidia, AMD...). This is used for "CPU Bound" tasks.
 
-A good design for the LLM layer of an application would be an LLM models microservice. This allows abstracting away the design choices of LLM providers (OpenAI, hugging face...) and LLM libraries and have a single IO interface to call any tinyllm LLMCall. This interface will be used for LLM IO validation, logging, caching, data persistence and monitoring.
+Tinyllm does not care about Parallelism. Parallelism is implemented by LLM providers
+on a GPU/CPU level and should be abstracted away using an LLM microservice.
+Tinyllm only cares about Concurrency, Chaining and organizing IO Bound tasks.
+
 
 ## Examples
 * #### Instantiating a tinyllm Function instance
