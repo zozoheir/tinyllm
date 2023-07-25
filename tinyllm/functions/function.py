@@ -35,6 +35,7 @@ class Function:
         self.id = str(uuid.uuid4())
         self.logger = APP_CONFIG.logging['default']
         self.name = name
+
         self.input_validator = input_validator
         self.output_validator = output_validator
         self.run_function = run_function if run_function is not None else self.run

@@ -49,7 +49,7 @@ async def classify_loan_application(**kwargs):
     return {'decision': chat_response}
 
 loan_classifier = Decision(
-    name="Loan classifier Chain",
+    name="Loan classifier",
     choices=['good', 'bad'],
     run_function=classify_loan_application,
     verbose=True
@@ -60,27 +60,27 @@ async def send_email(**kwargs):
     return {'success': True}
 
 email_notification = Function(
-    name="EmailNotification",
+    name="Email notification",
     run_function=send_email
 )
 
-async def further_analysis(**kwargs):
-    print("Performing further analysis...")
-    return {'further_analysis': 'Completed'}
+async def background_check(**kwargs):
+    print("Performing background check")
+    return {'background_check': 'Completed'}
 
-further_analysis_on_good_credit = Function(
-    name="FurtherAnalysisOnGoodCredit",
-    run_function=further_analysis,
+bg_check = Function(
+    name="Background check",
+    run_function=background_check,
 )
 
 async def main():
 
-    credit_analysis_chain = Chain(name="Credit analysis Chain",
+    credit_analysis_chain = Chain(name="Loan application processing",
                                   children=[
                                       loan_classifier,
-                                      Concurrent(name="Bad credit analysis Chain",
+                                      Concurrent(name="On good credit",
                                                  children=[email_notification,
-                                                           further_analysis_on_good_credit])],
+                                                           bg_check])],
                                   verbose=True)
 
     result = await credit_analysis_chain(loan_application=good_loan_application_example)
