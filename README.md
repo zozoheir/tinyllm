@@ -80,9 +80,7 @@ sentiment_classifier = Function(
 ```python
 chain.graph_chain()
 ```
-![Figure_1](https://github.com/zozoheir/tiny-llm/assets/42655961/c49669dd-a1b1-4a9c-ab9c-2029628a6b3c)
-
-
+<img width="1387" alt="Screenshot 2023-07-25 at 3 12 05 PM" src="https://github.com/zozoheir/tiny-llm/assets/42655961/7ee9fd79-3503-497e-aea9-983008db8da1">
 
 
 ## Todos:
