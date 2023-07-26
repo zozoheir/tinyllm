@@ -31,7 +31,7 @@ class OpenAIChat(Function):
         self.temperature = temperature
         self.n = n
 
-    async def run_function(self, **kwargs):
+    async def run(self, **kwargs):
         api_result = await openai.ChatCompletion.acreate(
             model=self.llm_name,
             temperature=self.temperature,

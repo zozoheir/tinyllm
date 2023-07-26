@@ -9,7 +9,7 @@ from tinyllm.functions.prompts.user_input import OpenAIUserMessage
 
 
 async def main():
-    openai_chat = OpenAIChat(name='OpenAI-GPT model',
+    openai_chat = OpenAIChat(name='OpenAI Chat model',
                              llm_name='gpt-3.5-turbo',
                              temperature=0,
                              n=1,
@@ -27,10 +27,7 @@ async def main():
     messages = await loan_classifier_template(message="Hii")
 
     chat_response = await openai_chat(**messages)
-    openai_chat = OpenAIChat(name='OpenAI-GPT model',
-                             llm_name='gpt-3.5-turbo',
-                             temperature=0,
-                             n=1)
+
 
     response = await openai_chat(**messages)
     print(response)

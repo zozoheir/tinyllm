@@ -24,7 +24,7 @@ class Function:
                  output_validator=Validator,
                  run_function=None,
                  parent_id=None,
-                 verbose=False):
+                 verbose=True):
         w = FunctionInitValidator(
             name=name,
             input_validator=input_validator,
@@ -50,7 +50,7 @@ class Function:
             self.transition(States.INPUT_VALIDATION)
             kwargs = await self.validate_input(**kwargs)
             self.transition(States.RUNNING)
-            output = await self.run_function(**kwargs)
+            output = await self.run(**kwargs)
             self.transition(States.OUTPUT_VALIDATION)
             output = await self.validate_output(**output)
             self.transition(States.PROCESSING_OUTPUT)
