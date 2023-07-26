@@ -42,11 +42,8 @@ class TestFunction(unittest.TestCase):
 
     def test_invalid_input(self):
         operator = AddOneOperator(name="AddOneTest")
-        asyncio.run(operator(value="wrong input"))
-
-
-        #with self.assertRaises(Exception):
-        #    self.loop.run_until_complete(operator(value="wrong input"))
+        self.loop.run_until_complete(operator(value="wrong input"))
+        assert operator.state == States.FAILED
 
 
 if __name__ == '__main__':
