@@ -1,11 +1,13 @@
 # Initialize a Loan Classifier OpenAI Prompt template
 import asyncio
+import openai
 
 from tinyllm.functions.llms.openai_chat import OpenAIChat
 from tinyllm.functions.prompts.openai_chat.system import OpenAISystemMessage
 from tinyllm.functions.prompts.template import OpenAIPromptTemplate
 from tinyllm.functions.prompts.user_input import OpenAIUserMessage
 
+openai.api_key = "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"
 
 
 async def main():
@@ -28,9 +30,7 @@ async def main():
 
     chat_response = await openai_chat(**messages)
 
-
-    response = await openai_chat(**messages)
-    print(response)
+    print(chat_response)
 
 if __name__ == '__main__':
     asyncio.run(main())
