@@ -13,7 +13,7 @@ from tinyllm.functions.prompts.template import OpenAIPromptTemplate
 from tinyllm.functions.prompts.user_input import OpenAIUserMessage
 from tinyllm.graph import graph_chain
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
+#openai.api_key = "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"
 
 # This is an example summary of a loan application. In practice, you'd to add a chain to load PDF files, bank records etc instead of this dummy variable
 good_loan_application_example = """
@@ -50,7 +50,7 @@ async def classify_loan_application(**kwargs):
     return {'decision': chat_response}
 
 loan_classifier = Decision(
-    name="Loan classifier",
+    name="Decision: Loan classifier",
     choices=['good', 'bad'],
     run_function=classify_loan_application,
     verbose=True
@@ -76,16 +76,16 @@ bg_check = Function(
 
 async def main():
 
-    credit_analysis_chain = Chain(name="Loan application processing",
+    credit_analysis_chain = Chain(name="Chain: Loan application",
                                   children=[
                                       loan_classifier,
-                                      Concurrent(name="On good credit",
+                                      Concurrent(name="Concurrent: On good credit",
                                                  children=[email_notification,
                                                            bg_check])],
                                   verbose=True)
 
     result = await credit_analysis_chain(loan_application=good_loan_application_example)
-    graph_chain(credit_analysis_chain)
+    #graph_chain(credit_analysis_chain)
 
 
 
