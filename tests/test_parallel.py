@@ -18,16 +18,17 @@ class SleepOperator(Function):
         return kwargs
 
 
-class TestChainOperator(unittest.TestCase):
+class TestParallelOperator(unittest.TestCase):
     def setUp(self):
         self.loop = asyncio.get_event_loop()
 
-    def test_chain_dag(self):
-        op3 = SleepOperator(name="SleeperTest2", sleep_time=2)
-        op4 = SleepOperator(name="SleeperTest2", sleep_time=2)
-        chain_dag = Chain(name="TestSequential", children=[op3, op4])
-        result2 = self.loop.run_until_complete(chain_dag(inputs={'time': 10}))
-        self.assertIsNotNone(result2)
+    def test_parallel_dag(self):
+        op1 = SleepOperator(name="SleeperTest1", sleep_time=2)
+        op2 = SleepOperator(name="SleeperTest1", sleep_time=2)
+        concurrent_dag = Concurrent(name="TestParallel", children=[op1, op2])
+        result1 = self.loop.run_until_complete(concurrent_dag(inputs=[{'time': 2},
+                                                                   {'time': 2}]))
+        self.assertIsNotNone(result1)
 
 
 if __name__ == '__main__':
