@@ -7,8 +7,8 @@ def get_logger(name: str,
                level=logging.INFO):
     logger = logging.getLogger(name)
     logger.setLevel(level)
-    root_logger = logging.getLogger()
-    root_logger.handlers = []
+    #root_logger = logging.getLogger()
+    #root_logger.handlers = []
     logger.handlers = []
     for handler in handlers:
         handler.setFormatter(logging.Formatter(format))
