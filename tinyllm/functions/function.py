@@ -4,9 +4,8 @@ from typing import Any, Callable, Optional, Type, Dict
 from py2neo import Node
 from pydantic import field_validator
 
-from tinyllm.app import APP
+from tinyllm import APP
 from tinyllm.exceptions import InvalidStateTransition
-from tinyllm.helpers import concatenate_strings
 from tinyllm.state import States, ALLOWED_TRANSITIONS
 from tinyllm.functions.validator import Validator
 from inspect import iscoroutinefunction
@@ -105,10 +104,17 @@ class Function:
         return self.output_validator(**kwargs).model_dump()
 
     async def push_to_db(self):
-        attributes_dict = vars(self)
-        attributes_dict = {key: str(value) for key, value in attributes_dict.items()}
-        node = Node(self.__class__.__name__, **attributes_dict)
-        APP.graph_db.create(node)
+
+        included_specifically = APP.config['DB_FUNCTIONS_LOGGING']['DEFAULT'] is True and self.name in \
+                                APP.config['DB_FUNCTIONS_LOGGING']['INCLUDE']
+        included_by_default = APP.config['DB_FUNCTIONS_LOGGING']['DEFAULT'] is True and self.name not in \
+                              APP.config['DB_FUNCTIONS_LOGGING']['EXCLUDE']
+        if included_specifically or included_by_default:
+            attributes_dict = vars(self)
+            attributes_dict = {key: str(value) for key, value in attributes_dict.items()}
+            attributes_dict['class'] = self.__class__.__name__
+            node = Node(self.name, **attributes_dict)
+            APP.graph_db.create(node)
 
     async def run(self, **kwargs) -> Any:
         pass
