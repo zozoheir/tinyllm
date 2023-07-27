@@ -1,42 +1,36 @@
 import os
 import unittest
-import asyncio
 
 import openai
 
 from tests.base import AsyncioTestCase
-from tinyllm.functions.llms.openai_chat import OpenAIChat
-from tinyllm.functions.prompts.openai_chat.system import OpenAISystemMessage
-from tinyllm.functions.prompts.template import OpenAIPromptTemplate
-from tinyllm.functions.prompts.user_input import OpenAIUserMessage
+from tinyllm.functions.llms.openai.helpers import get_system_message
+from tinyllm.functions.llms.openai.openai_chat import OpenAIChat
+from tinyllm.types import States
 
 openai.api_key = os.environ['OPENAI_API_KEY']
 
 
 class TestOpenAIChat(AsyncioTestCase):
 
-    async def test_openai_chat_script(self):
+    def test_openai_chat_script(self):
+        openai_prompt_template = [
+            get_system_message("You are an English to Spanish translator")
+        ]
         openai_chat = OpenAIChat(name='OpenAI Chat model',
                                  llm_name='gpt-3.5-turbo',
                                  temperature=0,
-                                 n=1,
-                                 verbose=True)
+                                 prompt_template=openai_prompt_template,
+                                 n=1)
 
-        loan_classifier_role = OpenAISystemMessage(name="Role",
-                                                   content="You will be provided with a loan application."
-                                                           "Your role is to classify if as as good or bad. Your output should be one one of these 2 words:[good, bad]")
+        result = self.loop.run_until_complete(openai_chat(message="Hello, how are you?"))
 
-        loan_classifier_template = OpenAIPromptTemplate(name="Loan Classifier Template",
-                                                        sections=[
-                                                            loan_classifier_role,
-                                                            OpenAIUserMessage(name="User Message"),
-                                                        ])
-        messages = await loan_classifier_template(message="Hii")
+        self.assertEqual(openai_chat.state,States.COMPLETE)
+        self.assertEqual(result['response'], 'Hola, ¿cómo estás?')
 
-        chat_response = await openai_chat(**messages)
-
-        self.assertIn("good", chat_response['output']['choices'][0]['message']['content'].lower())
-        self.assertIn("bad", chat_response['output']['choices'][0]['message']['content'].lower())
+        result = self.loop.run_until_complete(openai_chat(message="Today is Monday"))
+        self.assertEqual(openai_chat.state, States.COMPLETE)
+        self.assertEqual(len(openai_chat.memory.memories), 4)
 
 
 if __name__ == '__main__':

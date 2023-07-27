@@ -46,11 +46,11 @@ class Function:
         self.input_validator = input_validator
         self.output_validator = output_validator
         self.run_function = run_function if run_function is not None else self.run
-        self.type = type
         self.parent_id = parent_id
         self.verbose = verbose
         self.state = None
         self.transition(States.INIT)
+        self.error_message = None
 
     async def __call__(self, **kwargs):
         try:
@@ -65,6 +65,7 @@ class Function:
             self.transition(States.COMPLETE)
             return output
         except Exception as e:
+            self.error_message = str(e)
             self.transition(States.FAILED,
                             msg=str(e))
 

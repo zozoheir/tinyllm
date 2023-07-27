@@ -20,7 +20,7 @@ ALLOWED_TRANSITIONS = {
     States.RUNNING: [States.OUTPUT_VALIDATION, States.FAILED],
     States.OUTPUT_VALIDATION: [States.COMPLETE, States.PROCESSING_OUTPUT, States.FAILED],
     States.PROCESSING_OUTPUT: [States.COMPLETE, States.FAILED],
-    States.COMPLETE: [],
+    States.COMPLETE: [States.INPUT_VALIDATION],
     States.FAILED: []
 }
 
