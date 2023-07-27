@@ -4,14 +4,14 @@ import os
 
 import openai
 
-from tinyllm.app import APP_CONFIG
+from tinyllm.app import APP
 from tinyllm.functions.llms.openai.openai_chat import OpenAIChat
 
 openai.api_key = os.environ['OPENAI_API_KEY']
-APP_CONFIG.connect_graph_db(host=os.environ['TINYLLM_DB_HOST'],
-                            port=os.environ['TINYLLM_DB_PORT'],
-                            user=os.environ['TINYLLM_DB_USER'],
-                            password=os.environ['TINYLLM_DB_PASSWORD'])
+APP.connect_graph_db(host=os.environ['TINYLLM_DB_HOST'],
+                     port=os.environ['TINYLLM_DB_PORT'],
+                     user=os.environ['TINYLLM_DB_USER'],
+                     password=os.environ['TINYLLM_DB_PASSWORD'])
 
 
 async def main():
