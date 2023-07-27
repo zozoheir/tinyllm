@@ -3,7 +3,7 @@ import asyncio
 from tinyllm.functions.chain import Chain
 from tinyllm.functions.decision import Decision
 from tinyllm.functions.llms.openai.openai_chat import OpenAIChat
-from tinyllm.functions.parallel import Concurrent
+from tinyllm.functions.concurrent import Concurrent
 from tinyllm.functions.function import Function
 from tinyllm.functions.prompts.openai_chat.system import OpenAISystemMessage
 from tinyllm.functions.prompts.template import OpenAIPromptTemplate

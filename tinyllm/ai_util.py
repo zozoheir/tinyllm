@@ -13,10 +13,12 @@ def get_tinyllm_embeddings(library_files, embeddings_path):
         for file in library_files:
             with open(file, 'r') as f:
                 file_content = f.read()
-            embeddings_dict_list.append({
-                'file': file,
-                'embeddings': get_embedding(file_content)
-            })
+            if len(file_content)>0:
+                embeddings_dict_list.append({
+                    'file_path': file,
+                    'content':file_content,
+                    'embeddings': get_embedding(file_content)
+                })
         with open(embeddings_path, 'wb') as f:
             pickle.dump(embeddings_dict_list, f)
     return embeddings_dict_list
@@ -37,7 +39,11 @@ def top_n_similar(input_vector, vector_list, top_n=5):
 
 def get_embedding(text, model="text-embedding-ada-002"):
     text = text.replace("\n", " ")
-    return openai.Embedding.create(input=[text], model=model)['data'][0]['embedding']
+    try:
+        embedding = openai.Embedding.create(input=[text], model=model)['data'][0]['embedding']
+    except Exception as e:
+        raise e
+    return embedding
 
 def find_related_files(content, embeddings_dict_list, model="text-embedding-ada-002", top_n=5):
     content_embedding = get_embedding(content, model)
