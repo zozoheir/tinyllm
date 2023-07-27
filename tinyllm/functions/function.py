@@ -50,6 +50,7 @@ class Function:
         self.verbose = verbose
         self.state = None
         self.transition(States.INIT)
+        self.error_message = None
 
     async def __call__(self, **kwargs):
         try:
@@ -64,6 +65,7 @@ class Function:
             self.transition(States.COMPLETE)
             return output
         except Exception as e:
+            self.error_message = str(e)
             self.transition(States.FAILED,
                             msg=str(e))
 

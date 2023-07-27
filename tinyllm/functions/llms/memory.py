@@ -18,7 +18,7 @@ class Memory(Function, abc.ABC):
                  **kwargs):
         super().__init__(input_validator=InputValidator,
                          **kwargs)
-        self.message_history = None
+        self.memories = None
 
     async def load_memory(self, **kwargs):
         pass
