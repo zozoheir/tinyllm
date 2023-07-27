@@ -1,6 +1,7 @@
 import unittest
 import asyncio
 
+from tests.base import AsyncioTestCase
 from tinyllm.functions.function import Function
 from tinyllm.exceptions import InvalidStateTransition
 from tinyllm.functions.validator import Validator
@@ -25,9 +26,7 @@ class AddOneOperator(Function):
         return {"value": result}
 
 
-class TestFunction(unittest.TestCase):
-    def setUp(self):
-        self.loop = asyncio.get_event_loop()
+class TestFunction(AsyncioTestCase):
 
     def test_add_one(self):
         operator = AddOneOperator(name="AddOneTest")
