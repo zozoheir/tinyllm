@@ -30,6 +30,7 @@ class Function:
 
     def __init__(self,
                  name,
+                 user=None,
                  input_validator=Validator,
                  output_validator=Validator,
                  run_function=None,
@@ -42,6 +43,7 @@ class Function:
             run_function=run_function,
             parent_id=parent_id,
             verbose=verbose)
+        self.user = user
         self.id = str(uuid.uuid4())
         self.logger = APP.logging['default']
         self.name = name
@@ -72,13 +74,19 @@ class Function:
             self.transition(States.PROCESSING_OUTPUT)
             output = await self.process_output(**output)
             self.transition(States.COMPLETE)
-            await self.push_to_db()
+            try:
+                await self.push_to_db()
+            except Exception as e:
+                self.log(f"Error pushing to db: {e}", level='error')
             return output
         except Exception as e:
             self.error_message = str(e)
             self.transition(States.FAILED,
                             msg=str(e))
-            await self.push_to_db()
+            try:
+                await self.push_to_db()
+            except Exception as e:
+                self.log(f"Error pushing to db: {e}", level='error')
 
     def transition(self, new_state: States,
                    msg: Optional[str] = None):

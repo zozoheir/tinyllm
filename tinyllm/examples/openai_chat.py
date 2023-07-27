@@ -4,7 +4,7 @@ import os
 
 import openai
 
-from tinyllm.app import APP
+from tinyllm import APP
 from tinyllm.functions.llms.openai.openai_chat import OpenAIChat
 
 openai.api_key = os.environ['OPENAI_API_KEY']

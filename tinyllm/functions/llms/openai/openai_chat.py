@@ -38,7 +38,7 @@ class OpenAIChat(Function):
         self.temperature = temperature
         self.n = n
         if memory is None:
-            self.memory = OpenAIMemory(name=f"{self.llm_name}_memory")
+            self.memory = OpenAIMemory(name=f"{self.name}_memory")
         else:
             self.memory = memory
         self.prompt_template = prompt_template

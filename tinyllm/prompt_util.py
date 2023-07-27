@@ -2,6 +2,10 @@ import os
 from typing import List, Dict, Any, Optional
 import re
 
+import numpy as np
+import openai
+
+
 def concatenate_strings(paragraphs: List[str]) -> str:
     """
     Concatenates a list of strings with newline separator.
@@ -179,3 +183,4 @@ def get_recursive_content(file_list,
 
     final_prompt = '\n'.join(code_context)
     return final_prompt
+
