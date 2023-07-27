@@ -16,7 +16,7 @@ class TestDecision(AsyncioTestCase):
                             choices=choices,
                             run_function=decide)
         good_loan_application_example = "good file"
-        result = asyncio.run(decision(loan_application=good_loan_application_example))
+        result = self.loop.run_until_complete(decision(loan_application=good_loan_application_example))
         self.assertIsNotNone(result)
         self.assertTrue('decision' in result)
         self.assertIn(result['decision'], choices)

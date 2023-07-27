@@ -9,6 +9,3 @@ class AsyncioTestCase(unittest.TestCase):
     def tearDown(self):
         self.loop.close()
         asyncio.set_event_loop(None)
-
-    def run_async(self, coro):
-        return self.loop.run_until_complete(coro)

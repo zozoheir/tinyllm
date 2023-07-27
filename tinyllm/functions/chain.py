@@ -31,3 +31,11 @@ class Chain(Function):
         output = await self.validate_output(**output)
         self.transition(States.COMPLETE)
         return output
+
+    @property
+    def graph_state(self):
+        """Returns the state of the current function and all its children."""
+        graph_state = {self.name: self.state}
+        for child in self.children:
+            graph_state.update(child.graph_state)
+        return graph_state

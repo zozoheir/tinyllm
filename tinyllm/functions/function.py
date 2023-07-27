@@ -97,3 +97,8 @@ class Function:
 
     async def process_output(self, **kwargs):
         return kwargs
+
+    @property
+    def graph_state(self):
+        """Returns the state of the current function."""
+        return {self.name: self.state}

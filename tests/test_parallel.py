@@ -5,6 +5,7 @@ from tests.base import AsyncioTestCase
 from tinyllm.functions.chain import Chain
 from tinyllm.functions.function import Function
 from tinyllm.functions.parallel import Concurrent
+from tinyllm.types import States
 
 
 class SleepOperator(Function):
@@ -29,9 +30,10 @@ class TestParallelOperator(AsyncioTestCase):
         op2 = SleepOperator(name="SleeperTest1", sleep_time=2)
         concurrent_dag = Concurrent(name="TestParallel", children=[op1, op2])
         result1 = self.loop.run_until_complete(concurrent_dag(inputs=[{'time': 2},
-                                                                   {'time': 2}]))
+                                                                      {'time': 2}]))
         self.assertIsNotNone(result1)
-
+        self.assertEqual(result1, {'output': [{'time': 2}, {'time': 2}]})
+        self.assertEqual(concurrent_dag.state, States.COMPLETE)
 
 if __name__ == '__main__':
     unittest.main()

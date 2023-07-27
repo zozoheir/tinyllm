@@ -20,8 +20,6 @@ class SleepOperator(Function):
 
 
 class TestChainOperator(AsyncioTestCase):
-    def setUp(self):
-        self.loop = asyncio.get_event_loop()
 
     def test_chain_dag(self):
         op3 = SleepOperator(name="SleeperTest2", sleep_time=2)

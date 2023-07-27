@@ -42,8 +42,16 @@ class Concurrent(Function):
         return output
 
     def _handle_inputs_distribution(self, **kwargs):
-        # Case where we want the same input for all children functions
-        # If inputs list not provided, we create it
+        """
+        if inputs are not provided, distribute the kwargs to all children
+        """
         if 'inputs' not in kwargs: kwargs['inputs'] = [kwargs for _ in range(len(self.children))]
         return kwargs
 
+    @property
+    def graph_state(self):
+        """Returns the state of the current function and all its children."""
+        graph_state = {self.name: self.state}
+        for child in self.children:
+            graph_state.update(child.graph_state)
+        return graph_state
