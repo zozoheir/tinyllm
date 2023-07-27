@@ -46,7 +46,6 @@ class Function:
         self.input_validator = input_validator
         self.output_validator = output_validator
         self.run_function = run_function if run_function is not None else self.run
-        self.type = type
         self.parent_id = parent_id
         self.verbose = verbose
         self.state = None

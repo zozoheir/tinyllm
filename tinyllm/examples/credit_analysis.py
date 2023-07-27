@@ -1,17 +1,13 @@
 import asyncio
-import os
-
-import openai
 
 from tinyllm.functions.chain import Chain
 from tinyllm.functions.decision import Decision
-from tinyllm.functions.llms.openai_chat import OpenAIChat
+from tinyllm.functions.llms.openai.openai_chat import OpenAIChat
 from tinyllm.functions.parallel import Concurrent
 from tinyllm.functions.function import Function
 from tinyllm.functions.prompts.openai_chat.system import OpenAISystemMessage
 from tinyllm.functions.prompts.template import OpenAIPromptTemplate
 from tinyllm.functions.prompts.user_input import OpenAIUserMessage
-from tinyllm.graph import graph_chain
 
 #openai.api_key = "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"
 

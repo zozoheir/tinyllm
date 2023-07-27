@@ -4,7 +4,7 @@ import os
 
 import openai
 
-from tinyllm.functions.llms.openai_chat import OpenAIChat
+from tinyllm.functions.llms.openai.openai_chat import OpenAIChat
 from tinyllm.functions.prompts.openai_chat.system import OpenAISystemMessage
 from tinyllm.functions.prompts.template import OpenAIPromptTemplate
 from tinyllm.functions.prompts.user_input import OpenAIUserMessage
