@@ -5,7 +5,7 @@ from tests.base import AsyncioTestCase
 from tinyllm.functions.function import Function
 from tinyllm.exceptions import InvalidStateTransition
 from tinyllm.functions.validator import Validator
-from tinyllm.types import States
+from tinyllm.state import States
 
 
 class InputValidator(Validator):

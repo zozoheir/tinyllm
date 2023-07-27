@@ -1,19 +1,15 @@
 from typing import Dict
 
+from py2neo import Graph
+
 from tinyllm.logger import get_logger
+
 
 class App:
     def __init__(self):
         self.logging = {
         }
-        self.providers = {
-            'providers': {
-                'openai': None,
-                'huggingface': None,
-                'anthropic': None,
-            }
-        }
-
+        self.graph_db = None
 
     def set_logging(self, function_name: str, logger):
         """
@@ -26,6 +22,13 @@ class App:
 
     def set_provider(self, name, config: Dict):
         self.providers[name] = config
+
+    def connect_graph_db(self,
+                         host,
+                         port,
+                         user,
+                         password):
+        self.graph_db = Graph(f"neo4j+s://{host}:{port}", auth=(user, password))
 
 
 APP_CONFIG = App()

@@ -1,7 +1,7 @@
 import asyncio
 from typing import List, Type, Union, Any
 
-from tinyllm.types import States
+from tinyllm.state import States
 from tinyllm.functions.function import Function, Validator
 
 

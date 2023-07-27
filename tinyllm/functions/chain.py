@@ -2,7 +2,7 @@ from typing import List, Union, Dict, Type
 
 
 from tinyllm.functions.function import Function
-from tinyllm.types import States
+from tinyllm.state import States
 from tinyllm.functions.validator import Validator
 
 

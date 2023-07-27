@@ -6,5 +6,4 @@ setup(name='tiny-llm',
       packages=find_packages(),
       author='Othmane Zoheir',
       author_email='zozoheir@umich.edu',
-      url='',
-     )
+      url='')

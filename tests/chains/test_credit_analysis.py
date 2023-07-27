@@ -5,7 +5,7 @@ from tinyllm.functions.chain import Chain
 from tinyllm.functions.decision import Decision
 from tinyllm.functions.function import Function
 from tinyllm.functions.parallel import Concurrent
-from tinyllm.types import States
+from tinyllm.state import States
 
 
 class TestCreditAnalysis(AsyncioTestCase):

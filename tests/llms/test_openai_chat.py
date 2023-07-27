@@ -6,7 +6,7 @@ import openai
 from tests.base import AsyncioTestCase
 from tinyllm.functions.llms.openai.helpers import get_system_message
 from tinyllm.functions.llms.openai.openai_chat import OpenAIChat
-from tinyllm.types import States
+from tinyllm.state import States
 
 openai.api_key = os.environ['OPENAI_API_KEY']
 
