@@ -3,7 +3,10 @@ tinyllm is a lightweight framework for developing, debugging and monitoring LLM 
 
 ![Screenshot 2023-07-25 at 3 48 43 AM](https://github.com/zozoheir/tiny-llm/assets/42655961/f2db0c02-c18c-45a8-8054-6cd4da474e1e)
 
-
+## Install
+```
+pip install git+https://github.com/zozoheir/tinyllm.git
+```
 ## ⚡ Background and goals
 Many of the LLM libraries today (langchain, llama-index, deep pavlov...) have made serious software design commitments which I believe were too early to make given the infancy of the industry.
 The goals of tinyllm are:
