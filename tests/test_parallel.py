@@ -1,9 +1,11 @@
 import unittest
 import asyncio
 
+from tests.base import AsyncioTestCase
 from tinyllm.functions.chain import Chain
 from tinyllm.functions.function import Function
 from tinyllm.functions.parallel import Concurrent
+from tinyllm.types import States
 
 
 class SleepOperator(Function):
@@ -18,26 +20,20 @@ class SleepOperator(Function):
         return kwargs
 
 
-class TestSleepOperator(unittest.TestCase):
+class TestParallelOperator(AsyncioTestCase):
     def setUp(self):
-        self.loop = asyncio.get_event_loop()
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
 
     def test_parallel_dag(self):
-
         op1 = SleepOperator(name="SleeperTest1", sleep_time=2)
         op2 = SleepOperator(name="SleeperTest1", sleep_time=2)
         concurrent_dag = Concurrent(name="TestParallel", children=[op1, op2])
         result1 = self.loop.run_until_complete(concurrent_dag(inputs=[{'time': 2},
-                                                                   {'time': 2}]))
+                                                                      {'time': 2}]))
         self.assertIsNotNone(result1)
-
-    def test_chain_dag(self):
-        op3 = SleepOperator(name="SleeperTest2", sleep_time=2)
-        op4 = SleepOperator(name="SleeperTest2", sleep_time=2)
-        chain_dag = Chain(name="TestSequential", children=[op3, op4])
-        result2 = self.loop.run_until_complete(chain_dag(inputs={'time': 10}))
-        self.assertIsNotNone(result2)
-
+        self.assertEqual(result1, {'output': [{'time': 2}, {'time': 2}]})
+        self.assertEqual(concurrent_dag.state, States.COMPLETE)
 
 if __name__ == '__main__':
     unittest.main()

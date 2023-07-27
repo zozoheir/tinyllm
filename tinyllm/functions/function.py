@@ -1,10 +1,12 @@
 import uuid
 from typing import Any, Callable, Optional, Type, Dict
+from pydantic import field_validator
 
 from tinyllm.config import APP_CONFIG
 from tinyllm.exceptions import InvalidStateTransition
 from tinyllm.types import States, ALLOWED_TRANSITIONS
 from tinyllm.functions.validator import Validator
+from inspect import iscoroutinefunction
 
 
 class FunctionInitValidator(Validator):
@@ -15,6 +17,11 @@ class FunctionInitValidator(Validator):
     parent_id: Optional[str]
     verbose: bool
 
+    @field_validator('run_function')
+    def validate_run_function(cls, v):
+        if v is not None and not iscoroutinefunction(v):
+            raise ValueError('run_function must be an async function')
+        return v
 
 class Function:
 
@@ -24,7 +31,7 @@ class Function:
                  output_validator=Validator,
                  run_function=None,
                  parent_id=None,
-                 verbose=False):
+                 verbose=True):
         w = FunctionInitValidator(
             name=name,
             input_validator=input_validator,
@@ -84,8 +91,14 @@ class Function:
     async def validate_output(self, **kwargs):
         return self.output_validator(**kwargs).model_dump()
 
+
     async def run(self, **kwargs) -> Any:
         pass
 
     async def process_output(self, **kwargs):
         return kwargs
+
+    @property
+    def graph_state(self):
+        """Returns the state of the current function."""
+        return {self.name: self.state}
