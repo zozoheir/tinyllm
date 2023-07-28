@@ -1,18 +1,12 @@
-import logging
-import os
-from pathlib import Path
-import yaml
-
-import os
 from typing import Dict
+import yaml
+import os
 
-from py2neo import Graph
 
 from tinyllm.logger import get_logger
-import os
 from pathlib import Path
-import yaml
 
+from py2neo import Graph
 
 def load_yaml_config(yaml_file_name: str, directories: list) -> dict:
     config = None
@@ -27,6 +21,7 @@ def load_yaml_config(yaml_file_name: str, directories: list) -> dict:
                     print(exc)
                 break
     return config
+
 
 def set_env_variables(config: dict):
     if config is not None:

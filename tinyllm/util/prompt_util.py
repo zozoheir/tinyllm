@@ -1,9 +1,6 @@
-import os
 from typing import List, Dict, Any, Optional
 import re
-
-import numpy as np
-import openai
+from smartpy.utility.os_util import *
 
 
 def concatenate_strings(paragraphs: List[str]) -> str:
@@ -125,37 +122,6 @@ def extract_markdown_python(text: str):
     python_codes = re.findall(pattern, text, re.DOTALL)
     return "\n".join(python_codes)
 
-
-def isDirPath(path):
-    split_path = str(path).split('/')
-    return '.' not in split_path[len(split_path) - 1]
-
-
-def joinPaths(paths: list):
-    # Remove '/' at the beginning of all paths
-    paths = [path[1:] if path.startswith('/') and i != 0 else path for i, path in enumerate(paths)]
-    return os.path.join(*paths)
-
-
-def listDir(path, format='', recursive=False):
-    if recursive is True:
-        # create a list of file and sub directories
-        # coin_names in the given directory
-        listOfFile = os.listdir(path)
-        allFiles = list()
-        # Iterate over all the entries
-        for entry in listOfFile:
-            # Create full path
-            fullPath = os.path.join(path, entry)
-            # If entry is a directory then get the list of files in this directory
-            if os.path.isdir(fullPath):
-                allFiles = allFiles + listDir(fullPath, recursive=recursive, format=format)
-            else:
-                if fullPath.endswith(format):
-                    allFiles.append(fullPath)
-        return allFiles
-    else:
-        return [joinPaths([path, i]) for i in os.listdir(path) if i.endswith(format)]
 
 
 def get_recursive_content(file_list,

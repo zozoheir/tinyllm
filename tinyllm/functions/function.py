@@ -68,6 +68,9 @@ class Function:
         self.state = None
         self.transition(States.INIT)
         self.error_message = None
+        self.input = None
+        self.output = None
+        self.processed_output = None
 
     @property
     def graph_state(self):
@@ -76,14 +79,17 @@ class Function:
 
     async def __call__(self, **kwargs):
         try:
+            self.input = kwargs
             self.transition(States.INPUT_VALIDATION)
             kwargs = await self.validate_input(**kwargs)
             self.transition(States.RUNNING)
             output = await self.run_function(**kwargs)
+            self.output = output
             self.transition(States.OUTPUT_VALIDATION)
             output = await self.validate_output(**output)
             self.transition(States.PROCESSING_OUTPUT)
             output = await self.process_output(**output)
+            self.processed_output = output
             self.transition(States.COMPLETE)
             try:
                 await self.push_to_db()

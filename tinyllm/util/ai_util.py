@@ -45,6 +45,7 @@ def get_embedding(text, model="text-embedding-ada-002"):
         raise e
     return embedding
 
+
 def find_related_files(content, embeddings_dict_list, model="text-embedding-ada-002", top_n=5):
     content_embedding = get_embedding(content, model)
     embeddings_list = [item['embeddings'] for item in embeddings_dict_list]
