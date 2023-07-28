@@ -6,8 +6,8 @@ def main():
     pass
 
 @main.command()
-def start():
-    import tinyllm.app
+def agent():
+    import tinyllm.agent
 
 if __name__ == "__main__":
     main()
