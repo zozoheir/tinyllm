@@ -97,7 +97,16 @@ The app has a default logger which can be disabled, and gives option option to h
 app = App()
 app.set_logging(function_name="my new function", logger=logging.getLogger())
 ```
-
+```
+INFO - 2023-07-28 01:52:34,785: [Concurrent: On good credit] transition to: States.OUTPUT_VALIDATION
+INFO - 2023-07-28 01:52:34,786: [Concurrent: On good credit] transition to: States.COMPLETE
+INFO - 2023-07-28 01:52:34,786: [Concurrent: On good credit] Pushing to db
+INFO - 2023-07-28 01:52:34,945: [Concurrent: On good credit] Creating relationship between Concurrent: On good credit and Email notification
+INFO - 2023-07-28 01:52:35,163: [Concurrent: On good credit] Creating relationship between Concurrent: On good credit and Background check
+INFO - 2023-07-28 01:52:35,666: [Chain: Loan application] transition to: States.OUTPUT_VALIDATION
+INFO - 2023-07-28 01:52:35,666: [Chain: Loan application] transition to: States.COMPLETE
+INFO - 2023-07-28 01:52:35,666: [Chain: Loan application] Pushing to db
+```
 ## ⚡ Examples
 
 ### Chaining
