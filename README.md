@@ -1,11 +1,11 @@
+![Screenshot 2023-07-25 at 3 48 43 AM](https://github.com/zozoheir/tiny-llm/assets/42655961/f2db0c02-c18c-45a8-8054-6cd4da474e1e)
+
 # 🕸️ tinyllm (beta)
 tinyllm is a lightweight framework for developing, debugging and monitoring LLM powered applications at scale. It is designed based on a Finite State Machine and Compute Graph model and sits as a layer between your Web application and your LLM libraries. tinyllm has main components:
 - the tinyllm library + CLI commands
 - a neo4j backend database
 - a tinyllm agent UI
 
-![Screenshot 2023-07-25 at 3 48 43 AM](https://github.com/zozoheir/tiny-llm/assets/42655961/f2db0c02-c18c-45a8-8054-6cd4da474e1e)
-![Screenshot 2023-07-28 at 2 19 48 AM](https://github.com/zozoheir/tinyllm/assets/42655961/61c8121e-0909-473e-a475-20626cf6452f)
 
 ## Install
 ```
@@ -18,6 +18,11 @@ The start command will open a UI to the library's agent.
 tinyllm agent
 ```
 ![Screenshot 2023-07-28 at 2 06 05 AM](https://github.com/zozoheir/tinyllm/assets/42655961/7c5a9d62-4c79-499c-9d85-8a9a4a285190)
+
+
+## Backend
+A graph database is used to store runs, logs and input outputs. You can easily visualize, manipulate and debug complex LLM calls.
+![Screenshot 2023-07-28 at 2 19 48 AM](https://github.com/zozoheir/tinyllm/assets/42655961/61c8121e-0909-473e-a475-20626cf6452f)
 
 ## ⚡ Features
 * Integrate tiny-llm with any LLM library or existing python code or pipelines
@@ -88,15 +93,12 @@ DB_FUNCTIONS_LOGGING:
 
 
 ### Logging
-The app has a single logger, single format, that can push logs to many different streams (console, file, custom...)
-The default logger is managed through the App() object. 
-Additionally, you can enable or disable logging of States on a Function level using 
+The app has a default logger which can be disabled, and gives option option to have 1 logger by function.
+```python
+app = App()
+app.set_logging(function_name="my new function", logger=logging.getLogger())
 ```
-    openai_chat = OpenAIChat(name='OpenAI-GPT model',
-                             llm_name='gpt-3.5-turbo',
-                             temperature=0,
-                             n=1,
-                             verbose=True)
+
 ## ⚡ Examples
 
 ### Chaining
