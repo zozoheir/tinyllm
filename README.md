@@ -116,4 +116,4 @@ app.set_logging(function_name="my new function", logger=logging.getLogger())
 * [ ] Dockerize tinyllm microservice
 * [ ] Write docker compose
 * [x] Implement visualization/monitoring layer
-* [ ] Create tinyllm trained AI powered helpers
+* [x] Create tinyllm trained AI powered helpers
