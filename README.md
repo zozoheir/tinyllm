@@ -108,12 +108,12 @@ app.set_logging(function_name="my new function", logger=logging.getLogger())
 * ####  [The tinyllm agent](https://github.com/zozoheir/tinyllm/blob/main/tinyllm/agent.py)
 
 ## Todos:
-* [ ] More tests
-* [ ] Prettify graph_chain visualization (concurrent vs parallel chaining + styling)
-* [ ] Implement backend database 
-* [ ] Implement redis caching
+* [x] More tests
+* [x] Prettify graph_chain visualization (concurrent vs parallel chaining + styling)
+* [x] Implement backend database 
+* [x] Implement caching
 * [ ] Dockerize backend db + cache
 * [ ] Dockerize tinyllm microservice
 * [ ] Write docker compose
-* [ ] Implement visualization/monitoring layer
+* [x] Implement visualization/monitoring layer
 * [ ] Create tinyllm trained AI powered helpers
