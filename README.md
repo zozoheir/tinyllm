@@ -13,7 +13,6 @@ pip install git+https://github.com/zozoheir/tinyllm.git
 ```
 
 ## Tinyllm agent v0
-The start command will open a UI to the library's agent. 
 ```
 tinyllm agent
 ```
@@ -21,7 +20,7 @@ tinyllm agent
 
 
 ## Backend
-A graph database is used to store runs, logs and input outputs. You can easily visualize, manipulate and debug complex LLM calls.
+A neo4j graph database is used to store runs, logs and input outputs. You can easily visualize, manipulate and debug complex LLM calls.
 ![Screenshot 2023-07-28 at 2 19 48 AM](https://github.com/zozoheir/tinyllm/assets/42655961/61c8121e-0909-473e-a475-20626cf6452f)
 
 ## ⚡ Features
