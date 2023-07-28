@@ -1,10 +1,24 @@
 from setuptools import setup, find_packages
 
-setup(name='tiny-llm',
+setup(name='tinyllm',
       version='0.1',
-      description='Development and management infra for LLM applications',
+      description='Development and management infrastructure for LLM applications',
       packages=find_packages(),
+      entry_points={
+          'console_scripts': [
+              'tinyllm = tinyllm.cli:main',
+          ],
+      },
+      install_requires=[
+          'pytest==7.4.0',
+          'pydantic==2.0.3',
+          'openai==0.27.8',
+          'py2neo==2021.2.3',
+          'pyyaml',
+          'gradio',
+          'psutil',
+          'click'
+      ],
       author='Othmane Zoheir',
       author_email='zozoheir@umich.edu',
-      url='',
-     )
+      url='')

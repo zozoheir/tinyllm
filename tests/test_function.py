@@ -1,11 +1,11 @@
 import unittest
-import asyncio
 
 from tests.base import AsyncioTestCase
+from tinyllm import APP
 from tinyllm.functions.function import Function
 from tinyllm.exceptions import InvalidStateTransition
 from tinyllm.functions.validator import Validator
-from tinyllm.types import States
+from tinyllm.state import States
 
 
 class InputValidator(Validator):
@@ -43,6 +43,29 @@ class TestFunction(AsyncioTestCase):
         operator = AddOneOperator(name="AddOneTest")
         self.loop.run_until_complete(operator(value="wrong input"))
         assert operator.state == States.FAILED
+
+
+    def test_push_to_db(self):
+        async def dummy_function(**kwargs):
+            return kwargs
+        test_function = Function(name='test_function',
+                                 run_function=dummy_function,
+                                 parent_id=None,
+                                 verbose=True)
+        self.loop.run_until_complete(test_function())
+
+        node = APP.graph_db.evaluate(f"MATCH (n:{test_function.name}) WHERE n.class = $name RETURN n",
+                                     parameters={"name": test_function.__class__.__name__})
+
+        self.assertIsNotNone(node, "Node was not created in the database")
+
+        APP.graph_db.run(f"MATCH (n:{test_function.__class__.__name__}) WHERE n.name = $name DETACH DELETE n",
+                         parameters={"name": test_function.name})
+
+        node = APP.graph_db.evaluate(f"MATCH (n:{test_function.name}) WHERE n.class = $name RETURN n",
+                                     parameters={"name": test_function.name})
+
+        self.assertIsNone(node, "Node was not properly deleted from database")
 
 
 if __name__ == '__main__':

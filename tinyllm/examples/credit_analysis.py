@@ -2,16 +2,11 @@ import asyncio
 
 from tinyllm.functions.chain import Chain
 from tinyllm.functions.decision import Decision
+from tinyllm.functions.llms.openai.helpers import get_system_message
 from tinyllm.functions.llms.openai.openai_chat import OpenAIChat
-from tinyllm.functions.parallel import Concurrent
+from tinyllm.functions.concurrent import Concurrent
 from tinyllm.functions.function import Function
-from tinyllm.functions.prompts.openai_chat.system import OpenAISystemMessage
-from tinyllm.functions.prompts.template import OpenAIPromptTemplate
-from tinyllm.functions.prompts.user_input import OpenAIUserMessage
 
-#openai.api_key = "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"
-
-# This is an example summary of a loan application. In practice, you'd to add a chain to load PDF files, bank records etc instead of this dummy variable
 good_loan_application_example = """
 The loan application showcases a commendable financial profile with an excellent credit history. The applicant's credit score
 demonstrates a history of timely payments, responsible credit usage, and a low utilization rate, reflecting a consistent
@@ -21,29 +16,23 @@ manageable level of existing debt. Overall, the applicant's solid credit standin
 this loan application an appealing opportunity for potential lenders.
 """
 
-
-# Initialize a Loan Classifier OpenAI Prompt template
 openai_chat = OpenAIChat(name='OpenAI-GPT model',
                          llm_name='gpt-3.5-turbo',
                          temperature=0,
-                         n=1)
-loan_classifier_role = OpenAISystemMessage(name="Role",
-                                           content="You will be provided with a loan application."
-                                                   "Your role is to classify if as as good or bad. Your output should be one one of these 2 words:[good, bad]")
+                         n=1,
+                         prompt_template=[
+                             get_system_message("You will be provided with a loan application."
+                                                "Your role is to classify if as as good or bad. Your output should be one one of these 2 words:[good, bad]")
 
-loan_classifier_template = OpenAIPromptTemplate(name="Loan Classifier Template",
-                                                sections=[
-                                                    loan_classifier_role,
-                                                    OpenAIUserMessage(name="User Message"),
-                                                ])
+                         ])
 
-# Initialize a Loan Classifier OpenAI Prompt template
+
+# Loan classifier LLM
 async def classify_loan_application(**kwargs):
     loan_application = kwargs.get('loan_application')
-    messages = await loan_classifier_template(message=loan_application)
-    chat_response = await openai_chat(**messages)
+    chat_response = await openai_chat(message=loan_application)
     print(f"Credit classification: {chat_response}")
-    return {'decision': chat_response}
+    return {'decision': chat_response['response']}
 
 loan_classifier = Decision(
     name="Decision: Loan classifier",
@@ -52,6 +41,7 @@ loan_classifier = Decision(
     verbose=True
 )
 
+# Email notification
 async def send_email(**kwargs):
     print("Sending email notification...")
     return {'success': True}
@@ -61,6 +51,7 @@ email_notification = Function(
     run_function=send_email
 )
 
+# Background check
 async def background_check(**kwargs):
     print("Performing background check")
     return {'background_check': 'Completed'}
@@ -70,8 +61,9 @@ bg_check = Function(
     run_function=background_check,
 )
 
-async def main():
 
+# Chain
+async def main():
     credit_analysis_chain = Chain(name="Chain: Loan application",
                                   children=[
                                       loan_classifier,
@@ -81,9 +73,6 @@ async def main():
                                   verbose=True)
 
     result = await credit_analysis_chain(loan_application=good_loan_application_example)
-    #graph_chain(credit_analysis_chain)
-
-
 
 if __name__ == '__main__':
     asyncio.run(main())

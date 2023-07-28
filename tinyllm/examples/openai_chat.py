@@ -4,12 +4,14 @@ import os
 
 import openai
 
+from tinyllm import APP
 from tinyllm.functions.llms.openai.openai_chat import OpenAIChat
-from tinyllm.functions.prompts.openai_chat.system import OpenAISystemMessage
-from tinyllm.functions.prompts.template import OpenAIPromptTemplate
-from tinyllm.functions.prompts.user_input import OpenAIUserMessage
 
 openai.api_key = os.environ['OPENAI_API_KEY']
+APP.connect_graph_db(host=os.environ['TINYLLM_DB_HOST'],
+                     port=os.environ['TINYLLM_DB_PORT'],
+                     user=os.environ['TINYLLM_DB_USER'],
+                     password=os.environ['TINYLLM_DB_PASSWORD'])
 
 
 async def main():
@@ -19,10 +21,7 @@ async def main():
                              n=1,
                              verbose=True)
 
-    chat_response = await openai_chat('Hi how are you?')
-
-    print(chat_response)
-
+    chat_response = await openai_chat(message='Hi how are you?')
 
 
 if __name__ == '__main__':

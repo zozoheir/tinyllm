@@ -1,7 +1,7 @@
 *DS_Store*
 *pytest*
-
-
+*.pickle*
+*gradio_cache*
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

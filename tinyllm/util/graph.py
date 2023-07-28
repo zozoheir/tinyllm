@@ -3,7 +3,7 @@ from matplotlib import pyplot as plt
 
 from tinyllm.functions.chain import Chain
 from tinyllm.functions.decision import Decision
-from tinyllm.functions.parallel import Concurrent
+from tinyllm.functions.concurrent import Concurrent
 
 
 def graph_chain(chain):
