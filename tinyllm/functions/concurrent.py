@@ -1,9 +1,13 @@
 import asyncio
 from typing import List, Type, Union, Any
 
+from py2neo import Node, Relationship, NodeMatcher
+
+from tinyllm import APP
 from tinyllm.state import States
 from tinyllm.functions.function import Function, Validator
 
+matcher = NodeMatcher(APP.graph_db)
 
 class ConcurrentValidator(Validator):
     children: List[Union[Function, Type[Function]]]
@@ -30,16 +34,30 @@ class Concurrent(Function):
         self.children = children if children else []
 
     async def __call__(self, **kwargs):
-        kwargs = self._handle_inputs_distribution(**kwargs)
-        self.transition(States.INPUT_VALIDATION)
-        kwargs = await self.validate_input(**kwargs)
-        self.transition(States.RUNNING)
-        tasks = [child.__call__(**kwargs['inputs'][i]) for i, child in enumerate(self.children)]
-        output = await asyncio.gather(*tasks)
-        self.transition(States.OUTPUT_VALIDATION)
-        output = await self.validate_output(output=output)
-        self.transition(States.COMPLETE)
-        return output
+        try:
+            kwargs = self._handle_inputs_distribution(**kwargs)
+            self.transition(States.INPUT_VALIDATION)
+            kwargs = await self.validate_input(**kwargs)
+            self.transition(States.RUNNING)
+            tasks = [child.__call__(**kwargs['inputs'][i]) for i, child in enumerate(self.children)]
+            output = await asyncio.gather(*tasks)
+            self.transition(States.OUTPUT_VALIDATION)
+            output = await self.validate_output(output=output)
+            self.transition(States.COMPLETE)
+            try:
+                await self.push_to_db()
+            except Exception as e:
+                self.log(f"Error pushing to db: {e}", level='error')
+            return output
+        except Exception as e:
+            self.error_message = str(e)
+            self.transition(States.FAILED,
+                            msg=str(e))
+            try:
+                await self.push_to_db()
+            except Exception as e:
+                self.log(f"Error pushing to db: {e}", level='error')
+
 
     def _handle_inputs_distribution(self, **kwargs):
         """
@@ -55,3 +73,25 @@ class Concurrent(Function):
         for child in self.children:
             graph_state.update(child.graph_state)
         return graph_state
+
+    async def push_to_db(self):
+        self.log("Pushing to db")
+        included_specifically = APP.config['DB_FUNCTIONS_LOGGING']['DEFAULT'] is True and self.name in \
+                                APP.config['DB_FUNCTIONS_LOGGING']['INCLUDE']
+        included_by_default = APP.config['DB_FUNCTIONS_LOGGING']['DEFAULT'] is True and self.name not in \
+                              APP.config['DB_FUNCTIONS_LOGGING']['EXCLUDE']
+        if included_specifically or included_by_default:
+            attributes_dict = vars(self)
+            attributes_dict['class'] = self.__class__.__name__
+            attributes_dict = {key: str(value) for key, value in attributes_dict.items()}
+            to_ignore = ['input_validator', 'output_validator', 'run_function', 'logger']
+            attributes_dict = {str(key): str(value) for key, value in attributes_dict.items() if value not in to_ignore}
+            node = Node(self.name, **attributes_dict)
+            APP.graph_db.create(node)
+
+            for child in self.children:
+                self.log(f"Creating relationship between {self.name} and {child.name}")
+                child_node = matcher.match(child.name, function_id=child.function_id).first()
+                relationship = Relationship(node, "CALLS", child_node)
+                relationship['input'] = str(child.output)
+                APP.graph_db.create(relationship)

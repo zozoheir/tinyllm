@@ -135,26 +135,24 @@ def getParentDir(path):
     return os.path.dirname(path)
 
 
-def listDir(path, format='', recursive=False):
+def listDir(path, formats='', recursive=False):
+    if isinstance(formats, str):
+        formats = [formats]
     if recursive is True:
-        # create a list of file and sub directories
-        # coin_names in the given directory
         listOfFile = os.listdir(path)
         allFiles = list()
-        # Iterate over all the entries
         for entry in listOfFile:
-            # Create full path
             fullPath = os.path.join(path, entry)
-            # If entry is a directory then get the list of files in this directory
             if os.path.isdir(fullPath):
-                allFiles = allFiles + listDir(fullPath, recursive=recursive, format=format)
+                allFiles = allFiles + listDir(fullPath, recursive=recursive, formats=formats)
             else:
-                if fullPath.endswith(format):
-                    allFiles.append(fullPath)
+                for format in formats:
+                    if fullPath.endswith(format):
+                        allFiles.append(fullPath)
+                        break
         return allFiles
     else:
-        return [joinPaths([path, i]) for i in os.listdir(path) if i.endswith(format)]
-
+        return [os.path.join(path, i) for i in os.listdir(path) if any(i.endswith(format) for format in formats)]
 
 def walkDir(paths: Union[str, list], extension="", ignore=[]) -> list:
     if isinstance(paths, str):

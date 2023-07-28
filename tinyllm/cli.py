@@ -7,9 +7,7 @@ def main():
 
 @main.command()
 def start():
-    click.echo('Running the start command.')
-    # Call your function here
-
+    import tinyllm.app
 
 if __name__ == "__main__":
     main()

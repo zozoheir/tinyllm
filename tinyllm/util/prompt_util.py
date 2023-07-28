@@ -1,6 +1,5 @@
 from typing import List, Dict, Any, Optional
 import re
-from smartpy.utility.os_util import *
 
 
 def concatenate_strings(paragraphs: List[str]) -> str:

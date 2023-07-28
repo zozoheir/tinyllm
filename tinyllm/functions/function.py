@@ -9,10 +9,11 @@ Function is the building block of tinyllm. A function has 4 main components:
 - When creating Functions or child classes, the above requirements apply
 - Functions, Chains, and Concurrents and
 """
+import json
 import uuid
 from typing import Any, Callable, Optional, Type, Dict
 
-from py2neo import Node
+from py2neo import Node, Relationship
 from pydantic import field_validator
 
 from tinyllm import APP
@@ -55,7 +56,7 @@ class Function:
             parent_id=parent_id,
             verbose=verbose)
         self.user = user
-        self.id = str(uuid.uuid4())
+        self.function_id = str(uuid.uuid4())
         self.logger = APP.logging['default']
         self.name = name
 
@@ -128,18 +129,24 @@ class Function:
     async def validate_output(self, **kwargs):
         return self.output_validator(**kwargs).model_dump()
 
-    async def push_to_db(self):
+    def create_function_node(self):
+        attributes_dict = vars(self)
+        attributes_dict['class'] = self.__class__.__name__
+        attributes_dict = {key: str(value) for key, value in attributes_dict.items()}
+        to_ignore = ['input_validator', 'output_validator', 'run_function', 'logger']
+        attributes_dict = {str(key): str(value) for key, value in attributes_dict.items() if value not in to_ignore}
+        return Node(self.name, **attributes_dict)
 
+    async def push_to_db(self):
+        self.log("Pushing to db")
         included_specifically = APP.config['DB_FUNCTIONS_LOGGING']['DEFAULT'] is True and self.name in \
                                 APP.config['DB_FUNCTIONS_LOGGING']['INCLUDE']
         included_by_default = APP.config['DB_FUNCTIONS_LOGGING']['DEFAULT'] is True and self.name not in \
                               APP.config['DB_FUNCTIONS_LOGGING']['EXCLUDE']
         if included_specifically or included_by_default:
-            attributes_dict = vars(self)
-            attributes_dict = {key: str(value) for key, value in attributes_dict.items()}
-            attributes_dict['class'] = self.__class__.__name__
-            node = Node(self.name, **attributes_dict)
+            node = self.create_function_node()
             APP.graph_db.create(node)
+
 
     async def run(self, **kwargs) -> Any:
         pass

@@ -1,11 +1,7 @@
-import gzip
 import hashlib
-import io
 
-import openai
-
-from smartpy.utility import os_util
 from tinyllm import get_logger
+from tinyllm.util import os_util
 from tinyllm.util.ai_util import get_embedding, top_n_similar
 
 logger = get_logger(name='default')
@@ -17,6 +13,8 @@ class LocalFilesCache:
         logger.info(f"LocalFilesCache: Initializing cache at {cache_path}")
         if os_util.fileExists(cache_path):
             self.cache = os_util.loadJson(cache_path)
+            if source_dir not in self.cache.keys():
+                self.cache[source_dir] = {}
         else:
             self.cache = {source_dir: {}}
         self.cache_path = cache_path
@@ -78,7 +76,12 @@ class LocalFilesCache:
 
     def refresh_cache(self,
                       only_missing=True):
-        relevant_files = os_util.listDir(self.source_dir, recursive=True, format='py')
+        relevant_files = os_util.listDir(self.source_dir, recursive=True, formats=['py','md'])
+        relevant_files = [file for file in relevant_files if '__init__' not in file]
+        for file_path in self.cache[self.source_dir].keys():
+            if file_path not in relevant_files:
+                del self.cache[self.source_dir][file_path]
+
         if only_missing:
             relevant_files = [file for file in relevant_files if file not in self.cache[self.source_dir].keys()]
         for file in relevant_files:
