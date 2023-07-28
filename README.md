@@ -2,12 +2,13 @@
 
 # 🕸️ tinyllm (beta)
 tinyllm is a lightweight framework for developing, debugging and monitoring LLM powered applications at scale. It is designed based on a Finite State Machine and Compute Graph model and sits as a layer between your Web application and your LLM libraries. The tinyllm tech stack:
-- the tinyllm library + CLI commands
-- a neo4j backend database
-- a tinyllm agent UI
+- **Python library**: the tinyllm library + CLI commands
+- **Backend**: a neo4j backend database for debugging, logging and storing your LLM runs
+- **TinyLLM Agent**: your copilot for using tinyllm
 
 
 ## Install
+package
 ```
 pip install git+https://github.com/zozoheir/tinyllm.git
 ```
