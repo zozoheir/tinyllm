@@ -3,7 +3,7 @@ from logging import StreamHandler
 
 def get_logger(name: str,
                handlers=[StreamHandler()],
-               format='%(levelname)s - %(asctime)s: %(message)s',
+               format='%(asctime)s - %(levelname)s - %(message)s',
                level=logging.INFO):
     logger = logging.getLogger(name)
     logger.setLevel(level)

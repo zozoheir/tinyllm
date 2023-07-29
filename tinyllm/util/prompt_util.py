@@ -1,5 +1,21 @@
+import random
 from typing import List, Dict, Any, Optional
 import re
+
+import tiktoken
+
+from tinyllm.util import os_util
+
+OPENAI_MODELS_MAX_TOKENS = {
+    "gpt-3.5-turbo": 4096,
+    "gpt-3.5-turbo-16k": 16384,
+    "gpt-3.5-turbo-0613": 4096,
+    "gpt-3.5-turbo-16k-0613": 16384,
+    "text-davinci-003 (Legacy)": 4097,
+    "text-davinci-002 (Legacy)": 4097,
+    "code-davinci-002 (Legacy)": 8001
+}
+
 
 
 def concatenate_strings(paragraphs: List[str]) -> str:
@@ -127,8 +143,8 @@ def get_recursive_content(file_list,
                           format):
     code_context = []
     for file_name in file_list:
-        if isDirPath(file_name):
-            for file_path in listDir(file_name, recursive=True, format=format):
+        if os_util.isDirPath(file_name):
+            for file_path in os_util.listDir(file_name, recursive=True, format=format):
                 try:
                     with open(file_path, 'r') as file:
                         content = file.read()
@@ -149,3 +165,18 @@ def get_recursive_content(file_list,
     final_prompt = '\n'.join(code_context)
     return final_prompt
 
+
+def num_tokens_from_string(string: str, encoding_name: str='cl100k_base') -> int:
+    """Returns the number of tokens in a text string."""
+    encoding = tiktoken.get_encoding(encoding_name)
+    num_tokens = len(encoding.encode(string))
+    return num_tokens
+
+
+def shuffle_with_freeze(input_list, freeze):
+    not_frozen_dict = {i: input_list[i] for i in range(len(input_list)) if i not in freeze}
+    not_frozen_indices = list(not_frozen_dict.keys())
+    random.shuffle(not_frozen_indices)
+    shuffled_dict = {i: not_frozen_dict[not_frozen_indices[i]] for i in range(len(not_frozen_indices))}
+    output_list = [shuffled_dict.get(i) if i in shuffled_dict else input_list[i] for i in range(len(input_list))]
+    return output_list

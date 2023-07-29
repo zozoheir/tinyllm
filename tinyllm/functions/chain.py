@@ -35,20 +35,10 @@ class Chain(Function):
             self.transition(States.OUTPUT_VALIDATION)
             output = await self.validate_output(**output)
             self.transition(States.COMPLETE)
-
-            try:
-                await self.push_to_db()
-            except Exception as e:
-                self.log(f"Error pushing to db: {e}", level='error')
+            await self.push_to_db()
             return output
         except Exception as e:
-            self.error_message = str(e)
-            self.transition(States.FAILED,
-                            msg=str(e))
-            try:
-                await self.push_to_db()
-            except Exception as e:
-                self.log(f"Error pushing to db: {e}", level='error')
+            await self.handle_exception(e)
 
     @property
     def graph_state(self):
@@ -60,22 +50,25 @@ class Chain(Function):
 
 
     async def push_to_db(self):
-        self.log("Pushing to db")
-        included_specifically = APP.config['DB_FUNCTIONS_LOGGING']['DEFAULT'] is True and self.name in \
-                                APP.config['DB_FUNCTIONS_LOGGING']['INCLUDE']
-        included_by_default = APP.config['DB_FUNCTIONS_LOGGING']['DEFAULT'] is True and self.name not in \
-                              APP.config['DB_FUNCTIONS_LOGGING']['EXCLUDE']
-        if included_specifically or included_by_default:
-            node = self.create_function_node()
-            APP.graph_db.create(node)
-            next_node = matcher.match(self.children[0].name, function_id=self.children[0].function_id).first()
-            relationship = Relationship(node, "CALLS", next_node)
-            relationship['input'] = str(self.output)
-            APP.graph_db.create(relationship)
-
-            for i in range(len(self.children) - 1):
-                current_node = matcher.match(self.children[i].name, function_id=self.children[i].function_id).first()
-                next_node = matcher.match(self.children[i+1].name, function_id=self.children[i + 1].function_id).first()
-                relationship = Relationship(current_node, "CALLS", next_node)
-                relationship['input'] = str(self.children[i].output)
+        try:
+            self.log("Pushing to db")
+            included_specifically = APP.config['DB_FUNCTIONS_LOGGING']['DEFAULT'] is True and self.name in \
+                                    APP.config['DB_FUNCTIONS_LOGGING']['INCLUDE']
+            included_by_default = APP.config['DB_FUNCTIONS_LOGGING']['DEFAULT'] is True and self.name not in \
+                                  APP.config['DB_FUNCTIONS_LOGGING']['EXCLUDE']
+            if included_specifically or included_by_default:
+                node = self.create_function_node()
+                APP.graph_db.create(node)
+                next_node = matcher.match(self.children[0].name, function_id=self.children[0].function_id).first()
+                relationship = Relationship(node, "START", next_node)
+                relationship['input'] = str(self.output)
                 APP.graph_db.create(relationship)
+
+                for i in range(len(self.children) - 1):
+                    current_node = matcher.match(self.children[i].name, function_id=self.children[i].function_id).first()
+                    next_node = matcher.match(self.children[i+1].name, function_id=self.children[i + 1].function_id).first()
+                    relationship = Relationship(current_node, "CHAIN", next_node)
+                    relationship['input'] = str(self.children[i].output)
+                    APP.graph_db.create(relationship)
+        except Exception as e:
+            self.log(f"Error pushing to db: {e}", level='error')

@@ -1,7 +1,7 @@
 import unittest
 import asyncio
 
-from tests.base import AsyncioTestCase
+from tinyllm.tests.base import AsyncioTestCase
 from tinyllm.functions.chain import Chain
 from tinyllm.functions.function import Function
 from tinyllm.functions.concurrent import Concurrent

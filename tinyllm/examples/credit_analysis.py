@@ -6,6 +6,7 @@ from tinyllm.functions.llms.openai.helpers import get_system_message
 from tinyllm.functions.llms.openai.openai_chat import OpenAIChat
 from tinyllm.functions.concurrent import Concurrent
 from tinyllm.functions.function import Function
+from tinyllm.functions.llms.openai.openai_prompt_template import OpenAIPromptTemplate
 
 good_loan_application_example = """
 The loan application showcases a commendable financial profile with an excellent credit history. The applicant's credit score
@@ -16,15 +17,16 @@ manageable level of existing debt. Overall, the applicant's solid credit standin
 this loan application an appealing opportunity for potential lenders.
 """
 
+loan_classifier_prompt_template = OpenAIPromptTemplate(
+    name="KG Extractor prompt template",
+    system_role="Your role is to classify if as as good or bad. Your output should be one one of these 2 words:[good, bad]",
+)
+
 openai_chat = OpenAIChat(name='OpenAI-GPT model',
                          llm_name='gpt-3.5-turbo',
                          temperature=0,
                          n=1,
-                         prompt_template=[
-                             get_system_message("You will be provided with a loan application."
-                                                "Your role is to classify if as as good or bad. Your output should be one one of these 2 words:[good, bad]")
-
-                         ])
+                         prompt_template=loan_classifier_prompt_template)
 
 
 # Loan classifier LLM
@@ -34,6 +36,7 @@ async def classify_loan_application(**kwargs):
     print(f"Credit classification: {chat_response}")
     return {'decision': chat_response['response']}
 
+
 loan_classifier = Decision(
     name="Decision: Loan classifier",
     choices=['good', 'bad'],
@@ -41,20 +44,24 @@ loan_classifier = Decision(
     verbose=True
 )
 
+
 # Email notification
 async def send_email(**kwargs):
     print("Sending email notification...")
     return {'success': True}
+
 
 email_notification = Function(
     name="Email notification",
     run_function=send_email
 )
 
+
 # Background check
 async def background_check(**kwargs):
     print("Performing background check")
     return {'background_check': 'Completed'}
+
 
 bg_check = Function(
     name="Background check",
@@ -64,15 +71,19 @@ bg_check = Function(
 
 # Chain
 async def main():
-    credit_analysis_chain = Chain(name="Chain: Loan application",
-                                  children=[
-                                      loan_classifier,
-                                      Concurrent(name="Concurrent: On good credit",
-                                                 children=[email_notification,
-                                                           bg_check])],
-                                  verbose=True)
+    credit_analysis_chain = Chain(
+        name="Chain: Loan application",
+        children=[
+            loan_classifier,
+            Concurrent(name="Concurrent: On good credit",
+                       children=[
+                           email_notification,
+                           bg_check])
+        ],
+        verbose=True)
 
     result = await credit_analysis_chain(loan_application=good_loan_application_example)
+
 
 if __name__ == '__main__':
     asyncio.run(main())

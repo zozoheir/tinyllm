@@ -9,10 +9,11 @@ Function is the building block of tinyllm. A function has 4 main components:
 - When creating Functions or child classes, the above requirements apply
 - Functions, Chains, and Concurrents and
 """
-import json
+import datetime as dt
 import uuid
 from typing import Any, Callable, Optional, Type, Dict
 
+import pytz
 from py2neo import Node, Relationship
 from pydantic import field_validator
 
@@ -47,7 +48,8 @@ class Function:
                  output_validator=Validator,
                  run_function=None,
                  parent_id=None,
-                 verbose=True):
+                 verbose=True,
+                 required=True):
         w = FunctionInitValidator(
             name=name,
             input_validator=input_validator,
@@ -56,6 +58,7 @@ class Function:
             parent_id=parent_id,
             verbose=verbose)
         self.user = user
+        self.init_timestamp = dt.datetime.now(pytz.UTC)
         self.function_id = str(uuid.uuid4())
         self.logger = APP.logging['default']
         self.name = name
@@ -65,6 +68,7 @@ class Function:
         self.run_function = run_function if run_function is not None else self.run
         self.parent_id = parent_id
         self.verbose = verbose
+        self.required = required
         self.logs = ""
         self.state = None
         self.transition(States.INIT)
@@ -92,31 +96,32 @@ class Function:
             output = await self.process_output(**output)
             self.processed_output = output
             self.transition(States.COMPLETE)
-            try:
-                await self.push_to_db()
-            except Exception as e:
-                self.log(f"Error pushing to db: {e}", level='error')
+            await self.push_to_db()
             return output
         except Exception as e:
-            self.error_message = str(e)
-            self.transition(States.FAILED,
-                            msg=str(e))
-            try:
-                await self.push_to_db()
-            except Exception as e:
-                self.log(f"Error pushing to db: {e}", level='error')
+            await self.handle_exception(e)
 
-    def transition(self, new_state: States,
+    async def handle_exception(self, e):
+        self.error_message = str(e)
+        self.transition(States.FAILED,
+                        msg=str(e))
+        await self.push_to_db()
+        if self.required is True:
+            raise e
+
+    def transition(self,
+                   new_state: States,
                    msg: Optional[str] = None):
         if new_state not in ALLOWED_TRANSITIONS[self.state]:
             raise InvalidStateTransition(self, f"Invalid state transition from {self.state} to {new_state}")
         self.state = new_state
-        self.log(f"transition to: {new_state}" + (f" ({msg})" if msg is not None else ""))
+        log_level = 'error' if new_state == States.FAILED else 'info'
+        self.log(f"transition to: {new_state}" + (f" ({msg})" if msg is not None else ""), level=log_level)
 
     def log(self, message, level='info'):
         if self.logger is None or self.verbose is False:
             return
-        log_message = f"[{self.name}] {message}"
+        log_message = f"[{self.name}][{self.function_id}] {message}"
         self.logs += '\n' + log_message
         if level == 'error':
             self.logger.error(log_message)
@@ -134,19 +139,21 @@ class Function:
         attributes_dict['class'] = self.__class__.__name__
         attributes_dict = {key: str(value) for key, value in attributes_dict.items()}
         to_ignore = ['input_validator', 'output_validator', 'run_function', 'logger']
-        attributes_dict = {str(key): str(value) for key, value in attributes_dict.items() if value not in to_ignore}
+        attributes_dict = {str(key): str(value) for key, value in attributes_dict.items() if str(value) not in to_ignore}
         return Node(self.name, **attributes_dict)
 
     async def push_to_db(self):
-        self.log("Pushing to db")
-        included_specifically = APP.config['DB_FUNCTIONS_LOGGING']['DEFAULT'] is True and self.name in \
-                                APP.config['DB_FUNCTIONS_LOGGING']['INCLUDE']
-        included_by_default = APP.config['DB_FUNCTIONS_LOGGING']['DEFAULT'] is True and self.name not in \
-                              APP.config['DB_FUNCTIONS_LOGGING']['EXCLUDE']
-        if included_specifically or included_by_default:
-            node = self.create_function_node()
-            APP.graph_db.create(node)
-
+        try:
+            included_specifically = APP.config['DB_FUNCTIONS_LOGGING']['DEFAULT'] is True and self.name in \
+                                    APP.config['DB_FUNCTIONS_LOGGING']['INCLUDE']
+            included_by_default = APP.config['DB_FUNCTIONS_LOGGING']['DEFAULT'] is True and self.name not in \
+                                  APP.config['DB_FUNCTIONS_LOGGING']['EXCLUDE']
+            if included_specifically or included_by_default:
+                self.log("Pushing to db")
+                node = self.create_function_node()
+                APP.graph_db.create(node)
+        except Exception as e:
+            self.log(f"Error pushing to db: {e}", level='error')
 
     async def run(self, **kwargs) -> Any:
         pass

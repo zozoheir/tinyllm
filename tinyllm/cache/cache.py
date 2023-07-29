@@ -78,7 +78,8 @@ class LocalFilesCache:
                       only_missing=True):
         relevant_files = os_util.listDir(self.source_dir, recursive=True, formats=['py','md'])
         relevant_files = [file for file in relevant_files if '__init__' not in file]
-        for file_path in self.cache[self.source_dir].keys():
+        current_files = list(self.cache[self.source_dir].keys())
+        for file_path in current_files:
             if file_path not in relevant_files:
                 del self.cache[self.source_dir][file_path]
 
@@ -93,7 +94,8 @@ class LocalFilesCache:
                           message,
                           n=5):
         content_embedding = get_embedding(message)
-        embeddings_list = [self.cache[self.source_dir][file_path]['embedding'] for file_path in self.cache[self.source_dir].keys()]
+        current_files = list(self.cache[self.source_dir].keys())
+        embeddings_list = [self.cache[self.source_dir][file_path]['embedding'] for file_path in current_files]
         similar_embeddings_indices = top_n_similar(content_embedding, embeddings_list, n)
         similar_files_paths = [list(self.cache[self.source_dir].keys())[i] for i in similar_embeddings_indices]
         similar_content = [self.get_file_content(file_path) for file_path in similar_files_paths]

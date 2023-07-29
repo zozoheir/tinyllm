@@ -1,6 +1,6 @@
 import unittest
 
-from tests.base import AsyncioTestCase
+from tinyllm.tests.base import AsyncioTestCase
 from tinyllm import APP
 from tinyllm.functions.function import Function
 from tinyllm.exceptions import InvalidStateTransition
@@ -40,7 +40,8 @@ class TestFunction(AsyncioTestCase):
             operator.transition(States.COMPLETE)
 
     def test_invalid_input(self):
-        operator = AddOneOperator(name="AddOneTest")
+        operator = AddOneOperator(name="AddOneTest",
+                                  required=False)
         self.loop.run_until_complete(operator(value="wrong input"))
         assert operator.state == States.FAILED
 
@@ -52,7 +53,7 @@ class TestFunction(AsyncioTestCase):
                                  run_function=dummy_function,
                                  parent_id=None,
                                  verbose=True)
-        self.loop.run_until_complete(test_function())
+        self.loop.run_until_complete(test_function(input='test input'))
 
         node = APP.graph_db.evaluate(f"MATCH (n:{test_function.name}) WHERE n.class = $name RETURN n",
                                      parameters={"name": test_function.__class__.__name__})

@@ -1,6 +1,6 @@
 import unittest
 
-from tests.base import AsyncioTestCase
+from tinyllm.tests.base import AsyncioTestCase
 from tinyllm.functions.chain import Chain
 from tinyllm.functions.decision import Decision
 from tinyllm.functions.function import Function
