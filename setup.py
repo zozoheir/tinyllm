@@ -11,7 +11,7 @@ setup(name='tinyllm',
       },
       install_requires=[
           'pytest==7.4.0',
-          'pydantic==2.0.3',
+          'pydantic==1.10.12',
           'openai==0.27.8',
           'tiktoken',
           'py2neo==2021.2.3',

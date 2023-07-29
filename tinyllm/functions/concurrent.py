@@ -35,7 +35,7 @@ class Concurrent(Function):
 
     async def __call__(self, **kwargs):
         try:
-            kwargs = self._handle_inputs_distribution(**kwargs)
+            kwargs = self.handle_inputs(**kwargs)
             self.transition(States.INPUT_VALIDATION)
             kwargs = await self.validate_input(**kwargs)
             self.transition(States.RUNNING)
@@ -49,12 +49,14 @@ class Concurrent(Function):
         except Exception as e:
             self.handle_exception(e)
 
-    def _handle_inputs_distribution(self, **kwargs):
+    def handle_inputs(self, **kwargs):
         """
         if inputs are not provided, distribute the kwargs to all children
         """
-        if 'inputs' not in kwargs: kwargs['inputs'] = [kwargs for _ in range(len(self.children))]
-        return kwargs
+        if 'inputs' not in kwargs.keys():
+            return {'inputs':[kwargs for i in range(len(self.children))]}
+        else:
+            return kwargs
 
     @property
     def graph_state(self):

@@ -15,7 +15,7 @@ from typing import Any, Callable, Optional, Type, Dict
 
 import pytz
 from py2neo import Node, Relationship
-from pydantic import field_validator
+from pydantic import validator as field_validator
 
 from tinyllm import APP
 from tinyllm.exceptions import InvalidStateTransition
@@ -129,10 +129,10 @@ class Function:
             self.logger.info(log_message)
 
     async def validate_input(self, **kwargs):
-        return self.input_validator(**kwargs).model_dump()
+        return self.input_validator(**kwargs).dict()
 
     async def validate_output(self, **kwargs):
-        return self.output_validator(**kwargs).model_dump()
+        return self.output_validator(**kwargs).dict()
 
     def create_function_node(self):
         attributes_dict = vars(self)
