@@ -23,7 +23,8 @@ setup(name='tinyllm',
           'psycopg2-binary',
           'sqlalchemy',
           'uuid',
-          'pathspec'
+          'pathspec',
+          'cohere'
       ],
       author='Othmane Zoheir',
       author_email='zozoheir@umich.edu',
