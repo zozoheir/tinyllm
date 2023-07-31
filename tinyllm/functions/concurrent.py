@@ -69,10 +69,10 @@ class Concurrent(Function):
     async def push_to_db(self):
         try:
             self.log("Pushing to db")
-            included_specifically = APP.config['DB_FUNCTIONS_LOGGING']['DEFAULT'] is True and self.name in \
-                                    APP.config['DB_FUNCTIONS_LOGGING']['INCLUDE']
-            included_by_default = APP.config['DB_FUNCTIONS_LOGGING']['DEFAULT'] is True and self.name not in \
-                                  APP.config['DB_FUNCTIONS_LOGGING']['EXCLUDE']
+            included_specifically = APP.config['FUNCTIONS_LOGGING']['DEFAULT'] is True and self.name in \
+                                    APP.config['FUNCTIONS_LOGGING']['INCLUDE']
+            included_by_default = APP.config['FUNCTIONS_LOGGING']['DEFAULT'] is True and self.name not in \
+                                  APP.config['FUNCTIONS_LOGGING']['EXCLUDE']
             if included_specifically or included_by_default:
                 attributes_dict = vars(self)
                 attributes_dict['class'] = self.__class__.__name__

@@ -58,7 +58,7 @@ class Function:
             parent_id=parent_id,
             verbose=verbose)
         self.user = user
-        self.init_timestamp = dt.datetime.now(pytz.UTC)
+        self.init_timestamp = dt.datetime.now(pytz.UTC).isoformat()
         self.function_id = str(uuid.uuid4())
         self.logger = APP.logging['default']
         self.name = name
@@ -139,15 +139,15 @@ class Function:
         attributes_dict['class'] = self.__class__.__name__
         attributes_dict = {key: str(value) for key, value in attributes_dict.items()}
         to_ignore = ['input_validator', 'output_validator', 'run_function', 'logger']
-        attributes_dict = {str(key): str(value) for key, value in attributes_dict.items() if str(value) not in to_ignore}
+        attributes_dict = {str(key): str(value) for key, value in attributes_dict.items() if str(key) not in to_ignore}
         return Node(self.name, **attributes_dict)
 
     async def push_to_db(self):
         try:
-            included_specifically = APP.config['DB_FUNCTIONS_LOGGING']['DEFAULT'] is True and self.name in \
-                                    APP.config['DB_FUNCTIONS_LOGGING']['INCLUDE']
-            included_by_default = APP.config['DB_FUNCTIONS_LOGGING']['DEFAULT'] is True and self.name not in \
-                                  APP.config['DB_FUNCTIONS_LOGGING']['EXCLUDE']
+            included_specifically = APP.config['FUNCTIONS_LOGGING']['DEFAULT'] is True and self.name in \
+                                    APP.config['FUNCTIONS_LOGGING']['INCLUDE']
+            included_by_default = APP.config['FUNCTIONS_LOGGING']['DEFAULT'] is True and self.name not in \
+                                  APP.config['FUNCTIONS_LOGGING']['EXCLUDE']
             if included_specifically or included_by_default:
                 self.log("Pushing to db")
                 node = self.create_function_node()

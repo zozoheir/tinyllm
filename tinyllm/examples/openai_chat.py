@@ -3,16 +3,9 @@ import asyncio
 import os
 
 import openai
-
-from tinyllm import APP
 from tinyllm.functions.llms.openai.openai_chat import OpenAIChat
 
 openai.api_key = os.environ['OPENAI_API_KEY']
-APP.connect_graph_db(host=os.environ['TINYLLM_DB_HOST'],
-                     port=os.environ['TINYLLM_DB_PORT'],
-                     user=os.environ['TINYLLM_DB_USER'],
-                     password=os.environ['TINYLLM_DB_PASSWORD'])
-
 
 async def main():
     openai_chat = OpenAIChat(name='OpenAI Chat model',

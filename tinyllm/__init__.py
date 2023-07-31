@@ -8,17 +8,20 @@ from pathlib import Path
 
 from py2neo import Graph
 
+logger = get_logger(__name__)
+
+
 def load_yaml_config(yaml_file_name: str, directories: list) -> dict:
     config = None
     for directory in directories:
         yaml_path = Path(directory) / yaml_file_name
         if yaml_path.is_file():
-            print(f"CONFIG: tinyllm config found at {yaml_path}")
+            logger.info(f"Tinyllm: tinyllm config found at {yaml_path}")
             with open(yaml_path, 'r') as stream:
                 try:
                     config = yaml.safe_load(stream)
                 except yaml.YAMLError as exc:
-                    print(exc)
+                    logger.info(exc)
                 break
     return config
 
@@ -49,18 +52,18 @@ class App:
         self.config = load_yaml_config('tinyllm.yaml', directories)
         if self.config is not None:
             set_env_variables(self.config)
-            print("CONFIG: tinyllm config loaded")
+            logger.info("Tinyllm: tinyllm config loaded")
         else:
-            raise Exception("CONFIG: tinyllm config not found")
+            raise Exception("Tinyllm: tinyllm config not found")
 
         try:
-            self.connect_graph_db(host=os.environ['TINYLLM_DB_HOST'],
-                                        port=os.environ['TINYLLM_DB_PORT'],
-                                        user=os.environ['TINYLLM_DB_USER'],
-                                        password=os.environ['TINYLLM_DB_PASSWORD'])
+            self.connect_graph_db(host=os.environ['TINYLLM_NEO4J_HOST'],
+                                        port=os.environ['TINYLLM_NEO4J_PORT'],
+                                        user=os.environ['TINYLLM_NEO4J_USER'],
+                                        password=os.environ['TINYLLM_NEO4J_PASSWORD'])
             self.check_graph_db_connection()
         except Exception as e:
-            print(e)
+            logger.info(e)
 
     def set_logging(self, function_name: str, logger):
         """
@@ -87,9 +90,9 @@ class App:
             result = self.graph_db.run("MATCH (n) RETURN COUNT(n) AS count")
             count = result.evaluate()
             if count is not None:
-                print("CONFIG: Graph DB connected")
+                logger.info("Tinyllm: Graph DB connected")
         except Exception as e:
-            print("CONFIG: Graph database connection error:", e)
+            logger.info("Tinyllm: Graph database connection error:", e)
 
 
 APP = App()

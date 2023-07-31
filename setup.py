@@ -12,6 +12,7 @@ setup(name='tinyllm',
       install_requires=[
           'pytest==7.4.0',
           'pydantic==1.10.12',
+          'pgvector'
           'openai==0.27.8',
           'tiktoken',
           'py2neo==2021.2.3',
@@ -19,6 +20,10 @@ setup(name='tinyllm',
           'gradio',
           'psutil',
           'click',
+          'psycopg2-binary',
+          'sqlalchemy',
+          'uuid',
+          'pathspec'
       ],
       author='Othmane Zoheir',
       author_email='zozoheir@umich.edu',

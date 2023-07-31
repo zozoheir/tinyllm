@@ -135,7 +135,8 @@ def getParentDir(path):
     return os.path.dirname(path)
 
 
-def listDir(path, formats='', recursive=False):
+def listDir(path,
+            formats='', recursive=False):
     if isinstance(formats, str):
         formats = [formats]
     if recursive is True:

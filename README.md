@@ -74,19 +74,19 @@ Configs are managed through a tinyllm.yaml file. It gets picked up at runtime an
 LLM_PROVIDERS:
   OPENAI_API_KEY: 
 DB:
-  TINYLLM_DB_HOST: 
+  TINYLLM_POSTGRES_HOST: 
   TINYLLM_DB_PORT: 
   TINYLLM_DB_USER: 
   TINYLLM_DB_PASSWORD: 
 
-DB_FUNCTIONS_LOGGING:
+FUNCTIONS_LOGGING:
   DEFAULT: true
   INCLUDE:
     - 'CustomFunctionClass'
   EXCLUDE:
     - 'Function'
 ```
-* DB_FUNCTIONS_LOGGING is used for including/excluding logging to the backend DB for certain classes like base classes (Function).
+* FUNCTIONS_LOGGING is used for including/excluding logging to the backend DB for certain classes like base classes (Function).
 * DB is used for your neo4j backend
 * tinyllm.__init__ has an App class that is used for loading the config file, connecting to the database etc. 
 
