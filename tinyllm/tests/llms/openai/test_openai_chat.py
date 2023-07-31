@@ -4,7 +4,6 @@ import unittest
 import openai
 
 from tinyllm.tests.base import AsyncioTestCase
-from tinyllm.functions.llms.openai.helpers import get_system_message
 from tinyllm.functions.llms.openai.openai_chat import OpenAIChat
 from tinyllm.functions.llms.openai.openai_prompt_template import OpenAIPromptTemplate
 from tinyllm.state import States

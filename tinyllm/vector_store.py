@@ -13,7 +13,7 @@ CONNECTION_STRING = PGVector.connection_string_from_db_params(
 )
 
 
-def get_vector_store(collection_name) -> PGVector:
+def get_vector_collection(collection_name) -> PGVector:
     return PGVector(connection_string=CONNECTION_STRING,
                     embedding_function=OpenAIEmbeddings(),
                     collection_name=collection_name)

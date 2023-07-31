@@ -1,7 +1,6 @@
 from typing import List, Dict, Optional
 
 import openai
-from langchain.llms.cohere import completion_with_retry, acompletion_with_retry
 
 from tinyllm.functions.llms.openai.helpers import get_user_message
 from tinyllm.functions.llms.llm_call import LLMCall
@@ -9,60 +8,63 @@ from tinyllm.functions.llms.openai.openai_memory import OpenAIMemory
 from tinyllm.functions.llms.openai.openai_prompt_template import OpenAIPromptTemplate
 from tinyllm.functions.validator import Validator
 
-from langchain.llms.openai import OpenAIChat as langchain_openai_chat
+import openai  # for OpenAI API calls
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_random_exponential,
+)  # for exponential backoff
+
+
+@retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(6))
+async def chat_completion_with_backoff(**kwargs):
+    return await openai.ChatCompletion.acreate(**kwargs)
+
 
 class OpenAIChatInitValidator(Validator):
-    llm_name: str
-    temperature: float
-    n: int
-    prompt_template: Optional[OpenAIPromptTemplate]  # Prompt template TYPES are validated on a model by model basis
-
+    llm_name: str ='gpt-3.5-turbo'
+    temperature: float=0
+    n: int=1
+    prompt_template: Optional[OpenAIPromptTemplate] = OpenAIPromptTemplate(name="standard_prompt_template") # Prompt template TYPES are validated on a model by model basis
 
 class OpenAIChat(LLMCall):
     def __init__(self,
-                 prompt_template=OpenAIPromptTemplate(name="standard_prompt_template"),
-                 llm_name='gpt-3.5-turbo',
-                 temperature=0,
-                 n=1,
-                 memory=None,
-                 functions=[],
+                 prompt_template,
+                 llm_name,
+                 temperature,
+                 n,
                  **kwargs):
         val = OpenAIChatInitValidator(llm_name=llm_name,
                                       temperature=temperature,
                                       n=n,
-                                      prompt_template=prompt_template,
-                                      memory=memory)
+                                      prompt_template=prompt_template)
         super().__init__(prompt_template=prompt_template,
                          **kwargs)
         self.llm_name = llm_name
         self.temperature = temperature
         self.n = n
-        if memory is None:
+        if 'memory' not in kwargs.keys():
             self.memory = OpenAIMemory(name=f"{self.name}_memory")
         else:
-            self.memory = memory
+            self.memory = kwargs['memory']
         self.prompt_template = prompt_template
-        self.functions = functions
 
     async def generate_prompt(self, message: str):
         return await self.prompt_template(message=message)
 
     async def run(self, **kwargs):
         message = kwargs.pop('message')
+        role = kwargs.pop('role','user')
         prompt = await self.generate_prompt(message=message)
-        await self.memory(role='user', message=message)
+        await self.memory(role=role, message=message)
 
-        api_result = acompletion_with_retry(llm=langchain_openai_chat,
-                                            model=self.llm_name,
-                                            temperature=self.temperature,
-                                            n=self.n,
-                                            messages=prompt['prompt'],
-                                            functions=self.functions,
-                                            function_call='auto',
-                                            **kwargs
-                                            )
-
-        # api_result = await openai.ChatCompletion.acreate()
+        api_result = await chat_completion_with_backoff(
+            model=self.llm_name,
+            temperature=self.temperature,
+            n=self.n,
+            messages=prompt['prompt'],
+            **kwargs
+        )
         return {'response': api_result}
 
     async def process_output(self, **kwargs):

@@ -15,6 +15,7 @@ setup(name='tinyllm',
           'pgvector'
           'openai==0.27.8',
           'tiktoken',
+          'tiktoken',
           'py2neo==2021.2.3',
           'pyyaml',
           'gradio',

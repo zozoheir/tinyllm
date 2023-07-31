@@ -9,10 +9,11 @@ Function is the building block of tinyllm. A function has 4 main components:
 - When creating Functions or child classes, the above requirements apply
 - Functions, Chains, and Concurrents and
 """
+import datetime
 import datetime as dt
-import json
 import uuid
 from typing import Any, Callable, Optional, Type, Dict
+
 
 import pytz
 from py2neo import Node, Relationship
@@ -23,7 +24,6 @@ from tinyllm.exceptions import InvalidStateTransition
 from tinyllm.state import States, ALLOWED_TRANSITIONS
 from tinyllm.functions.validator import Validator
 from inspect import iscoroutinefunction
-
 
 def pretty_print(value):
     if isinstance(value, dict):
@@ -49,17 +49,20 @@ class FunctionInitValidator(Validator):
         return v
 
 
+
+
 class Function:
     def __init__(
-        self,
-        name,
-        user=None,
-        input_validator=Validator,
-        output_validator=Validator,
-        run_function=None,
-        parent_id=None,
-        verbose=True,
-        required=True,
+            self,
+            name,
+            user_id=None,
+            input_validator=Validator,
+            output_validator=Validator,
+            run_function=None,
+            parent_id=None,
+            verbose=True,
+            required=True,
+
     ):
         w = FunctionInitValidator(
             name=name,
@@ -69,7 +72,7 @@ class Function:
             parent_id=parent_id,
             verbose=verbose,
         )
-        self.user = user
+        self.user = user_id
         self.init_timestamp = dt.datetime.now(pytz.UTC).isoformat()
         self.function_id = str(uuid.uuid4())
         self.logger = APP.logging["default"]
@@ -89,6 +92,7 @@ class Function:
         self.output = None
         self.processed_output = None
 
+
     @property
     def graph_state(self):
         """Returns the state of the current function."""
@@ -103,13 +107,13 @@ class Function:
             output = await self.run_function(**kwargs)
             self.output = output
             self.transition(States.OUTPUT_VALIDATION)
-            output = await self.validate_output(**output)
+            self.output = await self.validate_output(**output)
             self.transition(States.PROCESSING_OUTPUT)
-            output = await self.process_output(**output)
-            self.processed_output = output
+            self.output = await self.process_output(**output)
+            self.processed_output = self.output
             self.transition(States.COMPLETE)
             await self.push_to_db()
-            return output
+            return self.output
         except Exception as e:
             await self.handle_exception(e)
 
@@ -164,12 +168,12 @@ class Function:
     async def push_to_db(self):
         try:
             included_specifically = (
-                APP.config["FUNCTIONS_LOGGING"]["DEFAULT"] is True
-                and self.name in APP.config["FUNCTIONS_LOGGING"]["INCLUDE"]
+                    APP.config["FUNCTIONS_LOGGING"]["DEFAULT"] is True
+                    and self.name in APP.config["FUNCTIONS_LOGGING"]["INCLUDE"]
             )
             included_by_default = (
-                APP.config["FUNCTIONS_LOGGING"]["DEFAULT"] is True
-                and self.name not in APP.config["FUNCTIONS_LOGGING"]["EXCLUDE"]
+                    APP.config["FUNCTIONS_LOGGING"]["DEFAULT"] is True
+                    and self.name not in APP.config["FUNCTIONS_LOGGING"]["EXCLUDE"]
             )
             if included_specifically or included_by_default:
                 self.log("Pushing to db")

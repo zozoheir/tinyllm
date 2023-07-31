@@ -2,6 +2,8 @@ import os
 import pathspec
 from sqlalchemy import text
 from sqlalchemy.orm import Session
+
+from tinyllm.gitignore import gitignore_content
 from tinyllm.logger import get_logger
 
 from tinyllm.util import os_util
@@ -20,8 +22,6 @@ class LocalDirCache:
         self.load_from_dir()
 
     def load_from_dir(self):
-        with open('cache/.gitignore', 'r') as file:
-            gitignore_content = file.read()
         spec = pathspec.PathSpec.from_lines('gitwildmatch', gitignore_content.splitlines())
         file_paths = os_util.listDir(self.directory_name, recursive=True, formats=['md','py'])
         filtered_files = [file_path for file_path in file_paths if not spec.match_file(file_path)]
