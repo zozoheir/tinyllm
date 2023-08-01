@@ -8,7 +8,6 @@ from pathlib import Path
 
 from py2neo import Graph
 
-logger = get_logger(__name__)
 
 
 def load_yaml_config(yaml_file_name: str, directories: list) -> dict:
@@ -16,12 +15,12 @@ def load_yaml_config(yaml_file_name: str, directories: list) -> dict:
     for directory in directories:
         yaml_path = Path(directory) / yaml_file_name
         if yaml_path.is_file():
-            logger.info(f"Tinyllm: tinyllm config found at {yaml_path}")
+            print(f"Tinyllm: config found at {yaml_path}")
             with open(yaml_path, 'r') as stream:
                 try:
                     config = yaml.safe_load(stream)
                 except yaml.YAMLError as exc:
-                    logger.info(exc)
+                    print(exc)
                 break
     return config
 
@@ -52,7 +51,7 @@ class App:
         self.config = load_yaml_config('tinyllm.yaml', directories)
         if self.config is not None:
             set_env_variables(self.config)
-            logger.info("Tinyllm: tinyllm config loaded")
+            print("Tinyllm: tinyllm config loaded")
         else:
             raise Exception("Tinyllm: tinyllm config not found")
 
@@ -63,7 +62,7 @@ class App:
                                         password=os.environ['TINYLLM_NEO4J_PASSWORD'])
             self.check_graph_db_connection()
         except Exception as e:
-            logger.info(e)
+            print(e)
 
     def set_logging(self, function_name: str, logger):
         """
@@ -90,9 +89,9 @@ class App:
             result = self.graph_db.run("MATCH (n) RETURN COUNT(n) AS count")
             count = result.evaluate()
             if count is not None:
-                logger.info("Tinyllm: Graph DB connected")
+                print("Tinyllm: Graph DB connected")
         except Exception as e:
-            logger.info("Tinyllm: Graph database connection error:", e)
+            print("Tinyllm: Graph database connection error:", e)
 
 
 APP = App()

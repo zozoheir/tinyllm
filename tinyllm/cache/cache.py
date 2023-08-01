@@ -4,12 +4,8 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from tinyllm.gitignore import gitignore_content
-from tinyllm.logger import get_logger
 
 from tinyllm.util import os_util
-
-logger = get_logger(__name__)
-
 
 
 class LocalDirCache:
@@ -29,7 +25,7 @@ class LocalDirCache:
             content = self.get_file_content(file_path)
             if content:
                 self.cache[file_path] = content
-        logger.info(f"Loaded {len(filtered_files)} files from directory")
+        print(f"Loaded {len(filtered_files)} files from directory")
 
     def get_file_content(self, file_path):
         with open(file_path, 'r') as file:
@@ -49,7 +45,7 @@ class LocalDirCache:
             texts=[self.cache[file_path] for file_path in to_embed],
             metadatas=[{'file_path': file_path} for file_path in to_embed],
         )
-        logger.info("Added missing files")
+        print("Added missing files")
 
     def delete_old_files_from_db(self):
         embedded_files = self.embedded_files()
@@ -66,10 +62,10 @@ class LocalDirCache:
         with Session(self.connection) as session:
             session.execute(text(delete_query))
             session.commit()
-        logger.info("Deleted old files from DB")
+        print("Deleted old files from DB")
 
     def refresh_cache(self):
         self.load_from_dir()
         self.add_missing_files()
         self.delete_old_files_from_db()
-        logger.info("Cache refreshed")
+        print("Cache refreshed")

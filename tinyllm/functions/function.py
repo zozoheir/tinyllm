@@ -62,7 +62,6 @@ class Function:
             parent_id=None,
             verbose=True,
             required=True,
-
     ):
         w = FunctionInitValidator(
             name=name,

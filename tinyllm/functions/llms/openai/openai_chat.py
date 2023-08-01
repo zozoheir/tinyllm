@@ -1,14 +1,12 @@
 from typing import List, Dict, Optional
-
 import openai
 
-from tinyllm.functions.llms.openai.helpers import get_user_message
 from tinyllm.functions.llms.llm_call import LLMCall
+from tinyllm.functions.llms.openai.helpers import get_assistant_message
 from tinyllm.functions.llms.openai.openai_memory import OpenAIMemory
 from tinyllm.functions.llms.openai.openai_prompt_template import OpenAIPromptTemplate
 from tinyllm.functions.validator import Validator
 
-import openai  # for OpenAI API calls
 from tenacity import (
     retry,
     stop_after_attempt,
@@ -49,25 +47,7 @@ class OpenAIChat(LLMCall):
             self.memory = kwargs['memory']
         self.prompt_template = prompt_template
 
-    async def generate_prompt(self, message: str):
-        return await self.prompt_template(message=message)
-
-    async def run(self, **kwargs):
-        message = kwargs.pop('message')
-        role = kwargs.pop('role','user')
-        prompt = await self.generate_prompt(message=message)
-        await self.memory(role=role, message=message)
-
-        api_result = await chat_completion_with_backoff(
-            model=self.llm_name,
-            temperature=self.temperature,
-            n=self.n,
-            messages=prompt['prompt'],
-            **kwargs
-        )
-        return {'response': api_result}
-
     async def process_output(self, **kwargs):
         model_response = kwargs['response']['choices'][0]['message']['content']
-        await self.memory(role='assistant', message=model_response)
+        await self.memory(FUNCTIONS_LOGGING=get_assistant_message(role='assistant', message=model_response))
         return {'response': model_response}

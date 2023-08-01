@@ -22,5 +22,6 @@ openai_agent = OpenAIChatAgent(
 
 
 if __name__ == "__main__":
-    result = asyncio.run(openai_agent(message="What is tinyllm?"))
+    openai_msg = {'user_content': "What is tinyllm?"}
+    result = asyncio.run(openai_agent(**openai_msg))
     see = result["response"]

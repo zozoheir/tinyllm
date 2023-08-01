@@ -23,11 +23,6 @@ class LLMCall(Function, abc.ABC):
             **kwargs)
         self.prompt_template = prompt_template
 
-    @abc.abstractmethod
-    def generate_prompt(self, message: str):
-        # Your code here
-        pass
-
     async def run(self, message: str):
         # Your code here
         pass

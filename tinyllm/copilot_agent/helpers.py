@@ -16,10 +16,6 @@ local_file_cache = LocalDirCache(
     directory_name="/Users/othmanezoheir/PycharmProjects/openagents/tiny-llm/tinyllm",
     vector_collection=tinyllm_vector_collection,
 )
-local_file_cache.refresh_cache()
-
-
-
 
 tinyllm_agent_prompt_template = OpenAIPromptTemplate(
     name="TinyLLM Agent Prompt Template",
