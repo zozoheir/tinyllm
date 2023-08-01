@@ -4,18 +4,22 @@ import os
 
 import openai
 from tinyllm.functions.llms.openai.openai_chat import OpenAIChat
+from tinyllm.functions.llms.openai.openai_prompt_template import OpenAIPromptTemplate
 
 openai.api_key = os.environ['OPENAI_API_KEY']
 
-async def main():
-    openai_chat = OpenAIChat(name='OpenAI Chat model',
-                             llm_name='gpt-3.5-turbo',
-                             temperature=0,
-                             n=1,
-                             verbose=True)
-
-    chat_response = await openai_chat(message='Hi how are you?')
+prompt_template = OpenAIPromptTemplate(
+    name="TinyLLM Agent Prompt Template",
+)
+openai_chat = OpenAIChat(name='OpenAI Chat model',
+                         llm_name='gpt-3.5-turbo',
+                         temperature=0,
+                         verbose=True,
+                         max_tokens=100,
+                         prompt_template=prompt_template)
 
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    loop = asyncio.get_event_loop()
+    response = loop.run_until_complete(openai_chat(message='Hi how are you?'))
+    print(response)

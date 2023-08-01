@@ -44,7 +44,6 @@ class Concurrent(Function):
             self.transition(States.OUTPUT_VALIDATION)
             output = await self.validate_output(output=output)
             self.transition(States.COMPLETE)
-            await self.push_to_db()
             return output
         except Exception as e:
             self.handle_exception(e)
@@ -65,29 +64,3 @@ class Concurrent(Function):
         for child in self.children:
             graph_state.update(child.graph_state)
         return graph_state
-
-    async def push_to_db(self):
-        try:
-            self.log("Pushing to db")
-            included_specifically = APP.config['FUNCTIONS_LOGGING']['DEFAULT'] is True and self.name in \
-                                    APP.config['FUNCTIONS_LOGGING']['INCLUDE']
-            included_by_default = APP.config['FUNCTIONS_LOGGING']['DEFAULT'] is True and self.name not in \
-                                  APP.config['FUNCTIONS_LOGGING']['EXCLUDE']
-            if included_specifically or included_by_default:
-                attributes_dict = vars(self)
-                attributes_dict['class'] = self.__class__.__name__
-                attributes_dict = {key: str(value) for key, value in attributes_dict.items()}
-                to_ignore = ['input_validator', 'output_validator', 'run_function', 'logger']
-                attributes_dict = {str(key): str(value) for key, value in attributes_dict.items() if
-                                   value not in to_ignore}
-                node = Node(self.name, **attributes_dict)
-                APP.graph_db.create(node)
-
-                for child in self.children:
-                    self.log(f"Creating relationship between {self.name} and {child.name}")
-                    child_node = matcher.match(child.name, function_id=child.function_id).first()
-                    relationship = Relationship(node, "CONCURRENT", child_node)
-                    relationship['input'] = str(child.output)
-                    APP.graph_db.create(relationship)
-        except Exception as e:
-            self.log(f"Error pushing to db: {e}", level='error')

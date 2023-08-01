@@ -111,7 +111,6 @@ class Function:
             self.output = await self.process_output(**output)
             self.processed_output = self.output
             self.transition(States.COMPLETE)
-            await self.push_to_db()
             return self.output
         except Exception as e:
             await self.handle_exception(e)
@@ -119,7 +118,6 @@ class Function:
     async def handle_exception(self, e):
         self.error_message = str(e)
         self.transition(States.FAILED, msg=str(e))
-        await self.push_to_db()
         if self.required is True:
             raise e
 
@@ -163,23 +161,6 @@ class Function:
         }
         attributes_dict = pretty_print(attributes_dict)
         return Node(self.name, **attributes_dict)
-
-    async def push_to_db(self):
-        try:
-            included_specifically = (
-                    APP.config["FUNCTIONS_LOGGING"]["DEFAULT"] is True
-                    and self.name in APP.config["FUNCTIONS_LOGGING"]["INCLUDE"]
-            )
-            included_by_default = (
-                    APP.config["FUNCTIONS_LOGGING"]["DEFAULT"] is True
-                    and self.name not in APP.config["FUNCTIONS_LOGGING"]["EXCLUDE"]
-            )
-            if included_specifically or included_by_default:
-                self.log("Pushing to db")
-                node = self.create_function_node()
-                APP.graph_db.create(node)
-        except Exception as e:
-            self.log(f"Error pushing to db: {e}", level="error")
 
     async def run(self, **kwargs) -> Any:
         pass

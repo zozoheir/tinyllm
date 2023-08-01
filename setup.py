@@ -17,11 +17,11 @@ setup(name='tinyllm',
           'langfuse==0.0.66',
           'openai==0.27.8',
           'pathspec',
-          'pgvector'
+          'pgvector',
           'psutil',
           'psycopg2-binary',
           'py2neo==2021.2.3',
-          'pydantic==1.10.12',  # Compatible with langchain + langfuse
+          'pydantic==1.10.7',  # Compatible with langchain + langfuse
           'pytest==7.4.0',
           'pyyaml',
           'sqlalchemy',

@@ -1,8 +1,10 @@
+from datetime import datetime
 from typing import List, Dict, Optional
 import openai
+from langfuse.api.model import CreateTrace, CreateGeneration, Usage
 
 from tinyllm.functions.function import Function
-from tinyllm.functions.llms.openai.helpers import get_assistant_message, get_user_message
+from tinyllm.functions.llms.openai.helpers import get_assistant_message, get_user_message, get_openai_api_cost
 from tinyllm.functions.llms.openai.openai_memory import OpenAIMemory
 from tinyllm.functions.llms.openai.openai_prompt_template import OpenAIPromptTemplate
 from tinyllm.functions.validator import Validator
@@ -12,10 +14,7 @@ from tenacity import (
     wait_random_exponential,
 )
 
-
-@retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(6))
-async def chat_completion_with_backoff(**kwargs):
-    return await openai.ChatCompletion.acreate(**kwargs)
+from tinyllm.langfuse import langfuse_client
 
 
 class OpenAIChatInitValidator(Validator):
@@ -54,6 +53,32 @@ class OpenAIChat(Function):
             self.memory = kwargs['memory']
         self.prompt_template = prompt_template
         self.max_tokens = max_tokens
+        self.total_cost = 0
+        self.trace = langfuse_client.trace(CreateTrace(
+            name=self.name,
+            userId="test",
+            metadata={
+                "model": self.llm_name,
+                "modelParameters": self.parameters,
+                "prompt": self.prompt_template.messages,
+            }
+        ))
+
+
+    @property
+    def parameters(self):
+        return {
+            "temperature": self.temperature,
+            "maxTokens": self.max_tokens,
+            "n": self.n,
+        }
+
+    @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(6))
+    async def get_completion(self, **kwargs):
+        api_result = await openai.ChatCompletion.acreate(**kwargs)
+        api_result['cost_summary'] = get_openai_api_cost(api_result)
+        self.total_cost += api_result['cost_summary']['cost']
+        return api_result
 
     async def add_memory(self, new_memory):
         await self.memory(openai_message=new_memory)
@@ -63,13 +88,28 @@ class OpenAIChat(Function):
         messages = await self.prompt_template(openai_msg=user_msg,
                                               memories=self.memory.memories)
         await self.add_memory(new_memory=user_msg)
-        api_result = await chat_completion_with_backoff(
+        start_time = datetime.now()
+        api_result= await self.get_completion(
             model=self.llm_name,
             temperature=self.temperature,
             n=self.n,
             max_tokens=self.max_tokens,
             messages=messages['messages'],
         )
+        parameters = self.parameters
+        parameters['cost'] = api_result['cost_summary']['cost']
+        parameters['total_cost'] = self.total_cost
+        self.trace.generation(CreateGeneration(
+            name=f"Assistant response",
+            startTime=start_time,
+            endTime=datetime.now(),
+            model=self.llm_name,
+            modelParameters=parameters,
+            prompt=messages['messages'],
+            completion=api_result['choices'][0]['message']['content'],
+            metadata=api_result,
+            usage=Usage(promptTokens=api_result['cost_summary']['prompt_tokens'], completionTokens=api_result['cost_summary']['completion_tokens']),
+        ))
         return {'response': api_result}
 
     async def process_output(self, **kwargs):

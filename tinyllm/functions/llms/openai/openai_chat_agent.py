@@ -2,20 +2,12 @@ import json
 from datetime import datetime
 from typing import List, Dict, Callable
 
-from langfuse.api.model import CreateTrace, CreateSpan, UpdateSpan
+from langfuse.api.model import CreateSpan, UpdateSpan, CreateGeneration, Usage
 
 from tinyllm.functions.llms.openai.helpers import get_function_message, get_assistant_message, get_user_message
-from tinyllm.functions.llms.openai.openai_chat import OpenAIChat, chat_completion_with_backoff
+from tinyllm.functions.llms.openai.openai_chat import OpenAIChat
 from tinyllm.functions.llms.openai.openai_prompt_template import OpenAIPromptTemplate
 from tinyllm.functions.validator import Validator
-from langfuse import Langfuse
-from langfuse.api.model import CreateGeneration, Usage
-
-langfuse_client = Langfuse(
-    public_key="pk-lf-29a89706-d49e-4795-b72e-b59e2336289a",
-    secret_key="sk-lf-32250a16-2480-481a-8ea8-9fb221c65f4a",
-    host="http://localhost:3030/"
-)
 
 
 class OpenAIChatAgentInitValidator(Validator):
@@ -43,21 +35,6 @@ class OpenAIChatAgent(OpenAIChat):
         self.prompt_template = prompt_template
         self.function_callables = function_callables
 
-        self.trace = langfuse_client.trace(CreateTrace(
-            name=self.name,
-            userId="test",
-            metadata={
-                "model": self.llm_name,
-                "modelParameters": self.parameters,
-                "prompt": self.prompt_template.messages,
-                "functions": self.functions,
-                "functionCallables": self.function_callables,
-            }
-        ))
-
-    @property
-    def parameters(self):
-        return
 
     async def run(self, **kwargs):
         start_time = datetime.now()
@@ -66,7 +43,8 @@ class OpenAIChatAgent(OpenAIChat):
         messages = await self.prompt_template(openai_msg=user_msg,
                                               memories=self.memory.memories)
         await self.add_memory(new_memory=user_msg)
-        api_result = await chat_completion_with_backoff(
+
+        api_result= await self.get_completion(
             model=self.llm_name,
             temperature=self.temperature,
             n=self.n,
@@ -75,6 +53,10 @@ class OpenAIChatAgent(OpenAIChat):
             function_call='auto',
             max_tokens=self.max_tokens,
         )
+        parameters = self.parameters
+        parameters['cost'] = api_result['cost_summary']['cost']
+        parameters['total_cost'] = self.total_cost
+
         if api_result['choices'][0]['finish_reason'] == 'function_call':
             self.trace.generation(CreateGeneration(
                 name=f"Calling function: {api_result['choices'][0]['message']['function_call']['name']}",
@@ -84,10 +66,14 @@ class OpenAIChatAgent(OpenAIChat):
                 modelParameters=self.parameters,
                 prompt=messages['messages'],
                 metadata=api_result['choices'][0],
-                usage=Usage(promptTokens=50, completionTokens=49),
+                usage=Usage(promptTokens=api_result['cost_summary']['prompt_tokens'], completionTokens=api_result['cost_summary']['completion_tokens']),
             ))
         else:
             assistant_response = api_result['choices'][0]['message']['content']
+            parameters = self.parameters
+            parameters['cost'] = api_result['cost_summary']['cost']
+            parameters['total_cost'] = self.total_cost
+
             self.trace.generation(CreateGeneration(
                 name=f"Assistant response",
                 startTime=start_time,
@@ -96,8 +82,8 @@ class OpenAIChatAgent(OpenAIChat):
                 modelParameters=self.parameters,
                 prompt=messages['messages'],
                 completion=assistant_response,
-                metadata=api_result['choices'][0],
-                usage=Usage(promptTokens=50, completionTokens=49),
+                metadata=api_result,
+                usage=Usage(promptTokens=api_result['cost_summary']['prompt_tokens'], completionTokens=api_result['cost_summary']['completion_tokens']),
             ))
         return {'response': api_result}
 
@@ -120,7 +106,7 @@ class OpenAIChatAgent(OpenAIChat):
 
             # Get final assistant response with function call result by removing available functions
             start_time = datetime.now()
-            api_result = await chat_completion_with_backoff(
+            api_result= await self.get_completion(
                 model=self.llm_name,
                 temperature=self.temperature,
                 n=self.n,
@@ -136,7 +122,7 @@ class OpenAIChatAgent(OpenAIChat):
                 prompt=messages['messages'],
                 completion=assistant_response,
                 metadata=api_result['choices'][0],
-                usage=Usage(promptTokens=50, completionTokens=49),
+                usage=Usage(promptTokens=api_result['cost_summary']['prompt_tokens'], completionTokens=api_result['cost_summary']['completion_tokens']),
             ))
 
 
