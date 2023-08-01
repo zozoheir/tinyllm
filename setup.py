@@ -11,7 +11,7 @@ setup(name='tinyllm',
       },
       install_requires=[
           'click',
-          'cohere',
+          'tenacity',
           'gradio',
           'langchain==0.0.237',
           'langfuse==0.0.66',

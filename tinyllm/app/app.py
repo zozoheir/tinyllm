@@ -4,7 +4,8 @@ import gradio as gr
 import os
 import openai
 
-from tinyllm.app.helpers import tinyllm_agent_functions, function_callables, tinyllm_agent_prompt_template
+from tinyllm.app.helpers import tinyllm_agent_functions, function_callables, tinyllm_agent_prompt_template, \
+    local_file_cache
 from tinyllm.functions.llms.openai.openai_chat_agent import OpenAIChatAgent
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -20,11 +21,17 @@ openai_agent = OpenAIChatAgent(
     verbose=True,
 )
 
+chat_response = loop.run_until_complete(openai_agent(message="Help me write a unit test for the tinyllm chat agent class"))
+
 def tinyllm_chat(message, history):
     # Get the response from the AI agent
     chat_response = loop.run_until_complete(openai_agent(message=message))
     print(chat_response)
     return chat_response["response"]
+
+
+local_file_cache.refresh_cache()
+
 
 CSS = """
 .contain { display: flex; flex-direction: column; }

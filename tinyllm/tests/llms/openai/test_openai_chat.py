@@ -21,7 +21,7 @@ class TestOpenAIChat(AsyncioTestCase):
                                  llm_name='gpt-3.5-turbo',
                                  temperature=0,
                                  prompt_template=openai_prompt_template,
-                                 n=1)
+                                 max_tokens=100)
 
         result = self.loop.run_until_complete(openai_chat(message="Hello, how are you?"))
 

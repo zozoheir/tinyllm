@@ -30,9 +30,10 @@ class OpenAIPromptTemplate(PromptTemplate):
                          messages=messages,
                          output_validator=OutputValidator)
         self.system_role = system_role
-        self.messages = messages
+        self.messages = [get_system_message(self.system_role)] + [get_user_message(section) for section in self.messages]
+
 
     async def run(self,
                   **kwargs):
-        messages = [get_system_message(self.system_role)] + [get_user_message(section) for section in self.messages] + kwargs['memories'] + [kwargs['openai_msg']]
+        messages =  self.messages + kwargs['memories'] + [kwargs['openai_msg']]
         return {'messages': messages}

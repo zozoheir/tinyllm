@@ -1,9 +1,8 @@
 import json
 from datetime import datetime
-from typing import List, Dict, Callable, Optional
+from typing import List, Dict, Callable
 
-import langfuse
-from langfuse.api.model import CreateTrace, CreateSpan, CreateGeneration, UpdateSpan
+from langfuse.api.model import CreateTrace, CreateSpan, UpdateSpan
 
 from tinyllm.functions.llms.openai.helpers import get_function_message, get_assistant_message, get_user_message
 from tinyllm.functions.llms.openai.openai_chat import OpenAIChat, chat_completion_with_backoff
@@ -48,7 +47,11 @@ class OpenAIChatAgent(OpenAIChat):
             name=self.name,
             userId="test",
             metadata={
-                "function_id": self.function_id,
+                "model": self.llm_name,
+                "modelParameters": self.parameters,
+                "prompt": self.prompt_template.messages,
+                "functions": self.functions,
+                "functionCallables": self.function_callables,
             }
         ))
 
@@ -72,19 +75,19 @@ class OpenAIChatAgent(OpenAIChat):
             function_call='auto',
             max_tokens=self.max_tokens,
         )
-        gpt_response = api_result['choices'][0]
-        if gpt_response['finish_reason'] == 'function_call':
+        if api_result['choices'][0]['finish_reason'] == 'function_call':
             self.trace.generation(CreateGeneration(
-                name=f"Calling function: {gpt_response['message']['function_call']['name']}",
+                name=f"Calling function: {api_result['choices'][0]['message']['function_call']['name']}",
                 startTime=start_time,
                 endTime=datetime.now(),
                 model=self.llm_name,
                 modelParameters=self.parameters,
                 prompt=messages['messages'],
-                metadata=gpt_response,
+                metadata=api_result['choices'][0],
                 usage=Usage(promptTokens=50, completionTokens=49),
             ))
         else:
+            assistant_response = api_result['choices'][0]['message']['content']
             self.trace.generation(CreateGeneration(
                 name=f"Assistant response",
                 startTime=start_time,
@@ -92,14 +95,14 @@ class OpenAIChatAgent(OpenAIChat):
                 model=self.llm_name,
                 modelParameters=self.parameters,
                 prompt=messages['messages'],
-                completion=api_result['choices'][0]['content'],
-                metadata=gpt_response,
+                completion=assistant_response,
+                metadata=api_result['choices'][0],
                 usage=Usage(promptTokens=50, completionTokens=49),
             ))
         return {'response': api_result}
 
-    async def process_output(self, **kwargs):
 
+    async def process_output(self, **kwargs):
         if kwargs['response']['choices'][0]['finish_reason'] == 'function_call':
             function_name = kwargs['response']['choices'][0]['message']['function_call']['name']
             # Call the function

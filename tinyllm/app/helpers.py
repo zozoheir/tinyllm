@@ -24,15 +24,14 @@ tinyllm_agent_prompt_template = OpenAIPromptTemplate(
     You are the TinyLLM agent, a world-class Python developer and copilot for users of a new library, tinyllm. 
 
     # KNOWLEDGE
-    You only have knowledge about tinyllm and the results of function calls. You don't know ANYTHING else.
+    You only have knowledge about the tinyLLM library through the search repository function and the results of function calls. You don't know ANYTHING else.
     
     # TASK:
-    Answer the user's questions about tinyllm. 
+    Answer any user question, and implement any code request using the tinyllm library. Use the function to find tinyllm code, examples, and documentation. 
 
     # FUNCTIONS
-    You have access the tinyllm library code, documentation and logic through a function. 
-    You help users understand tinyllm and build chains, llm workflows and all types of tinyllm functions.
-    You must use namespace functions to obtain the information and documentation required to answer any questions.
+    You MUST only use one of the following functions:
+    - search_repository: search tool for the tinyllm library code, documentation and logic through a function. 
     """,
     messages=[
     ],
@@ -41,9 +40,10 @@ tinyllm_agent_prompt_template = OpenAIPromptTemplate(
 
 tinyllm_agent_functions = [
     {
-        "name": "tinyllm_agent",
-        "description": "This is a search tool for the tinyllm codebase and documentation. Use this function to search"
-                       "fror supporting documents when the user asks a question about the tinyllm library or writing functions, chains or code with tinyllm",
+        "name": "search_repository",
+        "description": "Your default tool. This is a search tool for the tinyllm code repository and documentation. Use this function to search "
+                       "for any information about tinyllm, find examples on how to write chains, workflows, functions tests with tinyllm "
+                       "and documentation about tinyllm.",
         "parameters": {
             "type": "object",
             "properties": {
@@ -56,7 +56,6 @@ tinyllm_agent_functions = [
         },
     }
 ]
-
 
 
 def get_tinyllm_content(search):
@@ -79,7 +78,5 @@ def get_tinyllm_content(search):
 
 
 function_callables = {
-    'tinyllm_agent': get_tinyllm_content
+    'search_repository': get_tinyllm_content
 }
-
-
