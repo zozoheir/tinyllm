@@ -1,102 +1,71 @@
-import hashlib
+import os
+import pathspec
+from sqlalchemy import text
+from sqlalchemy.orm import Session
 
-from tinyllm import get_logger
+from tinyllm.gitignore import gitignore_content
+
 from tinyllm.util import os_util
-from tinyllm.util.ai_util import get_embedding, top_n_similar
 
-logger = get_logger(name='default')
 
-class LocalFilesCache:
-    def __init__(self,
-                 source_dir,
-                 cache_path):
-        logger.info(f"LocalFilesCache: Initializing cache at {cache_path}")
-        if os_util.fileExists(cache_path):
-            self.cache = os_util.loadJson(cache_path)
-            if source_dir not in self.cache.keys():
-                self.cache[source_dir] = {}
-        else:
-            self.cache = {source_dir: {}}
-        self.cache_path = cache_path
-        self.source_dir = source_dir
-        self.persist()
+class LocalDirCache:
+    def __init__(self, directory_name, vector_collection, collection_name='tinyllm'):
+        self.cache = {}
+        self.directory_name = directory_name
+        self.collection_name = collection_name
+        self.vector_store = vector_collection
+        self.connection = vector_collection.connect()
+        self.load_from_dir()
 
-    def get(self, key):
-        if key in self.cache:
-            return self.cache[self.source_dir][key]
-
-    def set(self, key, value):
-        self.cache[self.source_dir][self.source_dir][key] = value
-
-    def delete(self, key):
-        if key in self.cache[self.source_dir]:
-            del self.cache[self.source_dir][key]
-
-    def clear(self):
-        self.cache[self.source_dir].clear()
-        self.persist()
-
-    def get_file_hash(self, file_path):
-        with open(file_path, 'rb') as file:
-            file_content = file.read()
-            file_hash = hashlib.md5(file_content).hexdigest()
-        return file_hash
+    def load_from_dir(self):
+        spec = pathspec.PathSpec.from_lines('gitwildmatch', gitignore_content.splitlines())
+        file_paths = os_util.listDir(self.directory_name, recursive=True, formats=['md','py'])
+        filtered_files = [file_path for file_path in file_paths if not spec.match_file(file_path)]
+        for file_path in filtered_files:
+            content = self.get_file_content(file_path)
+            if content:
+                self.cache[file_path] = content
+        print(f"Loaded {len(filtered_files)} files from directory")
 
     def get_file_content(self, file_path):
-        with open(file_path, 'r') as f:
-            return f.read()
+        with open(file_path, 'r') as file:
+            content = file.read().strip()
+            return content
 
-    def persist(self):
-        os_util.saveJson(self.cache, self.cache_path)
+    def embedded_files(self):
+        with Session(self.connection) as session:
+            results = session.execute(text("select embedding_metadata from embeddings")).fetchall()
+            return [metadata['file_path'] for result in results for metadata in result if
+                    'file_path' in metadata.keys()]
 
-    def generate_cache(self,
-                       file_path):
-        logger.info(f"LocalFilesCache: Generating cache for {file_path}")
-        new_file_hash = self.get_file_hash(file_path)
-        if file_path in self.cache[self.source_dir].keys():
-            last_file_hash = self.cache[self.source_dir][file_path]['file_hash']
-            if new_file_hash != last_file_hash:
-                self.update_file_cache(file_path,
-                                       new_file_hash)
-        else:
-            self.update_file_cache(file_path,
-                                   new_file_hash)
+    def add_missing_files(self):
+        embedded_files = self.embedded_files()
+        to_embed = [i for i in self.cache.keys() if i not in embedded_files]
+        self.vector_store.add_texts(
+            texts=[self.cache[file_path] for file_path in to_embed],
+            metadatas=[{'file_path': file_path} for file_path in to_embed],
+        )
+        print("Added missing files")
 
-    def update_file_cache(self,
-                          file_path,
-                          file_hash):
-        file_content = self.get_file_content(file_path)
-        if file_content != '':
-            embedding = get_embedding(file_content)
-            cache_content = {
-                'file_hash': file_hash,
-                'embedding': embedding
-            }
-            self.cache[self.source_dir][file_path] = cache_content
+    def delete_old_files_from_db(self):
+        embedded_files = self.embedded_files()
+        files = [os.path.join(dp, f) for dp, dn, filenames in os.walk(self.directory_name) for f in filenames]
+        to_delete = [i for i in embedded_files if i not in files]
+        to_delete_sql = ', '.join([f"'{item}'" for item in to_delete])
+        if len(to_delete_sql) == 0:
+            return
 
-    def refresh_cache(self,
-                      only_missing=True):
-        relevant_files = os_util.listDir(self.source_dir, recursive=True, formats=['py','md'])
-        relevant_files = [file for file in relevant_files if '__init__' not in file]
-        current_files = list(self.cache[self.source_dir].keys())
-        for file_path in current_files:
-            if file_path not in relevant_files:
-                del self.cache[self.source_dir][file_path]
+        delete_query = f"""
+        DELETE FROM public.langchain_pg_embedding
+        WHERE cmetadata->>'file_path' = ANY(ARRAY[{to_delete_sql}]);
+        """
+        with Session(self.connection) as session:
+            session.execute(text(delete_query))
+            session.commit()
+        print("Deleted old files from DB")
 
-        if only_missing:
-            relevant_files = [file for file in relevant_files if file not in self.cache[self.source_dir].keys()]
-        for file in relevant_files:
-            self.generate_cache(file)
-        self.persist()
-
-
-    def get_similar_files(self,
-                          message,
-                          n=5):
-        content_embedding = get_embedding(message)
-        current_files = list(self.cache[self.source_dir].keys())
-        embeddings_list = [self.cache[self.source_dir][file_path]['embedding'] for file_path in current_files]
-        similar_embeddings_indices = top_n_similar(content_embedding, embeddings_list, n)
-        similar_files_paths = [list(self.cache[self.source_dir].keys())[i] for i in similar_embeddings_indices]
-        similar_content = [self.get_file_content(file_path) for file_path in similar_files_paths]
-        return similar_content
+    def refresh_cache(self):
+        self.load_from_dir()
+        self.add_missing_files()
+        self.delete_old_files_from_db()
+        print("Cache refreshed")

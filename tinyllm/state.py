@@ -19,7 +19,7 @@ ALLOWED_TRANSITIONS = {
     States.INPUT_VALIDATION: [States.RUNNING, States.FAILED],
     States.RUNNING: [States.OUTPUT_VALIDATION, States.FAILED],
     States.OUTPUT_VALIDATION: [States.COMPLETE, States.PROCESSING_OUTPUT, States.FAILED],
-    States.PROCESSING_OUTPUT: [States.COMPLETE, States.FAILED],
+    States.PROCESSING_OUTPUT: [States.COMPLETE, States.FAILED, States.INPUT_VALIDATION], #input validation when running a function again
     States.COMPLETE: [States.INPUT_VALIDATION],
     States.FAILED: [States.INPUT_VALIDATION]
 }

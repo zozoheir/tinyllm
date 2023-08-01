@@ -4,7 +4,6 @@ import unittest
 import openai
 
 from tinyllm.tests.base import AsyncioTestCase
-from tinyllm.functions.llms.openai.helpers import get_system_message
 from tinyllm.functions.llms.openai.openai_chat import OpenAIChat
 from tinyllm.functions.llms.openai.openai_prompt_template import OpenAIPromptTemplate
 from tinyllm.state import States
@@ -22,7 +21,7 @@ class TestOpenAIChat(AsyncioTestCase):
                                  llm_name='gpt-3.5-turbo',
                                  temperature=0,
                                  prompt_template=openai_prompt_template,
-                                 n=1)
+                                 max_tokens=100)
 
         result = self.loop.run_until_complete(openai_chat(message="Hello, how are you?"))
 

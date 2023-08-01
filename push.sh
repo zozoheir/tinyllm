@@ -1,7 +1,7 @@
 #!/bin/bash
 cd /Users/othmanezoheir/PycharmProjects/openagents/tiny-llm
 
-if /Users/othmanezoheir/venv/tiny-llm/bin/Python -m unittest discover; then
+if /Users/othmanezoheir/venv/test_langfuse1/bin/Python -m unittest discover; then
   git add .
   echo "Enter commit message:"
   read commit_message

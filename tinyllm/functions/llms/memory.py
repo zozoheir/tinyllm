@@ -3,10 +3,6 @@ import abc
 from tinyllm.functions.function import Function
 from tinyllm.functions.validator import Validator
 
-class InputValidator(Validator):
-    message: str
-    role: str
-
 
 class Memory(Function, abc.ABC):
     """
@@ -16,8 +12,7 @@ class Memory(Function, abc.ABC):
 
     def __init__(self,
                  **kwargs):
-        super().__init__(input_validator=InputValidator,
-                         **kwargs)
+        super().__init__(**kwargs)
         self.memories = None
 
     async def load_memory(self, **kwargs):

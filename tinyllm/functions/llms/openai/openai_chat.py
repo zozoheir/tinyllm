@@ -1,62 +1,78 @@
 from typing import List, Dict, Optional
-
 import openai
 
-from tinyllm.functions.llms.openai.helpers import get_user_message
-from tinyllm.functions.llms.llm_call import LLMCall
+from tinyllm.functions.function import Function
+from tinyllm.functions.llms.openai.helpers import get_assistant_message, get_user_message
 from tinyllm.functions.llms.openai.openai_memory import OpenAIMemory
 from tinyllm.functions.llms.openai.openai_prompt_template import OpenAIPromptTemplate
 from tinyllm.functions.validator import Validator
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_random_exponential,
+)
+
+
+@retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(6))
+async def chat_completion_with_backoff(**kwargs):
+    return await openai.ChatCompletion.acreate(**kwargs)
 
 
 class OpenAIChatInitValidator(Validator):
-    llm_name: str
-    temperature: float
-    n: int
-    prompt_template: Optional[OpenAIPromptTemplate]  # Prompt template TYPES are validated on a model by model basis
+    llm_name: str = 'gpt-3.5-turbo'
+    temperature: float = 0
+    prompt_template: Optional[OpenAIPromptTemplate] = OpenAIPromptTemplate(
+        name="standard_prompt_template")  # Prompt template TYPES are validated on a model by model basis
+    max_tokens: int = 1000
+
+class OpenAIChatInputValidator(Validator):
+    message: str
+
+class OpenAIChatOutputValidator(Validator):
+    response: str
 
 
-class OpenAIChat(LLMCall):
+class OpenAIChat(Function):
     def __init__(self,
-                 prompt_template=OpenAIPromptTemplate(name="standard_prompt_template"),
-                 llm_name='gpt-3.5-turbo',
-                 temperature=0,
-                 n=1,
-                 memory=None,
+                 prompt_template,
+                 llm_name,
+                 temperature,
+                 max_tokens,
                  **kwargs):
         val = OpenAIChatInitValidator(llm_name=llm_name,
                                       temperature=temperature,
-                                      n=n,
                                       prompt_template=prompt_template,
-                                      memory=memory)
-        super().__init__(prompt_template=prompt_template,
+                                      max_tokens=max_tokens)
+        super().__init__(input_validator=OpenAIChatInputValidator,
                          **kwargs)
         self.llm_name = llm_name
         self.temperature = temperature
-        self.n = n
-        if memory is None:
+        self.n = 1
+        if 'memory' not in kwargs.keys():
             self.memory = OpenAIMemory(name=f"{self.name}_memory")
         else:
-            self.memory = memory
+            self.memory = kwargs['memory']
         self.prompt_template = prompt_template
+        self.max_tokens = max_tokens
 
-    async def generate_prompt(self, message: str):
-        return await self.prompt_template(message=message)
+    async def add_memory(self, new_memory):
+        await self.memory(openai_message=new_memory)
 
     async def run(self, **kwargs):
-        message = kwargs.pop('message')
-        prompt = await self.generate_prompt(message=message)
-        await self.memory(role='user', message=message)
-        api_result = await openai.ChatCompletion.acreate(
+        user_msg = get_user_message(message=kwargs['message'])
+        messages = await self.prompt_template(openai_msg=user_msg,
+                                              memories=self.memory.memories)
+        await self.add_memory(new_memory=user_msg)
+        api_result = await chat_completion_with_backoff(
             model=self.llm_name,
             temperature=self.temperature,
             n=self.n,
-            messages=prompt['prompt'],
-            **kwargs
+            max_tokens=self.max_tokens,
+            messages=messages['messages'],
         )
         return {'response': api_result}
 
     async def process_output(self, **kwargs):
         model_response = kwargs['response']['choices'][0]['message']['content']
-        await self.memory(role='assistant', message=model_response)
+        await self.memory(openai_message=get_assistant_message(content=model_response))
         return {'response': model_response}

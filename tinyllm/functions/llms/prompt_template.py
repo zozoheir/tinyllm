@@ -24,10 +24,7 @@ class PromptTemplate(Function):
 
     @abc.abstractmethod
     async def generate_prompt(self,
-                              method='multi',
-                              shuffle=False,
-                              freeze=[],
-                              **kwargs) -> List[str]:
+                              **kwargs) -> List:
         pass
 
     @abc.abstractmethod
