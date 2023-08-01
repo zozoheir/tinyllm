@@ -24,23 +24,22 @@ tinyllm_agent_prompt_template = OpenAIPromptTemplate(
     You are the TinyLLM agent, a world-class Python developer and copilot for users of a new library, tinyllm. 
 
     # KNOWLEDGE
-    It is July 2023;
-
-    # FUNCTIONS
-    You have access the tinyllm library code, documentation and logic through a function. Use the function to answer the user's questions.
-    You help users understand tinyllm and build chains, llm workflows and all types of tinyllm functions.
-
+    You only have knowledge about tinyllm and the results of function calls. You don't know ANYTHING else.
+    
     # TASK:
     Answer the user's questions about tinyllm. 
-    You must use namespace functions to obtain the information and documentation required to answer any questions.
 
+    # FUNCTIONS
+    You have access the tinyllm library code, documentation and logic through a function. 
+    You help users understand tinyllm and build chains, llm workflows and all types of tinyllm functions.
+    You must use namespace functions to obtain the information and documentation required to answer any questions.
     """,
     messages=[
     ],
 )
 
 
-openai_functions = [
+tinyllm_agent_functions = [
     {
         "name": "tinyllm_agent",
         "description": "This is a search tool for the tinyllm codebase and documentation. Use this function to search"
@@ -57,8 +56,6 @@ openai_functions = [
         },
     }
 ]
-
-
 
 
 
