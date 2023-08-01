@@ -27,7 +27,7 @@ class OpenAIPromptTemplate(Function):
                          input_validator=InputValidator,
                          output_validator=OutputValidator)
         self.system_role = system_role
-        self.messages = [get_system_message(self.system_role)] + [get_user_message(msg) for msg in messages]
+        self.messages = [get_system_message(self.system_role)] + messages
 
 
     async def run(self,

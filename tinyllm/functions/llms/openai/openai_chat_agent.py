@@ -54,37 +54,40 @@ class OpenAIChatAgent(OpenAIChat):
             max_tokens=self.max_tokens,
         )
         parameters = self.parameters
-        parameters['cost'] = api_result['cost_summary']['cost']
+        parameters['request_cost'] = api_result['cost_summary']['request_cost']
         parameters['total_cost'] = self.total_cost
 
         if api_result['choices'][0]['finish_reason'] == 'function_call':
-            self.trace.generation(CreateGeneration(
-                name=f"Calling function: {api_result['choices'][0]['message']['function_call']['name']}",
-                startTime=start_time,
-                endTime=datetime.now(),
-                model=self.llm_name,
-                modelParameters=self.parameters,
-                prompt=messages['messages'],
-                metadata=api_result['choices'][0],
-                usage=Usage(promptTokens=api_result['cost_summary']['prompt_tokens'], completionTokens=api_result['cost_summary']['completion_tokens']),
-            ))
+            if self.verbose is True:
+
+                self.trace.generation(CreateGeneration(
+                    name=f"Calling function: {api_result['choices'][0]['message']['function_call']['name']}",
+                    startTime=start_time,
+                    endTime=datetime.now(),
+                    model=self.llm_name,
+                    modelParameters=self.parameters,
+                    prompt=messages['messages'],
+                    metadata=api_result['choices'][0],
+                    usage=Usage(promptTokens=api_result['cost_summary']['prompt_tokens'], completionTokens=api_result['cost_summary']['completion_tokens']),
+                ))
         else:
             assistant_response = api_result['choices'][0]['message']['content']
             parameters = self.parameters
-            parameters['cost'] = api_result['cost_summary']['cost']
+            parameters['request_cost'] = api_result['cost_summary']['request_cost']
             parameters['total_cost'] = self.total_cost
+            if self.verbose is True:
 
-            self.trace.generation(CreateGeneration(
-                name=f"Assistant response",
-                startTime=start_time,
-                endTime=datetime.now(),
-                model=self.llm_name,
-                modelParameters=self.parameters,
-                prompt=messages['messages'],
-                completion=assistant_response,
-                metadata=api_result,
-                usage=Usage(promptTokens=api_result['cost_summary']['prompt_tokens'], completionTokens=api_result['cost_summary']['completion_tokens']),
-            ))
+                self.trace.generation(CreateGeneration(
+                    name=f"Assistant response",
+                    startTime=start_time,
+                    endTime=datetime.now(),
+                    model=self.llm_name,
+                    modelParameters=self.parameters,
+                    prompt=messages['messages'],
+                    completion=assistant_response,
+                    metadata=api_result,
+                    usage=Usage(promptTokens=api_result['cost_summary']['prompt_tokens'], completionTokens=api_result['cost_summary']['completion_tokens']),
+                ))
         return {'response': api_result}
 
 
@@ -113,17 +116,19 @@ class OpenAIChatAgent(OpenAIChat):
                 messages=messages['messages'],
             )
             assistant_response = api_result['choices'][0]['message']['content']
-            self.trace.generation(CreateGeneration(
-                name=f"End: Agent response",
-                startTime=start_time,
-                endTime=datetime.now(),
-                model=self.llm_name,
-                modelParameters=self.parameters,
-                prompt=messages['messages'],
-                completion=assistant_response,
-                metadata=api_result['choices'][0],
-                usage=Usage(promptTokens=api_result['cost_summary']['prompt_tokens'], completionTokens=api_result['cost_summary']['completion_tokens']),
-            ))
+            if self.verbose is True:
+
+                self.trace.generation(CreateGeneration(
+                    name=f"End: Agent response",
+                    startTime=start_time,
+                    endTime=datetime.now(),
+                    model=self.llm_name,
+                    modelParameters=self.parameters,
+                    prompt=messages['messages'],
+                    completion=assistant_response,
+                    metadata=api_result['choices'][0],
+                    usage=Usage(promptTokens=api_result['cost_summary']['prompt_tokens'], completionTokens=api_result['cost_summary']['completion_tokens']),
+                ))
 
 
         else:
@@ -138,16 +143,17 @@ class OpenAIChatAgent(OpenAIChat):
         start_time = datetime.now()
         callable = self.function_callables[function_call_info['name']]
         function_args = json.loads(function_call_info['arguments'])
+        if self.verbose is True:
 
-        span = self.trace.span(
-            CreateSpan(
-                name=f"Running function : {function_call_info['name']}",
-                startTime=start_time,
-                input=function_args,
+            span = self.trace.span(
+                CreateSpan(
+                    name=f"Running function : {function_call_info['name']}",
+                    startTime=start_time,
+                    input=function_args,
+                )
             )
-        )
 
         function_result = callable(**function_args)
-
-        span.update(UpdateSpan(endTime=datetime.now(), output={'output': function_result}))
+        if self.verbose is True:
+            span.update(UpdateSpan(endTime=datetime.now(), output={'output': function_result}))
         return function_result
