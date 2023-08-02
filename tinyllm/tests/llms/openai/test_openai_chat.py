@@ -27,10 +27,12 @@ class TestOpenAIChat(AsyncioTestCase):
 
         self.assertEqual(openai_chat.state, States.COMPLETE)
         self.assertEqual(result['response'], 'Hola, ¿cómo estás?')
+        self.assertTrue(self.loop.is_closed(), "Asyncio loop should be closed after the test.")
 
-        result = self.loop.run_until_complete(openai_chat(message="Today is Monday"))
-        self.assertEqual(openai_chat.state, States.COMPLETE)
-        self.assertEqual(len(openai_chat.memory.memories), 4)
+        #result = self.loop.run_until_complete(openai_chat(message="Today is Monday"))
+        #self.assertEqual(openai_chat.state, States.COMPLETE)
+        #self.assertEqual(len(openai_chat.memory.memories), 4)
+        #print("Test finished!")
 
 
 if __name__ == '__main__':

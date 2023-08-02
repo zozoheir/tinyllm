@@ -4,16 +4,11 @@ import openai
 from langfuse.api.model import CreateTrace, CreateGeneration, Usage
 
 from tinyllm.functions.function import Function
-from tinyllm.functions.llms.openai.helpers import get_assistant_message, get_user_message, get_openai_api_cost, \
-    num_tokens_from_string, num_tokens_from_messages
+from tinyllm.functions.llms.openai.helpers import get_assistant_message, get_user_message, get_openai_api_cost,\
+    num_tokens_from_messages
 from tinyllm.functions.llms.openai.openai_memory import OpenAIMemory
 from tinyllm.functions.llms.openai.openai_prompt_template import OpenAIPromptTemplate
 from tinyllm.functions.validator import Validator
-from tenacity import (
-    retry,
-    stop_after_attempt,
-    wait_random_exponential,
-)
 
 from tinyllm.langfuse import langfuse_client
 
@@ -84,7 +79,7 @@ class OpenAIChat(Function):
             api_result['cost_summary'] = get_openai_api_cost(model=self.llm_name,
                                                              completion_tokens=api_result["usage"]['completion_tokens'],
                                                              prompt_tokens=api_result["usage"]['prompt_tokens'])
-
+            # log to Langfuse
             if self.verbose is True:
                 parameters = self.parameters
                 parameters['request_cost'] = api_result['cost_summary']['request_cost']
