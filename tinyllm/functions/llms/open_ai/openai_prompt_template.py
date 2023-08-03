@@ -1,7 +1,7 @@
 from typing import List, Dict
 
 from tinyllm.functions.function import Function
-from tinyllm.functions.llms.openai.helpers import get_user_message, get_system_message
+from tinyllm.functions.llms.open_ai.helpers import get_user_message, get_system_message
 from tinyllm.functions.validator import Validator
 
 class InitValidator(Validator):

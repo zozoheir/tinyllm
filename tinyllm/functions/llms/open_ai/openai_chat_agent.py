@@ -4,9 +4,9 @@ from typing import List, Dict, Callable
 
 from langfuse.api.model import CreateSpan, UpdateSpan, CreateGeneration, Usage
 
-from tinyllm.functions.llms.openai.helpers import get_function_message, get_assistant_message, get_user_message
-from tinyllm.functions.llms.openai.openai_chat import OpenAIChat
-from tinyllm.functions.llms.openai.openai_prompt_template import OpenAIPromptTemplate
+from tinyllm.functions.llms.open_ai.helpers import get_function_message, get_assistant_message, get_user_message
+from tinyllm.functions.llms.open_ai.openai_chat import OpenAIChat
+from tinyllm.functions.llms.open_ai.openai_prompt_template import OpenAIPromptTemplate
 from tinyllm.functions.validator import Validator
 
 

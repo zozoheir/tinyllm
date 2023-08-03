@@ -4,13 +4,16 @@ import openai
 from langfuse.api.model import CreateTrace, CreateGeneration, Usage
 
 from tinyllm.functions.function import Function
-from tinyllm.functions.llms.openai.helpers import get_assistant_message, get_user_message, get_openai_api_cost,\
+from tinyllm.functions.llms.open_ai.helpers import get_assistant_message, get_user_message, get_openai_api_cost,\
     num_tokens_from_messages
-from tinyllm.functions.llms.openai.openai_memory import OpenAIMemory
-from tinyllm.functions.llms.openai.openai_prompt_template import OpenAIPromptTemplate
+from tinyllm.functions.llms.open_ai.openai_memory import OpenAIMemory
+from tinyllm.functions.llms.open_ai.openai_prompt_template import OpenAIPromptTemplate
 from tinyllm.functions.validator import Validator
 
 from tinyllm.langfuse import langfuse_client
+import logging
+
+logger = logging.getLogger()
 
 
 class OpenAIChatInitValidator(Validator):
@@ -75,6 +78,7 @@ class OpenAIChat(Function):
     async def get_completion(self, **kwargs):
         start_time = datetime.now()
         try:
+            logger.info(f"openai.ChatCompletion is : {openai.ChatCompletion}")
             api_result = await openai.ChatCompletion.acreate(**kwargs)
             api_result['cost_summary'] = get_openai_api_cost(model=self.llm_name,
                                                              completion_tokens=api_result["usage"]['completion_tokens'],

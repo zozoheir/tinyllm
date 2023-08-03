@@ -2,11 +2,11 @@ import asyncio
 
 from tinyllm.functions.chain import Chain
 from tinyllm.functions.decision import Decision
-from tinyllm.functions.llms.openai.helpers import get_system_message
-from tinyllm.functions.llms.openai.openai_chat import OpenAIChat
+from tinyllm.functions.llms.open_ai.helpers import get_system_message
+from tinyllm.functions.llms.open_ai.openai_chat import OpenAIChat
 from tinyllm.functions.concurrent import Concurrent
 from tinyllm.functions.function import Function
-from tinyllm.functions.llms.openai.openai_prompt_template import OpenAIPromptTemplate
+from tinyllm.functions.llms.open_ai.openai_prompt_template import OpenAIPromptTemplate
 
 good_loan_application_example = """
 The loan application showcases a commendable financial profile with an excellent credit history. The applicant's credit score
