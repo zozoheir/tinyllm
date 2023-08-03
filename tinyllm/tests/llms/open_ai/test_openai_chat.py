@@ -1,3 +1,4 @@
+import asyncio
 import os
 import unittest
 
@@ -22,7 +23,7 @@ class TestOpenAIChat(AsyncioTestCase):
                                  llm_name='gpt-3.5-turbo',
                                  temperature=0,
                                  prompt_template=openai_prompt_template,
-                                 max_tokens=100)
+                                 with_memory=True)
 
         result = self.loop.run_until_complete(openai_chat(message="Hello, how are you?"))
 
@@ -35,7 +36,8 @@ class TestOpenAIChat(AsyncioTestCase):
         #print("Test finished!")
 
     def tearDown(self):
-        super().tearDown()
+        self.loop.close()
+        asyncio.set_event_loop(None)
         langfuse_client.flush()
 
 

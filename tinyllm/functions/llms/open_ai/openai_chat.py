@@ -3,7 +3,7 @@ from typing import Optional
 import openai
 from langfuse.api.model import CreateTrace, CreateGeneration, Usage
 from tinyllm.functions.function import Function
-from tinyllm.functions.llms.open_ai.helpers import get_assistant_message, get_user_message, get_openai_api_cost,\
+from tinyllm.functions.llms.open_ai.helpers import get_assistant_message, get_user_message, get_openai_api_cost, \
     num_tokens_from_messages
 from tinyllm.functions.llms.open_ai.openai_memory import OpenAIMemory
 from tinyllm.functions.llms.open_ai.openai_prompt_template import OpenAIPromptTemplate
@@ -16,14 +16,15 @@ logger = logging.getLogger()
 
 
 class OpenAIChatInitValidator(Validator):
-    llm_name: str = 'gpt-3.5-turbo'
-    temperature: float = 0
-    prompt_template: Optional[OpenAIPromptTemplate] = OpenAIPromptTemplate(
-        name="standard_prompt_template")  # Prompt template TYPES are validated on a model by model basis
-    max_tokens: int = 1000
+    llm_name: str
+    temperature: float
+    prompt_template: OpenAIPromptTemplate  # Prompt template TYPES are validated on a model by model basis
+    max_tokens: int
+    with_memory: bool
 
 class OpenAIChatInputValidator(Validator):
     message: str
+
 
 class OpenAIChatOutputValidator(Validator):
     response: str
@@ -31,16 +32,19 @@ class OpenAIChatOutputValidator(Validator):
 
 class OpenAIChat(Function):
     def __init__(self,
-                 prompt_template,
-                 llm_name,
-                 temperature,
-                 max_tokens,
+                 prompt_template=OpenAIPromptTemplate(name="standard_prompt_template"),
+                 llm_name='gpt-3.5-turbo',
+                 temperature=0,
+                 with_memory=False,
+                 max_tokens=400,
                  trace=None,
                  **kwargs):
         val = OpenAIChatInitValidator(llm_name=llm_name,
                                       temperature=temperature,
                                       prompt_template=prompt_template,
-                                      max_tokens=max_tokens)
+                                      max_tokens=max_tokens,
+                                      with_memory=with_memory,
+                                      )
         super().__init__(input_validator=OpenAIChatInputValidator,
                          **kwargs)
         self.llm_name = llm_name
@@ -51,6 +55,7 @@ class OpenAIChat(Function):
         else:
             self.memory = kwargs['memory']
         self.prompt_template = prompt_template
+        self.with_memory = with_memory
         self.max_tokens = max_tokens
         self.total_cost = 0
         if trace is None and self.verbose is True:
@@ -78,6 +83,11 @@ class OpenAIChat(Function):
         start_time = datetime.now()
         try:
             logger.info(f"openai.ChatCompletion is : {openai.ChatCompletion}")
+
+            # Override any parameters passed in
+            if 'max_tokens' in kwargs.keys():
+                self.max_tokens = kwargs['max_tokens']
+
             api_result = await openai.ChatCompletion.acreate(**kwargs)
             api_result['cost_summary'] = get_openai_api_cost(model=self.llm_name,
                                                              completion_tokens=api_result["usage"]['completion_tokens'],
@@ -108,8 +118,8 @@ class OpenAIChat(Function):
         except Exception as e:
             if self.verbose is True:
                 cost = get_openai_api_cost(model=self.llm_name,
-                                                             completion_tokens=0,
-                                                             prompt_tokens=num_tokens_from_messages(kwargs['messages']))
+                                           completion_tokens=0,
+                                           prompt_tokens=num_tokens_from_messages(kwargs['messages']))
                 parameters = self.parameters
                 parameters['request_cost'] = cost['request_cost']
                 parameters['total_cost'] = self.total_cost
@@ -127,16 +137,16 @@ class OpenAIChat(Function):
                 ))
             raise e
 
-
     async def add_memory(self, new_memory):
-        await self.memory(openai_message=new_memory)
+        if self.with_memory is True:
+            await self.memory(openai_message=new_memory)
 
     async def run(self, **kwargs):
         user_msg = get_user_message(message=kwargs['message'])
         messages = await self.prompt_template(openai_msg=user_msg,
                                               memories=self.memory.memories)
         await self.add_memory(new_memory=user_msg)
-        api_result= await self.get_completion(
+        api_result = await self.get_completion(
             model=self.llm_name,
             temperature=self.temperature,
             n=self.n,
@@ -147,6 +157,5 @@ class OpenAIChat(Function):
 
     async def process_output(self, **kwargs):
         model_response = kwargs['response']['choices'][0]['message']['content']
-        await self.memory(openai_message=get_assistant_message(content=model_response))
+        await self.add_memory(get_assistant_message(content=model_response))
         return {'response': model_response}
-
