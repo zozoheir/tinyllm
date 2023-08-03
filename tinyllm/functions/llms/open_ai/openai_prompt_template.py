@@ -1,7 +1,7 @@
 from typing import List, Dict
 
 from tinyllm.functions.function import Function
-from tinyllm.functions.llms.openai.helpers import get_user_message, get_system_message
+from tinyllm.functions.llms.open_ai.helpers import get_user_message, get_system_message
 from tinyllm.functions.validator import Validator
 
 class InitValidator(Validator):
@@ -27,7 +27,7 @@ class OpenAIPromptTemplate(Function):
                          input_validator=InputValidator,
                          output_validator=OutputValidator)
         self.system_role = system_role
-        self.messages = [get_system_message(self.system_role)] + [get_user_message(msg) for msg in messages]
+        self.messages = [get_system_message(self.system_role)] + messages
 
 
     async def run(self,

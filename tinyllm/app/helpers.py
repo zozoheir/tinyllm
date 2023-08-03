@@ -3,7 +3,7 @@ import os
 import openai
 
 from tinyllm.cache.cache import LocalDirCache
-from tinyllm.functions.llms.openai.openai_prompt_template import OpenAIPromptTemplate
+from tinyllm.functions.llms.open_ai.openai_prompt_template import OpenAIPromptTemplate
 from tinyllm.vector_store import get_vector_collection
 
 openai.api_key = os.getenv("OPENAI_API_KEY")

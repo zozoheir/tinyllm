@@ -3,8 +3,8 @@ import asyncio
 import os
 
 import openai
-from tinyllm.functions.llms.openai.openai_chat import OpenAIChat
-from tinyllm.functions.llms.openai.openai_prompt_template import OpenAIPromptTemplate
+from tinyllm.functions.llms.open_ai.openai_chat import OpenAIChat
+from tinyllm.functions.llms.open_ai.openai_prompt_template import OpenAIPromptTemplate
 
 openai.api_key = os.environ['OPENAI_API_KEY']
 

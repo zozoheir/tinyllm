@@ -149,19 +149,6 @@ class Function:
     async def validate_output(self, **kwargs):
         return self.output_validator(**kwargs).dict()
 
-    def create_function_node(self):
-        attributes_dict = vars(self)
-        attributes_dict["class"] = self.__class__.__name__
-        attributes_dict = {key: str(value) for key, value in attributes_dict.items()}
-        to_ignore = ["input_validator", "output_validator", "run_function", "logger"]
-        attributes_dict = {
-            str(key): str(value)
-            for key, value in attributes_dict.items()
-            if str(key) not in to_ignore
-        }
-        attributes_dict = pretty_print(attributes_dict)
-        return Node(self.name, **attributes_dict)
-
     async def run(self, **kwargs) -> Any:
         pass
 

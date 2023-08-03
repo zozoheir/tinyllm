@@ -3,7 +3,7 @@ import os
 import openai
 
 from tinyllm.app.helpers import tinyllm_agent_functions, tinyllm_agent_prompt_template, function_callables
-from tinyllm.functions.llms.openai.openai_chat_agent import OpenAIChatAgent
+from tinyllm.functions.llms.open_ai.openai_chat_agent import OpenAIChatAgent
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 

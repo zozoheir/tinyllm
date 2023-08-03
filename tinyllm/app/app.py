@@ -6,7 +6,7 @@ import openai
 
 from tinyllm.app.helpers import tinyllm_agent_functions, function_callables, tinyllm_agent_prompt_template, \
     local_file_cache
-from tinyllm.functions.llms.openai.openai_chat_agent import OpenAIChatAgent
+from tinyllm.functions.llms.open_ai.openai_chat_agent import OpenAIChatAgent
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 loop = asyncio.get_event_loop()
