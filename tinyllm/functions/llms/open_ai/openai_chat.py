@@ -1,8 +1,7 @@
 from datetime import datetime
-from typing import List, Dict, Optional
+from typing import Optional
 import openai
 from langfuse.api.model import CreateTrace, CreateGeneration, Usage
-
 from tinyllm.functions.function import Function
 from tinyllm.functions.llms.open_ai.helpers import get_assistant_message, get_user_message, get_openai_api_cost,\
     num_tokens_from_messages
@@ -10,7 +9,7 @@ from tinyllm.functions.llms.open_ai.openai_memory import OpenAIMemory
 from tinyllm.functions.llms.open_ai.openai_prompt_template import OpenAIPromptTemplate
 from tinyllm.functions.validator import Validator
 
-from tinyllm.langfuse import langfuse_client
+from tinyllm.langfuse_client import langfuse_client
 import logging
 
 logger = logging.getLogger()

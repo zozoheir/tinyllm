@@ -3,7 +3,7 @@ import unittest
 
 import openai
 
-from tinyllm.langfuse import langfuse_client
+from tinyllm.langfuse_client import langfuse_client
 from tinyllm.tests.base import AsyncioTestCase
 from tinyllm.functions.llms.open_ai.openai_chat import OpenAIChat
 from tinyllm.functions.llms.open_ai.openai_prompt_template import OpenAIPromptTemplate
@@ -18,7 +18,7 @@ class TestOpenAIChat(AsyncioTestCase):
         openai_prompt_template = OpenAIPromptTemplate(name='OpenAI Prompt Template',
                                                       system_role="You are an English to Spanish translator")
 
-        openai_chat = OpenAIChat(name='OpenAI Chat model',
+        openai_chat = OpenAIChat(name='Test: OpenAI Chat model',
                                  llm_name='gpt-3.5-turbo',
                                  temperature=0,
                                  prompt_template=openai_prompt_template,
@@ -35,7 +35,9 @@ class TestOpenAIChat(AsyncioTestCase):
         #print("Test finished!")
 
     def tearDown(self):
+        super().tearDown()
         langfuse_client.flush()
+
 
 if __name__ == '__main__':
     unittest.main()
