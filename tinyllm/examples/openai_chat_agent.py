@@ -17,7 +17,7 @@ openai_agent = OpenAIChatAgent(
     temperature=0,
     prompt_template=tinyllm_agent_prompt_template,
     max_tokens=1000,
-    verbose=True,
+    tracing=True,
 )
 
 

@@ -21,6 +21,7 @@ from pydantic import validator as field_validator
 
 from tinyllm import APP
 from tinyllm.exceptions import InvalidStateTransition
+from tinyllm.llm_trace import LLMTrace
 from tinyllm.state import States, ALLOWED_TRANSITIONS
 from tinyllm.functions.validator import Validator
 from inspect import iscoroutinefunction
@@ -39,8 +40,7 @@ class FunctionInitValidator(Validator):
     input_validator: Optional[Type[Validator]]
     output_validator: Optional[Type[Validator]]
     run_function: Optional[Callable]
-    parent_id: Optional[str]
-    verbose: bool
+    is_traced: bool
 
     @field_validator("run_function")
     def validate_run_function(cls, v):
@@ -59,17 +59,16 @@ class Function:
             input_validator=Validator,
             output_validator=Validator,
             run_function=None,
-            parent_id=None,
-            verbose=True,
+            is_traced=True,
             required=True,
+            llm_trace: LLMTrace =None,
     ):
         w = FunctionInitValidator(
             name=name,
             input_validator=input_validator,
             output_validator=output_validator,
             run_function=run_function,
-            parent_id=parent_id,
-            verbose=verbose,
+            is_traced=is_traced,
         )
         self.user = user_id
         self.init_timestamp = dt.datetime.now(pytz.UTC).isoformat()
@@ -80,8 +79,7 @@ class Function:
         self.input_validator = input_validator
         self.output_validator = output_validator
         self.run_function = run_function if run_function is not None else self.run
-        self.parent_id = parent_id
-        self.verbose = verbose
+        self.is_traced = is_traced
         self.required = required
         self.logs = ""
         self.state = None
@@ -90,6 +88,14 @@ class Function:
         self.input = None
         self.output = None
         self.processed_output = None
+        if llm_trace is None:
+            self.llm_trace = LLMTrace(
+                is_traced=is_traced,
+                name=self.name,
+                userId="test",
+            )
+        else:
+            self.llm_trace = llm_trace
 
 
     @property
@@ -134,7 +140,7 @@ class Function:
         )
 
     def log(self, message, level="info"):
-        if self.logger is None or self.verbose is False:
+        if self.logger is None :
             return
         log_message = f"[{self.name}][{self.function_id}] {message}"
         self.logs += "\n" + log_message

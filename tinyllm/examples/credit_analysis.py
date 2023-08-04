@@ -41,7 +41,7 @@ loan_classifier = Decision(
     name="Decision: Loan classifier",
     choices=['good', 'bad'],
     run_function=classify_loan_application,
-    verbose=True
+    tracing=True
 )
 
 
@@ -80,7 +80,7 @@ async def main():
                            email_notification,
                            bg_check])
         ],
-        verbose=True)
+        tracing=True)
 
     result = await credit_analysis_chain(loan_application=good_loan_application_example)
 

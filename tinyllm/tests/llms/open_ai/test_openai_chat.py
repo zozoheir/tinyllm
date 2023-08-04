@@ -4,7 +4,7 @@ import unittest
 
 import openai
 
-from tinyllm.langfuse_client import langfuse_client
+from tinyllm.llm_trace import langfuse_client
 from tinyllm.tests.base import AsyncioTestCase
 from tinyllm.functions.llms.open_ai.openai_chat import OpenAIChat
 from tinyllm.functions.llms.open_ai.openai_prompt_template import OpenAIPromptTemplate
@@ -38,6 +38,7 @@ class TestOpenAIChat(AsyncioTestCase):
     def tearDown(self):
         self.loop.close()
         asyncio.set_event_loop(None)
+        #TODO Bad practice. Waiting for support to figure out source of hanging
         langfuse_client.flush()
 
 

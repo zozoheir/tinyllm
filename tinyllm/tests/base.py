@@ -1,7 +1,7 @@
 import asyncio
 import unittest
 
-from tinyllm.langfuse_client import langfuse_client
+from tinyllm.llm_trace import langfuse_client
 
 
 class AsyncioTestCase(unittest.TestCase):
