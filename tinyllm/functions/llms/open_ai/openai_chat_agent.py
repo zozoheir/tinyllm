@@ -4,7 +4,8 @@ from typing import List, Dict, Callable
 
 from langfuse.api.model import CreateSpan, UpdateSpan, CreateGeneration, Usage
 
-from tinyllm.functions.llms.open_ai.helpers import get_function_message, get_assistant_message, get_user_message
+from tinyllm.functions.llms.open_ai.helpers import get_function_message, get_assistant_message, get_user_message, \
+    get_openai_api_cost
 from tinyllm.functions.llms.open_ai.openai_chat import OpenAIChat
 from tinyllm.functions.llms.open_ai.openai_prompt_template import OpenAIPromptTemplate
 from tinyllm.functions.validator import Validator
@@ -37,7 +38,7 @@ class OpenAIChatAgent(OpenAIChat):
         self.function_callables = function_callables
 
     async def run(self, **kwargs):
-        kwargs, call_metadata, messages = await self.prepare_request(openai_message=kwargs['message'],
+        kwargs, call_metadata, messages = await self.prepare_request(openai_message=get_user_message(kwargs['message']),
                                                                      **kwargs)
         api_result = await self.get_completion(
             model=self.llm_name,
@@ -48,7 +49,11 @@ class OpenAIChatAgent(OpenAIChat):
             function_call='auto',
             max_tokens=self.max_tokens,
         )
-
+        parameters = self.parameters
+        parameters['cost_summary'] = get_openai_api_cost(model=self.llm_name,
+                                                         completion_tokens=api_result["usage"]['completion_tokens'],
+                                                         prompt_tokens=api_result["usage"]['prompt_tokens'])
+        parameters['total_cost'] = self.total_cost
         if api_result['choices'][0]['finish_reason'] == 'function_call':
             self.llm_trace.create_span(
                 name=f"Calling function: {api_result['choices'][0]['message']['function_call']['name']}",
@@ -57,21 +62,7 @@ class OpenAIChatAgent(OpenAIChat):
             )
         else:
             assistant_response = api_result['choices'][0]['message']['content']
-            parameters = self.parameters
-            parameters['request_cost'] = api_result['cost_summary']['request_cost']
-            parameters['total_cost'] = self.total_cost
-            self.llm_trace.create_generation(
-                name=f"Assistant response",
-                startTime=start_time,
-                endTime=datetime.now(),
-                model=self.llm_name,
-                modelParameters=self.parameters,
-                prompt=messages['messages'],
-                completion=assistant_response,
-                metadata=api_result,
-                usage=Usage(promptTokens=api_result['cost_summary']['prompt_tokens'],
-                            completionTokens=api_result['cost_summary']['completion_tokens']),
-            )
+
         return {'response': api_result}
 
     async def process_output(self, **kwargs):
@@ -90,7 +81,8 @@ class OpenAIChatAgent(OpenAIChat):
             )
 
             kwargs, call_metadata, messages = await self.prepare_request(
-                openai_message=function_msg['content'],
+                openai_message=get_function_message(name=function_name,
+                                                    content=function_msg['content']),
                 **kwargs
             )
 

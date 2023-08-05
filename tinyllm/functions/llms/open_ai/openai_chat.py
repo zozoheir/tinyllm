@@ -70,8 +70,9 @@ class OpenAIChat(Function):
 
     async def run(self, **kwargs):
         kwargs, call_metadata, messages = await self.prepare_request(
-            openai_message=kwargs['message'],
+            openai_message=get_user_message(kwargs['message']),
             **kwargs)
+
         api_result = await self.get_completion(
             model=self.llm_name,
             temperature=self.temperature,
@@ -88,17 +89,14 @@ class OpenAIChat(Function):
         await self.add_memory(get_assistant_message(content=model_response))
         return {'response': model_response}
 
-
-
     async def prepare_request(self,
                               openai_message,
                               **kwargs):
         # Format messages into list of dicts for OpenAI
-        user_msg = get_user_message(message=openai_message)
-        messages = await self.prompt_template(openai_msg=user_msg,
+        messages = await self.prompt_template(openai_msg=openai_message,
                                               memories=self.memory.memories)
         # add new memory
-        await self.add_memory(new_memory=user_msg)
+        await self.add_memory(new_memory=openai_message)
 
         # Set request args if not provided on __call__
         if 'max_tokens' not in kwargs:
@@ -107,7 +105,6 @@ class OpenAIChat(Function):
         call_metadata = kwargs.pop('call_metadata', {})
         return kwargs, call_metadata, messages
 
-
     async def get_completion(self, **kwargs):
         try:
             # Create tracing generation
@@ -115,9 +112,10 @@ class OpenAIChat(Function):
                 name=f"Assistant response",
                 model=self.llm_name,
                 prompt=kwargs['messages'],
+                startTime=datetime.now(),
             )
             # Call OpenAI API
-            request_args = {key:value for key,value in kwargs.items() if key not in ['call_metadata']}
+            request_args = {key: value for key, value in kwargs.items() if key not in ['call_metadata']}
             api_result = await openai.ChatCompletion.acreate(**request_args)
             # Update tracing generation
             self.update_openai_generation(api_result=api_result, **kwargs)
@@ -130,12 +128,11 @@ class OpenAIChat(Function):
             parameters = self.parameters
             parameters['request_cost'] = cost['request_cost']
             parameters['total_cost'] = self.total_cost
-            self.llm_trace.generation(UpdateGeneration(
+            self.llm_trace.update_generation(
                 completion=str({"error": str(e)}),
                 metadata={"error": str(e)},
-            ))
+            )
             raise e
-
 
     def update_openai_generation(self,
                                  api_result,
@@ -157,7 +154,7 @@ class OpenAIChat(Function):
         self.llm_trace.update_generation(
             endTime=datetime.now(),
             modelParameters=parameters,
-            completion=api_result['choices'][0]['message']['content'],
+            completion=str(api_result['choices'][0]),
             metadata=call_metadata,
             usage=Usage(promptTokens=call_metadata['cost_summary']['prompt_tokens'],
                         completionTokens=call_metadata['cost_summary']['completion_tokens'])

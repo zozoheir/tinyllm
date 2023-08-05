@@ -48,6 +48,7 @@ class TestOpenAIAgent(AsyncioTestCase):
             function_callables=function_callables,
             temperature=0,
             max_tokens=1000,
+            with_memory=True,
         )
 
         result = self.loop.run_until_complete(openai_agent(message="Oh nana...what's my name?"))

@@ -9,7 +9,6 @@ langfuse_client = Langfuse(
     host="https://cloud.langfuse.com/"
 )
 
-
 class LLMTrace:
 
     def __init__(self,
