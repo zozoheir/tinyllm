@@ -29,7 +29,6 @@ class Concurrent(Function):
                               input_validator=ConcurrentInputValidator,
                               output_validator=ConcurrentOutputValidator,
                               **kwargs)
-
         super().__init__(**kwargs)
         self.children = children if children else []
 

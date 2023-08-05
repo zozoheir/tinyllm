@@ -1,7 +1,6 @@
 from typing import List, Union, Dict, Type
 
-from py2neo import Node, Relationship
-from py2neo import Graph, NodeMatcher
+from py2neo import NodeMatcher
 
 from tinyllm import APP
 from tinyllm.functions.function import Function

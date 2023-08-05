@@ -1,9 +1,10 @@
+import asyncio
 import os
 import unittest
 
 import openai
 
-from tinyllm.langfuse import langfuse_client
+from tinyllm.llm_trace import langfuse_client
 from tinyllm.tests.base import AsyncioTestCase
 from tinyllm.functions.llms.open_ai.openai_chat import OpenAIChat
 from tinyllm.functions.llms.open_ai.openai_prompt_template import OpenAIPromptTemplate
@@ -14,15 +15,15 @@ openai.api_key = os.environ['OPENAI_API_KEY']
 
 class TestOpenAIChat(AsyncioTestCase):
 
-    def test_openai_chat_script(self):
+    def test_openai_chat(self):
         openai_prompt_template = OpenAIPromptTemplate(name='OpenAI Prompt Template',
                                                       system_role="You are an English to Spanish translator")
 
-        openai_chat = OpenAIChat(name='OpenAI Chat model',
+        openai_chat = OpenAIChat(name='Test: OpenAI Chat model',
                                  llm_name='gpt-3.5-turbo',
                                  temperature=0,
                                  prompt_template=openai_prompt_template,
-                                 max_tokens=100)
+                                 with_memory=True)
 
         result = self.loop.run_until_complete(openai_chat(message="Hello, how are you?"))
 
@@ -35,7 +36,11 @@ class TestOpenAIChat(AsyncioTestCase):
         #print("Test finished!")
 
     def tearDown(self):
+        self.loop.close()
+        asyncio.set_event_loop(None)
+        #TODO Bad practice. Waiting for support to figure out source of hanging
         langfuse_client.flush()
+
 
 if __name__ == '__main__':
     unittest.main()

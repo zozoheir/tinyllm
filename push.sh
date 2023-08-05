@@ -5,7 +5,7 @@ if /Users/othmanezoheir/venv/test_langfuse1/bin/Python -m unittest discover; the
   git add .
   echo "Enter commit message:"
   read commit_message
-  git commit -m "$commit_message"
+  git commit -m "[$commit_message]"
   if [ $? -eq 0 ]; then
     git push
     echo "Changes pushed successfully!"
