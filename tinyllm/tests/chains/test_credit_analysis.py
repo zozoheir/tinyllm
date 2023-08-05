@@ -21,7 +21,7 @@ class TestCreditAnalysis(AsyncioTestCase):
             name="Decision: Loan classifier",
             choices=['good', 'bad'],
             run_function=classify_loan_application,
-            tracing=True
+            is_traced=True
         )
 
         async def send_email(**kwargs):
@@ -49,7 +49,7 @@ class TestCreditAnalysis(AsyncioTestCase):
                                           Concurrent(name="Concurrent: On good credit",
                                                      children=[email_notification,
                                                                bg_check])],
-                                      tracing=True)
+                                      is_traced=True)
         result = self.loop.run_until_complete(credit_analysis_chain(loan_application="example"))
 
         for node, state in credit_analysis_chain.graph_state.items():

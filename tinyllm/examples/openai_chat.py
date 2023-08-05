@@ -14,7 +14,7 @@ prompt_template = OpenAIPromptTemplate(
 openai_chat = OpenAIChat(name='OpenAI Chat model',
                          llm_name='gpt-3.5-turbo',
                          temperature=0,
-                         tracing=True,
+                         is_traced=True,
                          max_tokens=100,
                          prompt_template=prompt_template)
 

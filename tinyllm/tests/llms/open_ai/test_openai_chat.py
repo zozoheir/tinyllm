@@ -15,7 +15,7 @@ openai.api_key = os.environ['OPENAI_API_KEY']
 
 class TestOpenAIChat(AsyncioTestCase):
 
-    def test_openai_chat_script(self):
+    def test_openai_chat(self):
         openai_prompt_template = OpenAIPromptTemplate(name='OpenAI Prompt Template',
                                                       system_role="You are an English to Spanish translator")
 

@@ -14,7 +14,7 @@ openai.api_key = os.environ['OPENAI_API_KEY']
 
 class TestOpenAIAgent(AsyncioTestCase):
 
-    def test_openai_chat_script(self):
+    def test_openai_agent(self):
         test_openai_functions = [
             {
                 "name": "test_function",

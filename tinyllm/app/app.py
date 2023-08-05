@@ -18,7 +18,7 @@ openai_agent = OpenAIChatAgent(
     temperature=0,
     prompt_template=tinyllm_agent_prompt_template,
     max_tokens=1000,
-    tracing=True,
+    is_traced=True,
 )
 
 chat_response = loop.run_until_complete(openai_agent(message="Help me write a unit test for the tinyllm chat agent class"))

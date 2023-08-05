@@ -68,6 +68,27 @@ class OpenAIChat(Function):
         if self.with_memory is True:
             await self.memory(openai_message=new_memory)
 
+    async def run(self, **kwargs):
+        kwargs, call_metadata, messages = await self.prepare_request(
+            openai_message=kwargs['message'],
+            **kwargs)
+        api_result = await self.get_completion(
+            model=self.llm_name,
+            temperature=self.temperature,
+            n=self.n,
+            max_tokens=kwargs['max_tokens'],
+            messages=messages['messages'],
+            call_metadata=call_metadata
+        )
+
+        return {'response': api_result}
+
+    async def process_output(self, **kwargs):
+        model_response = kwargs['response']['choices'][0]['message']['content']
+        await self.add_memory(get_assistant_message(content=model_response))
+        return {'response': model_response}
+
+
 
     async def prepare_request(self,
                               openai_message,
@@ -86,25 +107,6 @@ class OpenAIChat(Function):
         call_metadata = kwargs.pop('call_metadata', {})
         return kwargs, call_metadata, messages
 
-    async def run(self, **kwargs):
-        kwargs, call_metadata, messages = self.prepare_request(
-            openai_message=kwargs['message'],
-            **kwargs)
-        api_result = await self.get_completion(
-            model=self.llm_name,
-            temperature=self.temperature,
-            n=self.n,
-            max_tokens=kwargs['max_tokens'],
-            messages=messages['messages'],
-            call_metadata=call_metadata
-        )
-
-        return {'response': api_result}
-
-    async def process_output(self, **kwargs):
-        model_response = kwargs['response']['choices'][0]['message']['content']
-        await self.add_memory(get_assistant_message(content=model_response))
-        return {'response': model_response}
 
     async def get_completion(self, **kwargs):
         try:
