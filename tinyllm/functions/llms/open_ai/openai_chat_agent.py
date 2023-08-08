@@ -2,9 +2,7 @@ import json
 from datetime import datetime
 from typing import List, Dict, Callable
 
-from langfuse.api.model import CreateSpan, UpdateSpan, CreateGeneration, Usage
-
-from tinyllm.functions.llms.open_ai.helpers import get_function_message, get_assistant_message, get_user_message, \
+from tinyllm.functions.llms.open_ai.util.helpers import get_function_message, get_assistant_message, get_user_message, \
     get_openai_api_cost
 from tinyllm.functions.llms.open_ai.openai_chat import OpenAIChat
 from tinyllm.functions.llms.open_ai.openai_prompt_template import OpenAIPromptTemplate
@@ -38,8 +36,8 @@ class OpenAIChatAgent(OpenAIChat):
         self.function_callables = function_callables
 
     async def run(self, **kwargs):
-        kwargs, call_metadata, messages = await self.prepare_request(openai_message=get_user_message(kwargs['message']),
-                                                                     **kwargs)
+        kwargs, call_metadata, messages = await self.process_input(openai_message=get_user_message(kwargs['message']),
+                                                                   **kwargs)
         api_result = await self.get_completion(
             model=self.llm_name,
             temperature=self.temperature,
@@ -80,7 +78,7 @@ class OpenAIChatAgent(OpenAIChat):
                 name=function_name
             )
 
-            kwargs, call_metadata, messages = await self.prepare_request(
+            kwargs, call_metadata, messages = await self.process_input(
                 openai_message=get_function_message(name=function_name,
                                                     content=function_msg['content']),
                 **kwargs
