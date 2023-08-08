@@ -2,7 +2,6 @@ import asyncio
 
 from tinyllm.functions.chain import Chain
 from tinyllm.functions.decision import Decision
-from tinyllm.functions.llms.open_ai.helpers import get_system_message
 from tinyllm.functions.llms.open_ai.openai_chat import OpenAIChat
 from tinyllm.functions.concurrent import Concurrent
 from tinyllm.functions.function import Function

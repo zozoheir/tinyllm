@@ -2,9 +2,7 @@ import json
 from datetime import datetime
 from typing import List, Dict, Callable
 
-from langfuse.api.model import CreateSpan, UpdateSpan, CreateGeneration, Usage
-
-from tinyllm.functions.llms.open_ai.helpers import get_function_message, get_assistant_message, get_user_message, \
+from tinyllm.functions.llms.open_ai.util.helpers import get_function_message, get_assistant_message, get_user_message, \
     get_openai_api_cost
 from tinyllm.functions.llms.open_ai.openai_chat import OpenAIChat
 from tinyllm.functions.llms.open_ai.openai_prompt_template import OpenAIPromptTemplate
@@ -33,41 +31,51 @@ class OpenAIChatAgent(OpenAIChat):
                                            prompt_template=prompt_template)
         super().__init__(prompt_template=prompt_template,
                          **kwargs)
-        self.functions = openai_functions
+        self.openai_functions = openai_functions
         self.prompt_template = prompt_template
         self.function_callables = function_callables
 
     async def run(self, **kwargs):
-        kwargs, call_metadata, messages = await self.prepare_request(openai_message=get_user_message(kwargs['message']),
-                                                                     **kwargs)
+        message = kwargs.pop('message')
+        llm_name = kwargs['llm_name'] if kwargs['llm_name'] is not None else self.llm_name
+        temperature = kwargs['temperature'] if kwargs['temperature'] is not None else self.temperature
+        max_tokens = kwargs['max_tokens'] if kwargs['max_tokens'] is not None else self.max_tokens
+        call_metadata = kwargs['call_metadata'] if kwargs['call_metadata'] is not None else {}
+
+        messages = await self.process_input_message(openai_message=get_user_message(message))
+
         api_result = await self.get_completion(
-            model=self.llm_name,
-            temperature=self.temperature,
-            n=self.n,
             messages=messages['messages'],
-            functions=self.functions,
+            llm_name=llm_name,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            n=self.n,
+            call_metadata=call_metadata,
+            functions=self.openai_functions,
             function_call='auto',
-            max_tokens=self.max_tokens,
         )
-        parameters = self.parameters
-        parameters['cost_summary'] = get_openai_api_cost(model=self.llm_name,
+
+        call_metadata['cost_summary'] = get_openai_api_cost(model=self.llm_name,
                                                          completion_tokens=api_result["usage"]['completion_tokens'],
                                                          prompt_tokens=api_result["usage"]['prompt_tokens'])
-        parameters['total_cost'] = self.total_cost
+        call_metadata['total_cost'] = self.total_cost
         if api_result['choices'][0]['finish_reason'] == 'function_call':
             self.llm_trace.create_span(
                 name=f"Calling function: {api_result['choices'][0]['message']['function_call']['name']}",
                 startTime=datetime.now(),
-                metadata=api_result['choices'][0],
+                metadata={'api_result':api_result['choices'][0]},
             )
         else:
             assistant_response = api_result['choices'][0]['message']['content']
 
         return {'response': api_result}
 
+
+
+
     async def process_output(self, **kwargs):
 
-        # Case if function call
+        # Case if OpenAI decides function call
         if kwargs['response']['choices'][0]['finish_reason'] == 'function_call':
             # Call the function
             function_name = kwargs['response']['choices'][0]['message']['function_call']['name']
@@ -80,27 +88,47 @@ class OpenAIChatAgent(OpenAIChat):
                 name=function_name
             )
 
-            kwargs, call_metadata, messages = await self.prepare_request(
+            # Generate input messages with the function call content
+            messages = await self.process_input_message(
                 openai_message=get_function_message(name=function_name,
                                                     content=function_msg['content']),
                 **kwargs
             )
 
-            # Get final assistant response with function call result by removing available functions
-            api_result = await self.get_completion(
-                model=self.llm_name,
+            # Make API call with the function call content
+            assistant_response = await self.get_assistant_response_with_function_result(
+                llm_name=self.llm_name,
                 temperature=self.temperature,
+                max_tokens=self.max_tokens,
                 n=self.n,
                 messages=messages['messages'],
             )
-            assistant_response = api_result['choices'][0]['message']['content']
 
         else:
+            # If no function call, just return the result
             assistant_response = kwargs['response']['choices'][0]['message']['content']
             function_msg = get_assistant_message(content=assistant_response)
             await self.add_memory(new_memory=function_msg)
 
         return {'response': assistant_response}
+
+    async def get_assistant_response_with_function_result(self,
+                                                          llm_name,
+                                                          temperature,
+                                                          max_tokens,
+                                                          n,
+                                                          messages):
+        # Remove functions arg to get final assistant response
+        api_result = await self.get_completion(
+            messages=messages,
+            llm_name=llm_name,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            n=n,
+        )
+        assistant_response = api_result['choices'][0]['message']['content']
+        return assistant_response
+
 
     async def run_agent_function(self,
                                  function_call_info):

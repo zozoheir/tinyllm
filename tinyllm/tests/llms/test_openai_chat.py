@@ -10,14 +10,13 @@ from tinyllm.tests.base import AsyncioTestCase
 
 openai.api_key = os.environ['OPENAI_API_KEY']
 
-
 class TestOpenAIChat(AsyncioTestCase):
 
     def test_openai_chat_script(self):
         openai_prompt_template = OpenAIPromptTemplate(name='OpenAI Prompt Template',
                                                       system_role="You are an English to Spanish translator")
 
-        openai_chat = OpenAIChat(name='OpenAI Chat model',
+        openai_chat = OpenAIChat(name='Test: OpenAI Chat model',
                                  llm_name='gpt-3.5-turbo',
                                  temperature=0,
                                  prompt_template=openai_prompt_template,
