@@ -156,10 +156,8 @@ class OpenAIChat(Function):
                                                             completion_tokens=api_result["usage"]['completion_tokens'],
                                                             prompt_tokens=api_result["usage"]['prompt_tokens'])
         # To visualise the API result in metadata
-        call_metadata['api_result'] = {key: value for key, value in api_result['choices'][0].items() if key != 'content'}
+        call_metadata['api_result'] = {key: value for key, value in api_result['choices'][0]['message'].items() if key != 'content'}
         call_metadata['cost_summary']['total_cost'] = self.total_cost
-
-        # log to Langfuse
 
         # Extract completion from API result
         if api_result['choices'][0]['finish_reason'] == 'function_call':
