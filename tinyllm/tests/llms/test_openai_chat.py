@@ -10,7 +10,6 @@ from tinyllm.tests.base import AsyncioTestCase
 
 openai.api_key = os.environ['OPENAI_API_KEY']
 
-
 class TestOpenAIChat(AsyncioTestCase):
 
     def test_openai_chat_script(self):

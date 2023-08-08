@@ -77,7 +77,7 @@ class OpenAIChat(Function):
         max_tokens = kwargs['max_tokens'] if kwargs['max_tokens'] is not None else self.max_tokens
         call_metadata = kwargs['call_metadata'] if kwargs['call_metadata'] is not None else {}
 
-        messages = await self.process_input(openai_message=get_user_message(message))
+        messages = await self.process_input_message(openai_message=get_user_message(message))
 
         api_result = await self.get_completion(
             llm_name=llm_name,
@@ -90,19 +90,20 @@ class OpenAIChat(Function):
 
         return {'response': api_result}
 
-    async def process_output(self, **kwargs):
-        model_response = kwargs['response']['choices'][0]['message']['content']
-        await self.add_memory(get_assistant_message(content=model_response))
-        return {'response': model_response}
 
-    async def process_input(self,
-                            openai_message):
+    async def process_input_message(self,
+                                    openai_message):
         # Format messages into list of dicts for OpenAI
         messages = await self.prompt_template(openai_msg=openai_message,
                                               memories=self.memory.memories)
         # add new memory
         await self.add_memory(new_memory=openai_message)
         return messages
+
+    async def process_output(self, **kwargs):
+        model_response = kwargs['response']['choices'][0]['message']['content']
+        await self.add_memory(get_assistant_message(content=model_response))
+        return {'response': model_response}
 
     async def get_completion(self,
                              llm_name,

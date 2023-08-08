@@ -36,8 +36,8 @@ class OpenAIChatAgent(OpenAIChat):
         self.function_callables = function_callables
 
     async def run(self, **kwargs):
-        kwargs, call_metadata, messages = await self.process_input(openai_message=get_user_message(kwargs['message']),
-                                                                   **kwargs)
+        kwargs, call_metadata, messages = await self.process_input_message(openai_message=get_user_message(kwargs['message']),
+                                                                           **kwargs)
         api_result = await self.get_completion(
             model=self.llm_name,
             temperature=self.temperature,
@@ -78,7 +78,7 @@ class OpenAIChatAgent(OpenAIChat):
                 name=function_name
             )
 
-            kwargs, call_metadata, messages = await self.process_input(
+            kwargs, call_metadata, messages = await self.process_input_message(
                 openai_message=get_function_message(name=function_name,
                                                     content=function_msg['content']),
                 **kwargs
