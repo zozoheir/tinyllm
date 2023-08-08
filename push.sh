@@ -1,7 +1,24 @@
 #!/bin/bash
 cd /Users/othmanezoheir/PycharmProjects/openagents/tiny-llm
 
-if /Users/othmanezoheir/venv/test_langfuse1/bin/Python -m unittest discover; then
+# Running unittests for functions and chains folder
+if /Users/othmanezoheir/venv/test_langfuse1/bin/Python -m unittest discover -p 'test_*.py' tinyllm/tests/functions tinyllm/tests/chains; then
+  # Running specific tests for llms folder
+  if ! /Users/othmanezoheir/venv/test_langfuse1/bin/Python -m unittest tinyllm/tests/llms/test_memory.py; then
+    echo "Test test_memory.py failed, stopping."
+    exit 1
+  fi
+
+  if ! /Users/othmanezoheir/venv/test_langfuse1/bin/Python -m unittest tinyllm/tests/llms/test_openai_agent.py; then
+    echo "Test test_openai_agent.py failed, stopping."
+    exit 1
+  fi
+
+  if ! /Users/othmanezoheir/venv/test_langfuse1/bin/Python -m unittest tinyllm/tests/llms/test_openai_chat.py; then
+    echo "Test test_openai_chat.py failed, stopping."
+    exit 1
+  fi
+
   git add .
   echo "Enter commit message:"
   read commit_message

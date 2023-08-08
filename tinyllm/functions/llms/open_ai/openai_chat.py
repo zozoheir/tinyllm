@@ -1,7 +1,7 @@
 from datetime import datetime
-from typing import Optional
 import openai
-from langfuse.api.model import CreateTrace, CreateGeneration, Usage, UpdateGeneration
+from langfuse.api.model import Usage
+
 from tinyllm.functions.function import Function
 from tinyllm.functions.llms.open_ai.helpers import get_assistant_message, get_user_message, get_openai_api_cost, \
     num_tokens_from_messages

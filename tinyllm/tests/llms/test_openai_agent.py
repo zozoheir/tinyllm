@@ -5,9 +5,8 @@ import unittest
 import openai
 
 from tinyllm.functions.llms.open_ai.openai_chat_agent import OpenAIChatAgent
-from tinyllm.llm_trace import langfuse_client
-from tinyllm.tests.base import AsyncioTestCase
 from tinyllm.state import States
+from tinyllm.tests.base import AsyncioTestCase
 
 openai.api_key = os.environ['OPENAI_API_KEY']
 
@@ -55,14 +54,6 @@ class TestOpenAIAgent(AsyncioTestCase):
 
         self.assertEqual(openai_agent.state, States.COMPLETE)
         self.assertTrue('Elias' in result['response'])
-
-
-    def tearDown(self):
-        self.loop.close()
-        asyncio.set_event_loop(None)
-
-        #TODO Bad practice. Waiting for support to figure out source of hanging
-        langfuse_client.flush()
 
 
 if __name__ == '__main__':

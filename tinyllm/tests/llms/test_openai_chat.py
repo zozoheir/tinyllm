@@ -3,10 +3,10 @@ import unittest
 
 import openai
 
-from tinyllm.tests.base import AsyncioTestCase
-from tinyllm.functions.llms.openai.openai_chat import OpenAIChat
-from tinyllm.functions.llms.openai.openai_prompt_template import OpenAIPromptTemplate
+from tinyllm.functions.llms.open_ai.openai_chat import OpenAIChat
+from tinyllm.functions.llms.open_ai.openai_prompt_template import OpenAIPromptTemplate
 from tinyllm.state import States
+from tinyllm.tests.base import AsyncioTestCase
 
 openai.api_key = os.environ['OPENAI_API_KEY']
 
@@ -21,7 +21,8 @@ class TestOpenAIChat(AsyncioTestCase):
                                  llm_name='gpt-3.5-turbo',
                                  temperature=0,
                                  prompt_template=openai_prompt_template,
-                                 max_tokens=100)
+                                 max_tokens=100,
+                                 with_memory=True)
 
         result = self.loop.run_until_complete(openai_chat(message="Hello, how are you?"))
 

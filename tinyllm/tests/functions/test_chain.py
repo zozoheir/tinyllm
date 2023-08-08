@@ -4,7 +4,6 @@ import asyncio
 from tinyllm.tests.base import AsyncioTestCase
 from tinyllm.functions.chain import Chain
 from tinyllm.functions.function import Function
-from tinyllm.functions.concurrent import Concurrent
 
 
 class SleepOperator(Function):

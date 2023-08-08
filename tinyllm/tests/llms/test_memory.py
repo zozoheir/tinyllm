@@ -1,7 +1,7 @@
 import unittest
-from tinyllm.tests.base import AsyncioTestCase
 from tinyllm.functions.llms.open_ai.openai_memory import OpenAIMemory
 from tinyllm.state import States
+from tinyllm.tests.base import AsyncioTestCase
 
 
 class TestOpenAIMemory(AsyncioTestCase):
