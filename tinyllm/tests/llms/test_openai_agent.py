@@ -41,7 +41,7 @@ class TestOpenAIAgent(AsyncioTestCase):
         function_callables = {'test_function': test_function}
 
         openai_agent = OpenAIChatAgent(
-            name="TinyLLM Agent",
+            name="Test TinyLLM Agent",
             llm_name="gpt-3.5-turbo",
             openai_functions=test_openai_functions,
             function_callables=function_callables,

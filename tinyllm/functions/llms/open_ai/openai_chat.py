@@ -80,19 +80,19 @@ class OpenAIChat(Function):
         messages = await self.process_input_message(openai_message=get_user_message(message))
 
         api_result = await self.get_completion(
+            messages=messages['messages'],
             llm_name=llm_name,
             temperature=temperature,
             n=self.n,
             max_tokens=max_tokens,
-            messages=messages['messages'],
             call_metadata=call_metadata
         )
 
         return {'response': api_result}
 
-
     async def process_input_message(self,
-                                    openai_message):
+                                    openai_message,
+                                    **kwargs):
         # Format messages into list of dicts for OpenAI
         messages = await self.prompt_template(openai_msg=openai_message,
                                               memories=self.memory.memories)
@@ -111,7 +111,8 @@ class OpenAIChat(Function):
                              n,
                              max_tokens,
                              messages,
-                             call_metadata):
+                             call_metadata={},
+                             **kwargs):
         try:
             # Create tracing generation
             self.llm_trace.create_generation(
@@ -127,6 +128,7 @@ class OpenAIChat(Function):
                 n = n,
                 max_tokens = max_tokens,
                 messages = messages,
+                **kwargs
             )
             # Update tracing generation
             self.update_generation_trace(api_result=api_result, call_metadata=call_metadata)
@@ -154,7 +156,7 @@ class OpenAIChat(Function):
                                                             completion_tokens=api_result["usage"]['completion_tokens'],
                                                             prompt_tokens=api_result["usage"]['prompt_tokens'])
         # To visualise the API result in metadata
-        call_metadata.update({key: value for key, value in api_result['choices'][0].items() if key != 'content'})
+        call_metadata['api_result'] = {key: value for key, value in api_result['choices'][0].items() if key != 'content'}
         call_metadata['cost_summary']['total_cost'] = self.total_cost
 
         # log to Langfuse
