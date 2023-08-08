@@ -151,10 +151,17 @@ class OpenAIChat(Function):
             parameters['max_tokens'] = kwargs['max_tokens']
 
         call_metadata['cost_summary']['total_cost'] = self.total_cost
+
+        if api_result['choices'][0]['finish_reason'] == 'function_call':
+            completion = str(api_result['choices'][0]['message']['function_call'])
+        else:
+            completion = str(api_result['choices'][0]['message']['content'])
+
+
         self.llm_trace.update_generation(
             endTime=datetime.now(),
             modelParameters=parameters,
-            completion=str(api_result['choices'][0]),
+            completion=completion,
             metadata=call_metadata,
             usage=Usage(promptTokens=call_metadata['cost_summary']['prompt_tokens'],
                         completionTokens=call_metadata['cost_summary']['completion_tokens'])
