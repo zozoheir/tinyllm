@@ -1,5 +1,4 @@
 import unittest
-import asyncio
 
 from tinyllm.tests.base import AsyncioTestCase
 from tinyllm.functions.decision import Decision

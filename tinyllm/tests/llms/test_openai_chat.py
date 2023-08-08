@@ -5,8 +5,8 @@ import openai
 
 from tinyllm.functions.llms.open_ai.openai_chat import OpenAIChat
 from tinyllm.functions.llms.open_ai.openai_prompt_template import OpenAIPromptTemplate
-from tinyllm.tests.base import AsyncioTestCase
 from tinyllm.state import States
+from tinyllm.tests.base import AsyncioTestCase
 
 openai.api_key = os.environ['OPENAI_API_KEY']
 
