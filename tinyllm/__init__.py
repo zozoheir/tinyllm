@@ -3,17 +3,22 @@ import os
 
 from pathlib import Path
 
+from smartpy.utility.log_util import getLogger
+
+logger = getLogger(__name__)
+
+
 def load_yaml_config(yaml_file_name: str, directories: list) -> dict:
     config = None
     for directory in directories:
         yaml_path = Path(directory) / yaml_file_name
         if yaml_path.is_file():
-            print(f"Tinyllm: config found at {yaml_path}")
+            logger.info(f"Tinyllm: config found at {yaml_path}")
             with open(yaml_path, 'r') as stream:
                 try:
                     config = yaml.safe_load(stream)
                 except yaml.YAMLError as exc:
-                    print(exc)
+                    logger.info(exc)
                 break
     return config
 
