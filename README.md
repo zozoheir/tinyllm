@@ -1,24 +1,23 @@
 ![Screenshot 2023-07-25 at 3 48 43 AM](https://github.com/zozoheir/tiny-llm/assets/42655961/f2db0c02-c18c-45a8-8054-6cd4da474e1e)
 
 # 🕸️ tinyllm
-tinyllm is a lightweight framework for developing, debugging and monitoring LLM powered applications at scale. It is designed based on a Finite State Machine and Compute Graph model and sits as a layer between your Web application and your LLM libraries. The tinyllm tech stack:
+tinyllm is a lightweight framework for developing, debugging and monitoring LLM powered applications at scale. It sits as a layer between your Web application and your LLM libraries. The tinyllm tech stack:
 - **Python library**: the tinyllm library + CLI commands
-- **Backend**: a neo4j backend database for debugging, logging and storing your LLM runs
 - **TinyLLM Agent**: your copilot for using tinyllm
 
+The goal of the library is to keep things simple and reduce the unnecessary complexity of libraries like Langchain, llama index etc..
 
 ## Install
-package
 ```
 pip install git+https://github.com/zozoheir/tinyllm.git
 ```
 
 ## Tinyllm agent v0
+CLI command
 ```
 tinyllm agent
 ```
 ![Screenshot 2023-07-28 at 2 06 05 AM](https://github.com/zozoheir/tinyllm/assets/42655961/7c5a9d62-4c79-499c-9d85-8a9a4a285190)
-
 
 ## Tracing
 tinyllm is integrated with Langfuse for tracing chains, functions and agents.
