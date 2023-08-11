@@ -2,7 +2,6 @@ import random
 from typing import List, Dict, Any, Optional
 import re
 
-import tiktoken
 
 from tinyllm.util import os_util
 
@@ -89,6 +88,8 @@ def remove_imports(code: str) -> str:
 
 
 def extract_markdown_python(text: str):
+    if '```python' not in text:
+        return text
     pattern = r"```python(.*?)```"
     python_codes = re.findall(pattern, text, re.DOTALL)
     return "\n".join(python_codes)

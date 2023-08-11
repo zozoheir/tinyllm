@@ -12,5 +12,4 @@ class AsyncioTestCase(unittest.TestCase):
     def tearDown(self):
         self.loop.close()
         asyncio.set_event_loop(None)
-        #TODO Bad practice. Waiting for support to figure out source of hanging
         langfuse_client.flush()

@@ -31,11 +31,8 @@ class OpenAIJobBatch:
 
     @property
     def batch_prompt(self) -> str:
-        return stringify_dict_list(dict_header=self.dict_header, dicts=self.job_units_dicts)
+        return stringify_dict_list(dict_header=self.dict_header, dicts=self.job_units_dicts, ignore_keys=['source','author','timestamp'])
 
     @property
     def token_size(self) -> int:
         return num_tokens_from_string(self.batch_prompt)
-
-
-

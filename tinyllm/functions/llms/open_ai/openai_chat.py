@@ -58,13 +58,6 @@ class OpenAIChat(Function):
         self.max_tokens = max_tokens
         self.total_cost = 0
 
-    @property
-    def parameters(self):
-        return {
-            "temperature": self.temperature,
-            "max_tokens": self.max_tokens,
-            "n": self.n,
-        }
 
     async def add_memory(self, new_memory):
         if self.with_memory is True:
@@ -85,10 +78,11 @@ class OpenAIChat(Function):
             temperature=temperature,
             n=self.n,
             max_tokens=max_tokens,
-            call_metadata=call_metadata
+            call_metadata=call_metadata,
+            generation_name=kwargs.get('generation_name', "Assistant response")
         )
-
         return {'response': api_result}
+
 
     async def process_input_message(self,
                                     openai_message,
@@ -112,11 +106,12 @@ class OpenAIChat(Function):
                              max_tokens,
                              messages,
                              call_metadata={},
+                             generation_name="Assistant response",
                              **kwargs):
         try:
             # Create tracing generation
             self.llm_trace.create_generation(
-                name=f"Assistant response",
+                name=generation_name,
                 model=llm_name,
                 prompt=messages,
                 startTime=datetime.now(),
@@ -130,33 +125,41 @@ class OpenAIChat(Function):
                 messages = messages,
                 **kwargs
             )
+            model_parameters = {
+                "model": llm_name,
+                "temperature": temperature,
+                "max_tokens": max_tokens,
+                "n": n,
+            }
             # Update tracing generation
-            self.update_generation_trace(api_result=api_result, call_metadata=call_metadata)
+            self._update_generation(api_result=api_result, model_parameters=model_parameters, call_metadata=call_metadata)
             return api_result
 
         except Exception as e:
             cost = get_openai_api_cost(model=self.llm_name,
                                        completion_tokens=0,
                                        prompt_tokens=num_tokens_from_messages(messages))
-            parameters = self.parameters
-            parameters['request_cost'] = cost['request_cost']
-            parameters['total_cost'] = self.total_cost
             self.llm_trace.update_generation(
                 completion=str({"error": str(e)}),
                 metadata={"error": str(e)},
             )
             raise e
 
-    def update_generation_trace(self,
-                                api_result,
-                                call_metadata
-                                ):
-        # Enrich the result with metadata
+    def _update_generation(self,
+                           api_result,
+                           model_parameters,
+                           call_metadata
+                           ):
+        # We remove message content to properly visualise the API result in metadata
+        #api_result_to_log = api_result.copy()
+        #api_result_to_log['choices'][0]['message']['content'] = "..."
+
+        # Enrich the api result with metadata
+        call_metadata['api_result'] = api_result
         call_metadata['cost_summary'] = get_openai_api_cost(model=self.llm_name,
                                                             completion_tokens=api_result["usage"]['completion_tokens'],
                                                             prompt_tokens=api_result["usage"]['prompt_tokens'])
-        # To visualise the API result in metadata
-        call_metadata['api_result'] = {key: value for key, value in api_result['choices'][0]['message'].items() if key != 'content'}
+        #call_metadata['api_result'] = api_result_to_log
         call_metadata['cost_summary']['total_cost'] = self.total_cost
 
         # Extract completion from API result
@@ -167,10 +170,11 @@ class OpenAIChat(Function):
 
         self.llm_trace.update_generation(
             endTime=datetime.now(),
-            modelParameters=self.parameters,
+            modelParameters=model_parameters,
             completion=completion,
             metadata=call_metadata,
             usage=Usage(promptTokens=call_metadata['cost_summary']['prompt_tokens'],
                         completionTokens=call_metadata['cost_summary']['completion_tokens'])
         )
         self.total_cost += call_metadata['cost_summary']['request_cost']
+

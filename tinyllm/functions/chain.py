@@ -2,12 +2,10 @@ from typing import List, Union, Dict, Type
 
 from py2neo import NodeMatcher
 
-from tinyllm import APP
 from tinyllm.functions.function import Function
 from tinyllm.state import States
 from tinyllm.functions.validator import Validator
 
-matcher = NodeMatcher(APP.graph_db)
 
 class ChainValidator(Validator):
     children: List[Union[Function, Type[Function]]]

@@ -9,17 +9,14 @@ Function is the building block of tinyllm. A function has 4 main components:
 - When creating Functions or child classes, the above requirements apply
 - Functions, Chains, and Concurrents and
 """
-import datetime
 import datetime as dt
+import logging
 import uuid
 from typing import Any, Callable, Optional, Type, Dict
-
-
 import pytz
-from py2neo import Node, Relationship
 from pydantic import validator as field_validator
 
-from tinyllm import APP
+from smartpy.utility.log_util import getLogger
 from tinyllm.exceptions import InvalidStateTransition
 from tinyllm.llm_trace import LLMTrace
 from tinyllm.state import States, ALLOWED_TRANSITIONS
@@ -73,7 +70,7 @@ class Function:
         self.user = user_id
         self.init_timestamp = dt.datetime.now(pytz.UTC).isoformat()
         self.function_id = str(uuid.uuid4())
-        self.logger = APP.logging["default"]
+        self.logger = getLogger(__name__)
         self.name = name
 
         self.input_validator = input_validator
@@ -88,9 +85,8 @@ class Function:
         self.input = None
         self.output = None
         self.processed_output = None
-        if llm_trace is None:
+        if llm_trace is None and is_traced is True:
             self.llm_trace = LLMTrace(
-                is_traced=is_traced,
                 name=self.name,
                 userId="test",
             )
@@ -142,7 +138,7 @@ class Function:
     def log(self, message, level="info"):
         if self.logger is None :
             return
-        log_message = f"[{self.name}][{self.function_id}] {message}"
+        log_message = f"[{self.name}] {message}"
         self.logs += "\n" + log_message
         if level == "error":
             self.logger.error(log_message)

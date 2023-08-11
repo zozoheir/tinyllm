@@ -1,13 +1,9 @@
 import asyncio
 from typing import List, Type, Union, Any
 
-from py2neo import Node, Relationship, NodeMatcher
-
-from tinyllm import APP
 from tinyllm.state import States
 from tinyllm.functions.function import Function, Validator
 
-matcher = NodeMatcher(APP.graph_db)
 
 class ConcurrentValidator(Validator):
     children: List[Union[Function, Type[Function]]]
