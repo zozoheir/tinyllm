@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Optional
+import copy
 
 import openai
 from langfuse.api.model import Usage
@@ -153,9 +154,11 @@ class OpenAIChat(Function):
         # We remove message content to properly visualise the API result in metadata
         #api_result_to_log = api_result.copy()
         #api_result_to_log['choices'][0]['message']['content'] = "..."
+        dict_to_log = copy.deepcopy(api_result['choices'][0])
+        dict_to_log['message']['content'] = "..."
 
         # Enrich the api result with metadata
-        call_metadata['api_result'] = api_result
+        call_metadata['api_result'] = dict_to_log
         call_metadata['cost_summary'] = get_openai_api_cost(model=self.llm_name,
                                                             completion_tokens=api_result["usage"]['completion_tokens'],
                                                             prompt_tokens=api_result["usage"]['prompt_tokens'])

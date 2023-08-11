@@ -65,8 +65,6 @@ class OpenAIChatAgent(OpenAIChat):
                 startTime=datetime.now(),
                 metadata={'api_result':api_result['choices'][0]},
             )
-        else:
-            assistant_response = api_result['choices'][0]['message']['content']
 
         return {'response': api_result}
 
