@@ -20,14 +20,13 @@ tinyllm agent
 ![Screenshot 2023-07-28 at 2 06 05 AM](https://github.com/zozoheir/tinyllm/assets/42655961/7c5a9d62-4c79-499c-9d85-8a9a4a285190)
 
 
-## Backend
-A neo4j graph database is used to store runs, logs and input outputs. You can easily visualize, manipulate and debug complex LLM calls.
-![Screenshot 2023-07-28 at 2 19 48 AM](https://github.com/zozoheir/tinyllm/assets/42655961/61c8121e-0909-473e-a475-20626cf6452f)
+## Tracing
+tinyllm is integrated with Langfuse for tracing chains, functions and agents.
+![Screenshot 2023-08-11 at 12 45 07 PM](https://github.com/zozoheir/tinyllm/assets/42655961/4d7c6ae9-e9a3-4795-9496-ad7905bc361e)
 
 ## ⚡ Features
 * Integrate tiny-llm with any LLM library or existing python code or pipelines
 * Compose, debug and track LLM calls and chains at scale
-* Visualize chains in 1 line of code
 * High level abstraction of LLM/API chaining/interactions through a standardized I/O interface
 
 ## ⚡ Background and goals
@@ -37,13 +36,6 @@ The goals of tinyllm are:
 * **High level, robust abstractions**: tinyllm is designed to be as simple as possible to use and integrate with existing and living codebases.
 * **Human and machine readable code** to enable AI powered and autonomous chain development
 
-## ⚡ LLMs as Finite State Compute graphs
-tinyllm is based on the following principles:
-* A Function has Finite States
-* LLM calls are Compute graphs
-
-Since an LLM Call is itself a Function, LLM chains are thus Finite State Compute graphs that can be tracked, logged and debugged as such. While Graphs have nice properties, they need have a specific way to be implemented from a software perspective (data storage, visualization, logging etc...).
-On top of being Compute graphs, LLM Chains calls can be non deterministic (1 input can have more than 1 output) and interact through natural language. This is a new and unique paradigm for production software that hasn't been fully figured out yet. This is where tinyllm comes in.
 
 ## ⚡ Concurrency vs Parallelism vs Chaining
 These tend to be confusing across the board. Here's a quick explanation:
@@ -64,40 +56,30 @@ The TinyLLM library consists of several key components that work together to fac
 * **Chain**: A function that allows the chaining of multiple LLM functions together to form a pipeline of calls.
 * **Concurrent**: A function that enables concurrent execution of multiple LLM functions, useful for ensembling/comparing from different LLMs or speeding up IO bound task execution.
 * **Decision**: A function that represents a decision point in the chain, allowing different paths to be taken based on the output of a previous LLM function.
-* **LLMCall**: A function for making API calls to external language model services.
-* **Prompt**: A function for generating prompts from templates and user inputs.
 
 
-### Tinyllm configs
-Configs are managed through a tinyllm.yaml file. It gets picked up at runtime and can be placed in any of /Documents, the root folder, or the current working directory. Here is a sample yaml config file:
+### Tinyllm Vector Store
+The library uses a Postgres DB with the pgvector extension as a vector store. After lots of exploration, this felt like the most flexible and cost-friendly solution for managing and owning your embeddings. No need to integrate with 100 vector stores. A single good vector store works fine.
+
+
+### Tinyllm Configs
+Configs are managed through a tinyllm.yaml file. It gets picked up at runtime in tinyllm.__init__ and can be placed in any of /Documents, the root folder, or the current working directory. Here is a sample yaml config file:
 ```yaml
 LLM_PROVIDERS:
-  OPENAI_API_KEY: 
-DB:
-  TINYLLM_POSTGRES_HOST: 
-  TINYLLM_DB_PORT: 
-  TINYLLM_DB_USER: 
-  TINYLLM_DB_PASSWORD: 
-
-FUNCTIONS_LOGGING:
-  DEFAULT: true
-  INCLUDE:
-    - 'CustomFunctionClass'
-  EXCLUDE:
-    - 'Function'
+  OPENAI_API_KEY: ""
+LANGFUSE:
+  LANGFUSE_PUBLIC_KEY: ""
+  LANGFUSE_SECRET_KEY: ""
+POSTGRES:
+  TINYLLM_POSTGRES_USERNAME: ""
+  TINYLLM_POSTGRES_PASSWORD: ""
+  TINYLLM_POSTGRES_HOST: ""
+  TINYLLM_POSTGRES_PORT: 
+  TINYLLM_POSTGRES_NAME: ""
 ```
-* FUNCTIONS_LOGGING is used for including/excluding logging to the backend DB for certain classes like base classes (Function).
-* DB is used for your neo4j backend
-* tinyllm.__init__ has an App class that is used for loading the config file, connecting to the database etc. 
-
 
 
 ### Logging
-The app has a default logger which can be disabled, and gives option option to have 1 logger by function.
-```python
-app = App()
-app.set_logging(function_name="my new function", logger=logging.getLogger())
-```
 ```
 INFO - 2023-07-28 01:52:34,785: [Concurrent: On good credit] transition to: States.OUTPUT_VALIDATION
 INFO - 2023-07-28 01:52:34,786: [Concurrent: On good credit] transition to: States.COMPLETE
@@ -108,6 +90,7 @@ INFO - 2023-07-28 01:52:35,666: [Chain: Loan application] transition to: States.
 INFO - 2023-07-28 01:52:35,666: [Chain: Loan application] transition to: States.COMPLETE
 INFO - 2023-07-28 01:52:35,666: [Chain: Loan application] Pushing to db
 ```
+
 ## ⚡ Examples
 
 ### Chaining
@@ -117,13 +100,3 @@ INFO - 2023-07-28 01:52:35,666: [Chain: Loan application] Pushing to db
 ### Retrieval
 * ####  [The tinyllm agent](https://github.com/zozoheir/tinyllm/blob/main/tinyllm/agent.py)
 
-## Todos:
-* [x] More tests
-* [x] Prettify graph_chain visualization (concurrent vs parallel chaining + styling)
-* [x] Implement backend database 
-* [x] Implement caching
-* [ ] Dockerize backend db + cache
-* [ ] Dockerize tinyllm microservice
-* [ ] Write docker compose
-* [x] Implement visualization/monitoring layer
-* [x] Create tinyllm trained AI powered helpers
