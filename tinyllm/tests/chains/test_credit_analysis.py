@@ -34,11 +34,11 @@ class TestCreditAnalysis(AsyncioTestCase):
         )
 
         async def background_check(**kwargs):
-            print("Performing background check")
+            print("Performing background get_check_results")
             return {'background_check': 'Completed'}
 
         bg_check = Function(
-            name="Background check",
+            name="Background get_check_results",
             run_function=background_check,
         )
 

@@ -16,7 +16,7 @@ OPENAI_MODELS_MAX_TOKENS = {
 }
 
 
-def stringify_list(paragraphs: List[str]) -> str:
+def stringify_string_list(paragraphs: List[str]) -> str:
     """
     Concatenates a list of strings with newline separator.
 
@@ -60,12 +60,12 @@ def stringify_dict(header: str,
         generated_string = stringify_key_value(key, str(value).split('+')[0])
         all_strings.append(generated_string)
 
-    dict_string_representation = stringify_list(all_strings)
+    dict_string_representation = stringify_string_list(all_strings)
     return header + "\n" + dict_string_representation
 
 
 def stringify_dict_list(
-        dict_header: str,
+        header: str,
         dicts: List[Dict[str, Any]],
         ignore_keys: Optional[List[str]] = None) -> str:
     """
@@ -77,8 +77,8 @@ def stringify_dict_list(
     :return: A formatted string.
     """
     ignore_keys = ignore_keys or []
-    return stringify_list(
-        [stringify_dict(dict_header, data_dict, ignore_keys) for data_dict in dicts])
+    return stringify_string_list(
+        [stringify_dict(header, data_dict, ignore_keys) for data_dict in dicts])
 
 
 def remove_imports(code: str) -> str:

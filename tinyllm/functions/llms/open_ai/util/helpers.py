@@ -1,8 +1,12 @@
+from typing import Union, List, Dict
+
 import tiktoken
 from langchain.callbacks.openai_info import standardize_model_name, MODEL_COST_PER_1K_TOKENS, \
     get_openai_token_cost_for_model
 
-openai_model_context_sizes = {
+from tinyllm.util.prompt_util import stringify_dict
+
+OPENAI_MODELS_CONTEXT_SIZES = {
     "gpt-4": 8192,
     "gpt-4-0314": 8192,
     "gpt-4-0613": 8192,
@@ -52,8 +56,8 @@ def get_assistant_message(content):
 
 
 def get_openai_api_cost(model: str,
-                        completion_tokens:int,
-                        prompt_tokens:int):
+                        completion_tokens: int,
+                        prompt_tokens: int):
     """Collect token usage."""
     total_tokens = completion_tokens + prompt_tokens
     model_name = standardize_model_name(model)
@@ -79,7 +83,7 @@ def num_tokens_from_string(string: str, encoding_name: str = 'cl100k_base') -> i
     return num_tokens
 
 
-def num_tokens_from_messages(messages, model="gpt-3.5-turbo"):
+def count_openai_messages_tokens(messages, model="gpt-3.5-turbo"):
     """Returns the number of tokens used by a list of messages."""
     try:
         encoding = tiktoken.encoding_for_model(model)
@@ -97,3 +101,21 @@ def num_tokens_from_messages(messages, model="gpt-3.5-turbo"):
         return int(num_tokens)
     else:
         raise NotImplementedError("openai_num_tokens_from_messages() is not implemented for this model.")
+
+
+def count_tokens(input: Union[List[Dict], Dict, str],
+                 **kwargs):
+    if isinstance(input, list):
+        if len(input) == 0:
+            return 0
+        assert type(input[0]) == dict, "Input must be a list of dictionaries."
+        return sum([count_tokens(input_dict, **kwargs) for input_dict in input])
+    elif isinstance(input, str):
+        return num_tokens_from_string(input)
+    elif isinstance(input, dict):
+        dict_string = stringify_dict(header=kwargs['header'],
+                                     dict=input,
+                                     ignore_keys=kwargs['ignore_keys'])
+        return num_tokens_from_string(dict_string)
+    else:
+        raise NotImplementedError("count_tokens() is not implemented for this input type.")
