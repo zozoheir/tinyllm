@@ -7,7 +7,7 @@ from langfuse.api.model import Usage
 
 from tinyllm.functions.function import Function
 from tinyllm.functions.llms.open_ai.util.helpers import get_assistant_message, get_user_message, get_openai_api_cost, \
-    num_tokens_from_messages
+    count_openai_messages_tokens
 from tinyllm.functions.llms.open_ai.openai_memory import OpenAIMemory
 from tinyllm.functions.llms.open_ai.openai_prompt_template import OpenAIPromptTemplate
 from tinyllm.functions.validator import Validator
@@ -139,7 +139,7 @@ class OpenAIChat(Function):
         except Exception as e:
             cost = get_openai_api_cost(model=self.llm_name,
                                        completion_tokens=0,
-                                       prompt_tokens=num_tokens_from_messages(messages))
+                                       prompt_tokens=count_openai_messages_tokens(messages))
             self.llm_trace.update_generation(
                 completion=str({"error": str(e)}),
                 metadata={"error": str(e)},
