@@ -82,7 +82,8 @@ class OpenAIChat(Function):
             call_metadata=call_metadata,
             generation_name=kwargs.get('generation_name', "Assistant response")
         )
-        return {'response': api_result}
+        assistant_response = api_result['choices'][0]['message']['content']
+        return {'response': assistant_response}
 
 
     async def process_input_message(self,
@@ -96,9 +97,8 @@ class OpenAIChat(Function):
         return messages
 
     async def process_output(self, **kwargs):
-        model_response = kwargs['response']['choices'][0]['message']['content']
-        await self.add_memory(get_assistant_message(content=model_response))
-        return {'response': model_response}
+        await self.add_memory(get_assistant_message(content=kwargs['response']))
+        return kwargs
 
     async def get_completion(self,
                              llm_name,

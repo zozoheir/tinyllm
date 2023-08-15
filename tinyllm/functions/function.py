@@ -136,8 +136,6 @@ class Function:
         )
 
     def log(self, message, level="info"):
-        if self.logger is None :
-            return
         log_message = f"[{self.name}] {message}"
         self.logs += "\n" + log_message
         if level == "error":
