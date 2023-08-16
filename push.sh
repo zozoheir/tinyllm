@@ -3,7 +3,14 @@ cd /Users/othmanezoheir/PycharmProjects/openagents/tiny-llm
 
 # Running unittests for functions and chains folder
 if /Users/othmanezoheir/venv/test_langfuse1/bin/Python -m unittest discover -p 'test_*.py' tinyllm/tests/functions tinyllm/tests/chains; then
-  # Running specific tests for llms folder
+
+  if ! /Users/othmanezoheir/venv/test_langfuse1/bin/Python -m unittest tinyllm/tests/test_vector_store.py; then
+    echo "Test test_memory.py failed, stopping."
+    exit 1
+  fi
+
+
+  # Running specific tests 1 by 1 because of Langfuse hanging issue
   if ! /Users/othmanezoheir/venv/test_langfuse1/bin/Python -m unittest tinyllm/tests/llms/test_memory.py; then
     echo "Test test_memory.py failed, stopping."
     exit 1
