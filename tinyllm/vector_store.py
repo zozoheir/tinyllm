@@ -26,7 +26,7 @@ def get_database_uri():
 
 class Embeddings(Base):
     __tablename__ = "embeddings"
-    __table_args__ = (UniqueConstraint('text', name='uq_text'),)
+    __table_args__ = (UniqueConstraint('text', 'collection_name', name='uq_text_collection_name'),)
 
     id = Column(Integer, primary_key=True)
     collection_name = Column(String, nullable=False)
@@ -40,6 +40,7 @@ class VectorStore:
         self._engine = create_engine(get_database_uri())
         self._Session = sessionmaker(bind=self._engine)
         self.embedding_function = OpenAIEmbeddings()
+        self.create_tables()
 
     def _get_query_embedding(self, query):
         return self.embedding_function.embed_documents([query])[0]
@@ -47,21 +48,28 @@ class VectorStore:
     def _build_metadata_filters(self, metadata_filters):
         filter_clauses = []
         for key, value in metadata_filters.items():
-            IN = "in"
-            if isinstance(value, dict) and IN in map(str.lower, value.keys()):
+            if isinstance(value, list):
+                str_values = [str(v) for v in value]  # Convert all values to string
+                filter_by_metadata = Embeddings.emetadata[key].astext.in_(str_values)
+                filter_clauses.append(filter_by_metadata)
+            elif isinstance(value, dict) and "in" in map(str.lower, value.keys()):
                 value_case_insensitive = {k.lower(): v for k, v in value.items()}
-                # You use EmbeddingStore in your provided code, but it seems you meant Embeddings in this context
-                filter_by_metadata = Embeddings.emetadata[key].astext.in_(value_case_insensitive[IN])
+                filter_by_metadata = Embeddings.emetadata[key].astext.in_(value_case_insensitive["in"])
                 filter_clauses.append(filter_by_metadata)
             else:
                 filter_by_metadata = Embeddings.emetadata[key].astext == str(value)
                 filter_clauses.append(filter_by_metadata)
         return filter_clauses
 
+
     def create_tables(self):
         Base.metadata.create_all(self._engine)
 
-    def add_texts(self, texts, metadatas, collection_name):
+    def add_texts(self, texts,collection_name, metadatas=None):
+
+        if metadatas is None:
+            metadatas = [None] * len(texts)
+
         embeddings = self.embedding_function.embed_documents(texts)
 
         with self._Session() as session:
