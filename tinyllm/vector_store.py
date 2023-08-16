@@ -5,6 +5,7 @@ from langchain.embeddings import OpenAIEmbeddings
 from sqlalchemy import create_engine, Column, Integer, String, UniqueConstraint, JSON, and_, or_, cast
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.dialects.postgresql import insert
 from pgvector.sqlalchemy import Vector
 
 import tinyllm
@@ -50,15 +51,26 @@ class VectorStore:
 
         with self._Session() as session:
             for text, embedding, metadata in zip(texts, embeddings, metadatas):
-                embedding_obj = Embeddings(text=text, embedding=embedding, emetadata=metadata, collection_name=collection_name)
-                session.merge(embedding_obj)
+                stmt = insert(Embeddings).values(
+                    text=text,
+                    embedding=embedding,
+                    emetadata=metadata,
+                    collection_name=collection_name
+                ).on_conflict_do_nothing()
+                session.execute(stmt)
             session.commit()
 
     def _build_metadata_filters(self, metadata_filters):
         filter_clauses = []
         for key, value in metadata_filters.items():
             values = [str(val) for val in (value if isinstance(value, list) else [value])]
-            filter_clauses.append(or_(cast(Embeddings.emetadata[key].op('->>')(key), String) == val for val in values))
+            print(f"DEBUG: Key: {key}, Value: {value}, Processed Values: {values}")
+            filter_clause = or_(cast(Embeddings.emetadata[key].op('->>')(key), String) == val for val in values)
+            filter_clauses.append(filter_clause)
+
+        print(f"DEBUG: Total filter clauses: {len(filter_clauses)}")
+        for clause in filter_clauses:
+            print(f"DEBUG: Clause: {clause}")
         return filter_clauses
 
     def similarity_search(self, query, k, collection_filters, metadata_filters=None):
