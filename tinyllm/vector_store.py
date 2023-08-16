@@ -7,6 +7,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.dialects.postgresql import insert
 from pgvector.sqlalchemy import Vector
+from sqlalchemy.dialects import postgresql
 
 import tinyllm
 
@@ -31,7 +32,7 @@ class Embeddings(Base):
     collection_name = Column(String, nullable=False)
     embedding = Column(Vector(dim=1536))
     text = Column(String)
-    emetadata = Column(JSON)
+    emetadata = Column(postgresql.JSON)
 
 
 class VectorStore:
@@ -42,6 +43,20 @@ class VectorStore:
 
     def _get_query_embedding(self, query):
         return self.embedding_function.embed_documents([query])[0]
+
+    def _build_metadata_filters(self, metadata_filters):
+        filter_clauses = []
+        for key, value in metadata_filters.items():
+            IN = "in"
+            if isinstance(value, dict) and IN in map(str.lower, value.keys()):
+                value_case_insensitive = {k.lower(): v for k, v in value.items()}
+                # You use EmbeddingStore in your provided code, but it seems you meant Embeddings in this context
+                filter_by_metadata = Embeddings.emetadata[key].astext.in_(value_case_insensitive[IN])
+                filter_clauses.append(filter_by_metadata)
+            else:
+                filter_by_metadata = Embeddings.emetadata[key].astext == str(value)
+                filter_clauses.append(filter_by_metadata)
+        return filter_clauses
 
     def create_tables(self):
         Base.metadata.create_all(self._engine)
@@ -57,21 +72,10 @@ class VectorStore:
                     emetadata=metadata,
                     collection_name=collection_name
                 ).on_conflict_do_nothing()
+
                 session.execute(stmt)
             session.commit()
 
-    def _build_metadata_filters(self, metadata_filters):
-        filter_clauses = []
-        for key, value in metadata_filters.items():
-            values = [str(val) for val in (value if isinstance(value, list) else [value])]
-            print(f"DEBUG: Key: {key}, Value: {value}, Processed Values: {values}")
-            filter_clause = or_(cast(Embeddings.emetadata[key].op('->>')(key), String) == val for val in values)
-            filter_clauses.append(filter_clause)
-
-        print(f"DEBUG: Total filter clauses: {len(filter_clauses)}")
-        for clause in filter_clauses:
-            print(f"DEBUG: Clause: {clause}")
-        return filter_clauses
 
     def similarity_search(self, query, k, collection_filters, metadata_filters=None):
         query_embedding = self._get_query_embedding(query)
