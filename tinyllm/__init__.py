@@ -36,8 +36,11 @@ def set_env_variables(config: dict):
 directories = [
     Path.cwd(),
     Path.home(),
-    Path.home() / 'Documents'
+    Path.home() / 'Documents',
 ]
+
+if os.environ.get('TINYLLM_YAML_DIR') is not None:
+    directories.append(os.environ['TINYLLM_YAML_DIR'])
+
 config = load_yaml_config('tinyllm.yaml', directories)
 set_env_variables(config)
-
