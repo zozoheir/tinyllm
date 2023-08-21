@@ -16,14 +16,15 @@ OPENAI_MODELS_MAX_TOKENS = {
 }
 
 
-def stringify_string_list(paragraphs: List[str]) -> str:
+def stringify_string_list(paragraphs: List[str],
+                          separator="\n") -> str:
     """
     Concatenates a list of strings with newline separator.
 
     :param paragraphs: A list of strings to concatenate.
     :return: A string concatenated with newline separator.
     """
-    return "\n".join(paragraphs)
+    return separator.join(paragraphs)
 
 
 def stringify_key_value(key: str, value: Any) -> str:
@@ -51,8 +52,11 @@ def stringify_dict(header: str,
     all_strings = []
     for key, value in dict.items():
 
-        if key in ignore_keys or value is None or key is None:
+        if key in ignore_keys:
             continue
+
+        if value is None:
+            value=""
 
         if key in ['created_at', 'updated_at', 'timestamp']:
             value = str(value).split('+')[0]
@@ -60,7 +64,8 @@ def stringify_dict(header: str,
         generated_string = stringify_key_value(key, str(value).split('+')[0])
         all_strings.append(generated_string)
 
-    dict_string_representation = stringify_string_list(all_strings)
+    dict_string_representation = stringify_string_list(all_strings,
+                                                       separator="\n")
     return header + "\n" + dict_string_representation
 
 
@@ -78,7 +83,9 @@ def stringify_dict_list(
     """
     ignore_keys = ignore_keys or []
     return stringify_string_list(
-        [stringify_dict(header, data_dict, ignore_keys) for data_dict in dicts])
+        paragraphs=[stringify_dict(header, data_dict, ignore_keys) for data_dict in dicts],
+        separator="\n\n-------\n\n"
+    )
 
 
 def remove_imports(code: str) -> str:
@@ -129,3 +136,15 @@ def shuffle_with_freeze(input_list, freeze):
     shuffled_dict = {i: not_frozen_dict[not_frozen_indices[i]] for i in range(len(not_frozen_indices))}
     output_list = [shuffled_dict.get(i) if i in shuffled_dict else input_list[i] for i in range(len(input_list))]
     return output_list
+
+
+def remove_duplicate_lines(input_string: str) -> str:
+    lines = input_string.split('\n')
+    seen_lines = set()
+    unique_lines = []
+    for line in lines:
+        trimmed_line = line.strip()  # Removing leading and trailing whitespaces
+        if trimmed_line and trimmed_line not in seen_lines:
+            seen_lines.add(trimmed_line)
+            unique_lines.append(trimmed_line)
+    return '\n'.join(unique_lines)

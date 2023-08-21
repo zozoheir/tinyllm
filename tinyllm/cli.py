@@ -7,7 +7,7 @@ def main():
 
 @main.command()
 def agent():
-    import tinyllm.app
+    import tinyllm.app.app
 
 if __name__ == "__main__":
     main()

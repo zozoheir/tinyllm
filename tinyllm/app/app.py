@@ -4,6 +4,7 @@ import gradio as gr
 import os
 import openai
 
+import tinyllm
 from tinyllm.app.helpers import tinyllm_agent_functions, function_callables, tinyllm_agent_prompt_template, \
     local_file_cache
 from tinyllm.functions.llms.open_ai.openai_chat_agent import OpenAIChatAgent

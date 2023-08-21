@@ -1,7 +1,7 @@
 import yaml
 import os
 
-from pathlib import Path
+from pathlib import Path, PosixPath
 
 from smartpy.utility.log_util import getLogger
 
@@ -39,8 +39,7 @@ directories = [
     Path.home() / 'Documents',
 ]
 
-if os.environ.get('TINYLLM_YAML_DIR') is not None:
-    directories.append(os.environ['TINYLLM_YAML_DIR'])
+directories.append(PosixPath(os.environ['TINYLLM_YAML_DIR'].replace(' ', '')))
 
 config = load_yaml_config('tinyllm.yaml', directories)
 set_env_variables(config)

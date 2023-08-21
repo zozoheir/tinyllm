@@ -44,4 +44,7 @@ class OpenAIBatchGenerator:
             else:
                 yield batch
                 batch = [news_dict]
-        yield batch
+
+        if len(batch) > 0:
+            #Yielding last batch
+            yield batch
