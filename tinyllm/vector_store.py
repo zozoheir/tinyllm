@@ -1,4 +1,5 @@
-from sqlalchemy import asc
+from pgvector.asyncpg import register_vector
+from sqlalchemy import asc, select, text
 import os
 
 from langchain.embeddings import OpenAIEmbeddings
@@ -10,6 +11,8 @@ from pgvector.sqlalchemy import Vector
 from sqlalchemy.dialects import postgresql
 
 import tinyllm
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import sessionmaker
 
 Base = declarative_base()
 
@@ -20,7 +23,7 @@ def get_database_uri():
     host = os.getenv('TINYLLM_POSTGRES_HOST', 'localhost')
     port = os.getenv('TINYLLM_POSTGRES_PORT', '5432')
     name = os.getenv('TINYLLM_POSTGRES_NAME', 'default_db_name')
-    return f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{name}"
+    return f"postgresql+asyncpg://{user}:{password}@{host}:{port}/{name}"
 
 
 class Embeddings(Base):
@@ -36,13 +39,14 @@ class Embeddings(Base):
 
 class VectorStore:
     def __init__(self):
-        self._engine = create_engine(get_database_uri())
-        self._Session = sessionmaker(bind=self._engine)
+        self._engine = create_async_engine(get_database_uri())
+        self._Session = sessionmaker(
+            bind=self._engine,
+            expire_on_commit=False,
+            class_=AsyncSession,
+        )
         self.embedding_function = OpenAIEmbeddings()
         self.create_tables()
-
-    def _get_query_embedding(self, query):
-        return self.embedding_function.embed_documents([query])[0]
 
     def _build_metadata_filters(self, metadata_filters):
         filter_clauses = []
@@ -60,45 +64,67 @@ class VectorStore:
                 filter_clauses.append(filter_by_metadata)
         return filter_clauses
 
-    def create_tables(self):
-        Base.metadata.create_all(self._engine)
+    async def create_tables(self):
+        async with self._engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
 
-    def add_texts(self,
-                  texts,
-                  collection_name,
-                  metadatas=None):
-
+    async def add_texts(self, texts, collection_name, metadatas=None):
         if metadatas is None:
             metadatas = [None] * len(texts)
 
-        embeddings = self.embedding_function.embed_documents(texts)
+        embeddings = await self.embedding_function.aembed_documents(texts=texts,
+                                                                    chunk_size=500)
 
-        with self._Session() as session:
-            for text, embedding, metadata in zip(texts, embeddings, metadatas):
-                stmt = insert(Embeddings).values(
-                    text=text,
-                    embedding=embedding,
-                    emetadata=metadata,
-                    collection_name=collection_name
-                ).on_conflict_do_nothing()
+        async with self._Session() as session:
+            async with session.begin():
+                for text, embedding, metadata in zip(texts, embeddings, metadatas):
+                    stmt = insert(Embeddings).values(
+                        text=text,
+                        embedding=embedding,
+                        emetadata=metadata,
+                        collection_name=collection_name
+                    ).on_conflict_do_nothing()
 
-                session.execute(stmt)
-            session.commit()
+                    await session.execute(stmt)
+                await session.commit()
 
-    def similarity_search(self, query, k, collection_filters, metadata_filters=None):
-        query_embedding = self._get_query_embedding(query)
+    from sqlalchemy import text
 
-        with self._Session() as session:
-            filter_clauses = self._build_metadata_filters(metadata_filters or {})
-            filter_clauses.append(Embeddings.collection_name.in_(
-                [collection_filters] if isinstance(collection_filters, str) else collection_filters))
-            results = (
-                session.query(Embeddings, Embeddings.embedding.cosine_distance(query_embedding).label('distance'))
-                .filter(*filter_clauses)
-                .order_by(asc("distance"))
-                .limit(k)
-                .all()
-            )
+    async def similarity_search(self, query, k, collection_filters, metadata_filters=None):
+        query_embedding = await self.embedding_function.aembed_query(query)  # Assuming this method is async
 
-            return [{'text': r.Embeddings.text, 'metadata': r.Embeddings.emetadata, 'distance': r.distance} for r in
-                    results]
+        async with self._Session() as session:  # Use an asynchronous session
+            async with session.begin():
+                # Initialize the base SQL query
+                base_query = 'SELECT text, emetadata, collection_name, embedding <-> :embedding AS distance FROM embeddings'
+
+                # Initialize the WHERE clauses and parameters
+                where_clauses = []
+                params = {'embedding': str(query_embedding), 'k': k}
+
+                # Apply collection filters if they exist
+                if collection_filters:
+                    where_clauses.append('collection_name = ANY(:collection_filters)')
+                    params['collection_filters'] = collection_filters
+
+                # Apply metadata filters if they exist
+                if metadata_filters:
+                    for key, values in metadata_filters.items():
+                        where_clauses.append(f"emetadata->>'{key}' = ANY(:{key})")
+                        params[key] = values
+
+                # Construct the final query
+                if where_clauses:
+                    final_query = f"{base_query} WHERE {' AND '.join(where_clauses)} ORDER BY distance ASC LIMIT :k"
+                else:
+                    final_query = f"{base_query} ORDER BY distance ASC LIMIT :k"
+
+                # Execute the query
+                stmt = text(final_query)
+                result = await session.execute(stmt, params)
+                rows = result.all()
+
+            return [{'text': r.text,
+                     'metadata': r.emetadata,
+                     'collection_name': r.collection_name,
+                     'distance': r.distance} for r in rows]
