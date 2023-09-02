@@ -23,7 +23,6 @@ def get_database_uri():
     return f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{name}"
 
 
-
 class Embeddings(Base):
     __tablename__ = "embeddings"
     __table_args__ = (UniqueConstraint('text', 'collection_name', name='uq_text_collection_name'),)
@@ -61,11 +60,13 @@ class VectorStore:
                 filter_clauses.append(filter_by_metadata)
         return filter_clauses
 
-
     def create_tables(self):
         Base.metadata.create_all(self._engine)
 
-    def add_texts(self, texts,collection_name, metadatas=None):
+    def add_texts(self,
+                  texts,
+                  collection_name,
+                  metadatas=None):
 
         if metadatas is None:
             metadatas = [None] * len(texts)
@@ -84,14 +85,13 @@ class VectorStore:
                 session.execute(stmt)
             session.commit()
 
-
     def similarity_search(self, query, k, collection_filters, metadata_filters=None):
         query_embedding = self._get_query_embedding(query)
 
         with self._Session() as session:
             filter_clauses = self._build_metadata_filters(metadata_filters or {})
-            filter_clauses.append(Embeddings.collection_name.in_([collection_filters] if isinstance(collection_filters, str) else collection_filters))
-
+            filter_clauses.append(Embeddings.collection_name.in_(
+                [collection_filters] if isinstance(collection_filters, str) else collection_filters))
             results = (
                 session.query(Embeddings, Embeddings.embedding.cosine_distance(query_embedding).label('distance'))
                 .filter(*filter_clauses)
@@ -100,4 +100,5 @@ class VectorStore:
                 .all()
             )
 
-            return [{'text': r.Embeddings.text, 'metadata': r.Embeddings.emetadata, 'distance': r.distance} for r in results]
+            return [{'text': r.Embeddings.text, 'metadata': r.Embeddings.emetadata, 'distance': r.distance} for r in
+                    results]

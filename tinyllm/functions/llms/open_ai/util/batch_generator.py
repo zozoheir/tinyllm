@@ -31,14 +31,15 @@ class OpenAIBatchGenerator:
     def generate_batches(self):
         batch = []
         for news_dict in self.dicts_list:
-
+            news_dict['content'] = news_dict['content'][:int(self.optimal_batch_token_size * 0.95)]
             current_batch_size = count_tokens(batch,
                                               header='[post]',
-                                              ignore_keys=['timestamp', 'author', 'source'])
+                                              ignore_keys=['timestamp', 'author', 'source','suggested_question','summary'])
 
             news_dict_token_size = count_tokens(news_dict,
                                                 header='[post]',
-                                                ignore_keys=['timestamp','author','source'])
+                                                ignore_keys=['timestamp','author','source''suggested_question','summary'])
+
             if news_dict_token_size + current_batch_size < self.optimal_batch_token_size and len(batch) < self.max_posts_by_batch:
                 batch.append(news_dict)
             else:
@@ -46,5 +47,4 @@ class OpenAIBatchGenerator:
                 batch = [news_dict]
 
         if len(batch) > 0:
-            #Yielding last batch
             yield batch

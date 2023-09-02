@@ -11,6 +11,14 @@ from tinyllm.functions.llms.open_ai.util.helpers import get_assistant_message, g
 from tinyllm.functions.llms.open_ai.openai_memory import OpenAIMemory
 from tinyllm.functions.llms.open_ai.openai_prompt_template import OpenAIPromptTemplate
 from tinyllm.functions.validator import Validator
+from tenacity import retry, stop_after_attempt, wait_random_exponential, retry_if_exception_type
+import openai
+
+
+# Define which exceptions to retry on
+def retry_on_openai_exceptions(exception):
+    return isinstance(exception,
+                      (openai.error.RateLimitError, openai.error.Timeout, openai.error.ServiceUnavailableError))
 
 
 class OpenAIChatInitValidator(Validator):
@@ -24,6 +32,7 @@ class OpenAIChatInputValidator(Validator):
     temperature: Optional[float]
     max_tokens: Optional[int]
     call_metadata: Optional[dict]
+
 
 class OpenAIChatOutputValidator(Validator):
     response: str
@@ -59,7 +68,6 @@ class OpenAIChat(Function):
         self.max_tokens = max_tokens
         self.total_cost = 0
 
-
     async def add_memory(self, new_memory):
         if self.with_memory is True:
             await self.memory(openai_message=new_memory)
@@ -85,7 +93,6 @@ class OpenAIChat(Function):
         assistant_response = api_result['choices'][0]['message']['content']
         return {'response': assistant_response}
 
-
     async def process_input_message(self,
                                     openai_message,
                                     **kwargs):
@@ -100,6 +107,12 @@ class OpenAIChat(Function):
         await self.add_memory(get_assistant_message(content=kwargs['response']))
         return kwargs
 
+    @retry(
+        stop=stop_after_attempt(5),
+        wait=wait_random_exponential(min=1, max=30),
+        retry=retry_if_exception_type(
+            (openai.error.RateLimitError, openai.error.Timeout, openai.error.ServiceUnavailableError))
+    )
     async def get_completion(self,
                              llm_name,
                              temperature,
@@ -119,11 +132,11 @@ class OpenAIChat(Function):
             )
             # Call OpenAI API
             api_result = await openai.ChatCompletion.acreate(
-                model = llm_name,
-                temperature = temperature,
-                n = n,
-                max_tokens = max_tokens,
-                messages = messages,
+                model=llm_name,
+                temperature=temperature,
+                n=n,
+                max_tokens=max_tokens,
+                messages=messages,
                 **kwargs
             )
             model_parameters = {
@@ -133,7 +146,8 @@ class OpenAIChat(Function):
                 "n": n,
             }
             # Update tracing generation
-            self._update_generation(api_result=api_result, model_parameters=model_parameters, call_metadata=call_metadata)
+            self._update_generation(api_result=api_result, model_parameters=model_parameters,
+                                    call_metadata=call_metadata)
             return api_result
 
         except Exception as e:
@@ -152,8 +166,8 @@ class OpenAIChat(Function):
                            call_metadata
                            ):
         # We remove message content to properly visualise the API result in metadata
-        #api_result_to_log = api_result.copy()
-        #api_result_to_log['choices'][0]['message']['content'] = "..."
+        # api_result_to_log = api_result.copy()
+        # api_result_to_log['choices'][0]['message']['content'] = "..."
         dict_to_log = copy.deepcopy(api_result['choices'][0])
         dict_to_log['message']['content'] = "..."
 
@@ -162,7 +176,7 @@ class OpenAIChat(Function):
         call_metadata['cost_summary'] = get_openai_api_cost(model=self.llm_name,
                                                             completion_tokens=api_result["usage"]['completion_tokens'],
                                                             prompt_tokens=api_result["usage"]['prompt_tokens'])
-        #call_metadata['api_result'] = api_result_to_log
+        # call_metadata['api_result'] = api_result_to_log
         call_metadata['cost_summary']['total_cost'] = self.total_cost
 
         # Extract completion from API result
@@ -180,4 +194,3 @@ class OpenAIChat(Function):
                         completionTokens=call_metadata['cost_summary']['completion_tokens'])
         )
         self.total_cost += call_metadata['cost_summary']['request_cost']
-

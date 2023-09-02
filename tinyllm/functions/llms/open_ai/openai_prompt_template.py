@@ -4,6 +4,7 @@ from tinyllm.functions.function import Function
 from tinyllm.functions.llms.open_ai.util.helpers import get_system_message
 from tinyllm.functions.validator import Validator
 
+
 class InitValidator(Validator):
     system_role: str
 
@@ -11,6 +12,7 @@ class InitValidator(Validator):
 class InputValidator(Validator):
     openai_msg: Dict[str, str]
     memories: List[Dict]
+
 
 class OutputValidator(Validator):
     messages: List[Dict]
@@ -29,8 +31,7 @@ class OpenAIPromptTemplate(Function):
         self.system_role = system_role
         self.messages = [get_system_message(self.system_role)] + messages
 
-
     async def run(self,
                   **kwargs):
-        messages =  self.messages + kwargs['memories'] + [kwargs['openai_msg']]
+        messages = self.messages + kwargs['memories'] + [kwargs['openai_msg']]
         return {'messages': messages}
