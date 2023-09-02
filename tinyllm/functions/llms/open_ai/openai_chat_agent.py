@@ -30,7 +30,6 @@ class OpenAIChatAgent(OpenAIChat):
                                            function_callables=function_callables,
                                            prompt_template=prompt_template)
         super().__init__(prompt_template=prompt_template,
-                         with_memory=True,
                          **kwargs)
         self.openai_functions = openai_functions
         self.prompt_template = prompt_template
