@@ -1,14 +1,16 @@
 import unittest
 import os
 
+from sqlalchemy import delete
+
 from tinyllm.tests.base import AsyncioTestCase
 from tinyllm.vector_store import VectorStore, Embeddings
 
 
 class TestVectorStore(AsyncioTestCase):
 
-    @classmethod
-    def setUpClass(self):
+    def setUp(self):
+        super().setUp()
         # Environment Variables for DB
         self.vector_store = VectorStore()
         self.test_texts = ["Hello, world!", "Hi there!", "How are you?"]
@@ -28,16 +30,20 @@ class TestVectorStore(AsyncioTestCase):
         self.assertTrue(len(results) <= k)
         self.assertTrue(all(r['metadata']['type'] == 'test' for r in results))
 
-    @classmethod
-    async def tearDownClass(cls):  # Note the change to `cls` to follow Python convention for class methods
-        # Remove test data
-        async with cls.vector_store._Session() as session:  # Use an asynchronous session
-            await session.begin()
-            await session.execute(
-                delete(Embeddings).where(Embeddings.emetadata['type'].astext == 'test')
-            )
-            await session.commit()
 
+    def tearDown(self):
+
+        async def clear_dbb():
+            async with self.vector_store._Session() as session:  # Use an asynchronous session
+                await session.begin()
+                await session.execute(
+                    delete(Embeddings).where(Embeddings.collection_name == self.collection_name)
+                )
+                await session.commit()
+
+        self.loop.run_until_complete(clear_dbb())
+
+        super().tearDown()
 
 if __name__ == '__main__':
     unittest.main()

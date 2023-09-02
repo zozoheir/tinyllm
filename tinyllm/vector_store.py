@@ -91,8 +91,7 @@ class VectorStore:
     from sqlalchemy import text
 
     async def similarity_search(self, query, k, collection_filters, metadata_filters=None):
-        query_embedding = await self.embedding_function.aembed_query(query)  # Assuming this method is async
-
+        query_embedding = await self.embedding_function.aembed_query(query)
         async with self._Session() as session:  # Use an asynchronous session
             async with session.begin():
                 # Initialize the base SQL query
