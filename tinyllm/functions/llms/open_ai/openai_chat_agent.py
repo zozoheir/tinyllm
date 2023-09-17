@@ -65,7 +65,6 @@ class OpenAIChatAgent(OpenAIChat):
                 startTime=datetime.now(),
                 metadata={'api_result':api_result['choices'][0]},
             )
-
         return {'response': api_result}
 
 
@@ -78,7 +77,8 @@ class OpenAIChatAgent(OpenAIChat):
             # Call the function
             function_name = kwargs['response']['choices'][0]['message']['function_call']['name']
             function_result = await self.run_agent_function(
-                function_call_info=kwargs['response']['choices'][0]['message']['function_call'])
+                function_call_info=kwargs['response']['choices'][0]['message']['function_call']
+            )
 
             # Append function result to memory
             function_msg = get_function_message(
@@ -141,5 +141,5 @@ class OpenAIChatAgent(OpenAIChat):
         )
 
         function_result = callable(**function_args)
-        self.llm_trace.update_span(endTime=datetime.now(), output={'output': function_result})
+        self.llm_trace.update_span(endTime=datetime.now(), output={'output': str(function_result)})
         return function_result
