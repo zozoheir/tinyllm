@@ -5,7 +5,6 @@ import os
 from langchain.embeddings import OpenAIEmbeddings
 from sqlalchemy import create_engine, Column, Integer, String, UniqueConstraint, JSON, and_, or_, cast
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy.dialects.postgresql import insert
 from pgvector.sqlalchemy import Vector
 from sqlalchemy.dialects import postgresql
@@ -46,7 +45,7 @@ class VectorStore:
             class_=AsyncSession,
         )
         self.embedding_function = OpenAIEmbeddings()
-        self.create_tables()
+        #self.create_tables()
 
     def _build_metadata_filters(self, metadata_filters):
         filter_clauses = []
@@ -88,7 +87,6 @@ class VectorStore:
                     await session.execute(stmt)
                 await session.commit()
 
-    from sqlalchemy import text
 
     async def similarity_search(self, query, k, collection_filters, metadata_filters=None):
         query_embedding = await self.embedding_function.aembed_query(query)

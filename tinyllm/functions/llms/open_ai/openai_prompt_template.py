@@ -1,7 +1,7 @@
 from typing import List, Dict
 
 from tinyllm.functions.function import Function
-from tinyllm.functions.llms.open_ai.util.helpers import get_system_message
+from tinyllm.functions.llms.open_ai.util.helpers import get_system_message, count_tokens
 from tinyllm.functions.validator import Validator
 
 
@@ -35,3 +35,9 @@ class OpenAIPromptTemplate(Function):
                   **kwargs):
         messages = self.messages + kwargs['memories'] + [kwargs['openai_msg']]
         return {'messages': messages}
+
+    @property
+    def size(self):
+        return count_tokens(self.messages,
+                            header='',
+                            ignore_keys=[])

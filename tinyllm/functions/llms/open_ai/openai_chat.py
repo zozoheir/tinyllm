@@ -7,7 +7,7 @@ from langfuse.api.model import Usage
 
 from tinyllm.functions.function import Function
 from tinyllm.functions.llms.open_ai.util.helpers import get_assistant_message, get_user_message, get_openai_api_cost, \
-    count_openai_messages_tokens
+    count_openai_messages_tokens, count_tokens, OPENAI_MODELS_CONTEXT_SIZES
 from tinyllm.functions.llms.open_ai.openai_memory import OpenAIMemory
 from tinyllm.functions.llms.open_ai.openai_prompt_template import OpenAIPromptTemplate
 from tinyllm.functions.validator import Validator
@@ -194,3 +194,55 @@ class OpenAIChat(Function):
                         completionTokens=call_metadata['cost_summary']['completion_tokens'])
         )
         self.total_cost += call_metadata['cost_summary']['request_cost']
+
+    @property
+    def free_context_size(self):
+        memories_size = count_tokens(self.memory.memories,
+                                     header='',
+                                     ignore_keys=[])
+        prompt_template_size = count_tokens(self.prompt_template.messages,
+                                            header='',
+                                            ignore_keys=[])
+        return OPENAI_MODELS_CONTEXT_SIZES[self.llm_name] - prompt_template_size - memories_size - self.max_tokens - 10
+
+
+class OpenAIChatStream(OpenAIChat):
+
+    async def run(self, **kwargs):
+        message = kwargs.pop('message')
+        llm_name = kwargs.get('llm_name', self.llm_name)
+        temperature = kwargs.get('temperature', self.temperature)
+        max_tokens = kwargs.get('max_tokens', self.max_tokens)
+        call_metadata = kwargs.get('call_metadata', {})
+
+        messages = await self.process_input_message(openai_message=get_user_message(message))
+        # Create tracing generation
+        self.llm_trace.create_generation(
+            name=kwargs.get('generation_name', "Assistant response"),
+            model=llm_name,
+            prompt=messages,
+            startTime=datetime.now(),
+        )
+
+        response = openai.ChatCompletion.create(
+            model=self.llm_name,
+            messages=messages['messages'],
+            temperature=temperature,
+            max_tokens=max_tokens,
+            stream=True  # this time, we set stream=True
+        )
+
+        assistant_response = ""
+        for chunk in response:
+            if len(chunk['choices']) > 0:
+                if 'content' in chunk['choices'][0]['delta']:
+                    delta = chunk['choices'][0]['delta']['content']
+                    assistant_response += delta
+                    yield {'delta': delta}
+
+        self.llm_trace.update_generation(
+            completion=assistant_response,
+            endTime=datetime.now(),
+        )
+
+        yield {'final_message': assistant_response}
