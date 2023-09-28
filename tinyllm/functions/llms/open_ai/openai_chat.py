@@ -14,11 +14,13 @@ from tinyllm.functions.validator import Validator
 from tenacity import retry, stop_after_attempt, wait_random_exponential, retry_if_exception_type
 import openai
 
-
 # Define which exceptions to retry on
 def retry_on_openai_exceptions(exception):
     return isinstance(exception,
-                      (openai.error.RateLimitError, openai.error.Timeout, openai.error.ServiceUnavailableError))
+                      (openai.error.RateLimitError,
+                       openai.error.Timeout,
+                       openai.error.ServiceUnavailableError,
+                       openai.error.APIError))
 
 
 class OpenAIChatInitValidator(Validator):
