@@ -30,7 +30,7 @@ class TestExampleSelector(AsyncioTestCase):
 
     def tearDown(self):
         async def clear_db():
-            async with self.vector_store._Session() as session:  # Use an asynchronous session
+            async with self.vector_store._Session() as session:
                 await session.begin()
                 await session.execute(
                     delete(Embeddings).where(Embeddings.collection_name == self.collection_name)
