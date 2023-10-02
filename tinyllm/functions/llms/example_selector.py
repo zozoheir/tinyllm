@@ -37,7 +37,7 @@ class VectorStoreExampleSelector(Function):
         return {'best_examples': results}
 
 
-class InitValidator(Validator):
+class LocalExampleInitValidator(Validator):
     examples: List
     embedding_function: Callable
 
@@ -47,7 +47,7 @@ class LocalExampleSelector(Function):
                  examples,
                  embedding_function,
                  **kwargs):
-        val = InitValidator(examples=examples, embedding_function=embedding_function)
+        val = LocalExampleInitValidator(examples=examples, embedding_function=embedding_function)
         super().__init__(
             input_validator=InputValidator,
             output_validator=OutputValidator,

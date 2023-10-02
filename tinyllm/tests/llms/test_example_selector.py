@@ -25,8 +25,8 @@ class TestExampleSelector(AsyncioTestCase):
         results = self.loop.run_until_complete(self.example_selector(user_question=query,
                                                                      metadata_filters={"type": ["example"]}))
 
-        self.assertTrue(len(results['examples']) <= 1)
-        self.assertTrue(all(r['metadata']['type'] == 'example' for r in results['examples']))
+        self.assertTrue(len(results['best_examples']) <= 1)
+        self.assertTrue(all(r['metadata']['type'] == 'example' for r in results['best_examples']))
 
     def tearDown(self):
         async def clear_db():
