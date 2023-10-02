@@ -1,3 +1,6 @@
+"""
+Wrapper around the Langfuse API to make it easier to use.
+"""
 import os
 
 from langfuse import Langfuse
@@ -8,7 +11,6 @@ langfuse_client = Langfuse(
     secret_key=os.environ['LANGFUSE_SECRET_KEY'],
     host="https://cloud.langfuse.com/"
 )
-
 
 class LLMTrace:
 

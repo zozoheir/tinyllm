@@ -2,7 +2,7 @@ import unittest
 
 from sqlalchemy import delete
 
-from tinyllm.functions.llms.example_selector import ExampleSelector
+from tinyllm.functions.llms.example_selector import VectorStoreExampleSelector
 from tinyllm.tests.base import AsyncioTestCase
 from tinyllm.vector_store import VectorStore, Embeddings
 
@@ -17,8 +17,8 @@ class TestExampleSelector(AsyncioTestCase):
         self.metadatas = [{"type": "example"}] * len(self.example_texts)
         self.loop.run_until_complete(self.vector_store.add_texts(self.example_texts, self.collection_name, self.metadatas))
 
-        self.example_selector = ExampleSelector(name="Test example selector",
-                                                collection_name=self.collection_name)
+        self.example_selector = VectorStoreExampleSelector(name="Test example selector",
+                                                           collection_name=self.collection_name)
 
     def test_selector(self):
         query = "Find a relevant example"

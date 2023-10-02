@@ -71,8 +71,7 @@ class VectorStore:
         if metadatas is None:
             metadatas = [None] * len(texts)
 
-        embeddings = await self.embedding_function.aembed_documents(texts=texts,
-                                                                    chunk_size=500)
+        embeddings = await self.embedding_function.aembed_documents(texts=texts)
 
         async with self._Session() as session:
             async with session.begin():
