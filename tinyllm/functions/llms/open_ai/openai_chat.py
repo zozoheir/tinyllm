@@ -3,7 +3,7 @@ from typing import Optional
 import copy
 
 import openai
-from langfuse.api.model import Usage
+from langfuse.model import Usage
 
 from tinyllm.functions.function import Function
 from tinyllm.functions.llms.open_ai.util.helpers import get_assistant_message, get_user_message, get_openai_api_cost, \
