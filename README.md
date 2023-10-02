@@ -11,6 +11,12 @@ The goal of the library is to keep things simple and reduce the unnecessary comp
 ```
 pip install git+https://github.com/zozoheir/tinyllm.git
 ```
+## ⚡ Features
+* Integrate tiny-llm with any LLM library or existing python code or pipelines
+* Compose, debug and track LLM calls and chains at scale
+* High level abstraction of LLM/API chaining/interactions through a standardized I/O interface
+* OpenAI chat, vector store, prompt templates, chains, parallel executions, example selectors
+
 
 ## Tinyllm agent v0
 CLI command
@@ -23,10 +29,6 @@ tinyllm agent
 tinyllm is integrated with Langfuse for tracing chains, functions and agents.
 ![Screenshot 2023-08-11 at 12 45 07 PM](https://github.com/zozoheir/tinyllm/assets/42655961/4d7c6ae9-e9a3-4795-9496-ad7905bc361e)
 
-## ⚡ Features
-* Integrate tiny-llm with any LLM library or existing python code or pipelines
-* Compose, debug and track LLM calls and chains at scale
-* High level abstraction of LLM/API chaining/interactions through a standardized I/O interface
 
 ## ⚡ Background and goals
 Many of the LLM libraries today (langchain, llama-index, deep pavlov...) have made serious software design commitments which I believe were too early to make given the infancy of the industry.
