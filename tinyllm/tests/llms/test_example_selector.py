@@ -2,7 +2,7 @@ import unittest
 
 from sqlalchemy import delete
 
-from tinyllm.functions.llms.example_selector import VectorStoreExampleSelector
+from tinyllm.functions.llms.util.example_selector import VectorStoreExampleSelector
 from tinyllm.tests.base import AsyncioTestCase
 from tinyllm.vector_store import VectorStore, Embeddings
 

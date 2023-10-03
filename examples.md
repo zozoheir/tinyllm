@@ -7,7 +7,7 @@ string_list = [
     {"content": "Fake content 3", "summary": "Fake summary 3", "title": "Fake title 3"}
 ]
 
-context_builder = DocsContextBuilder(start_string="SUPPORTING DOCS",
+context_builder = SingleSourceDocsContextBuilder(start_string="SUPPORTING DOCS",
                                         end_string="SUPPORTING DOCS",
                                         available_token_size=1000)
 final_context = context_builder.get_context(

@@ -3,7 +3,6 @@ import unittest
 
 import openai
 
-from tinyllm.functions.llms.example_selector import VectorStoreExampleSelector
 from tinyllm.functions.llms.open_ai.openai_chat import OpenAIChat
 from tinyllm.functions.llms.open_ai.openai_prompt_template import OpenAIPromptTemplate
 from tinyllm.state import States

@@ -1,6 +1,6 @@
-from typing import Optional, Dict
+from typing import Dict
 
-from tinyllm.functions.llms.memory import Memory
+from tinyllm.functions.llms.util.memory import Memory
 from tinyllm.functions.llms.open_ai.util.helpers import count_tokens
 from tinyllm.functions.validator import Validator
 

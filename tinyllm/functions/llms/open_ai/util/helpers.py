@@ -113,9 +113,9 @@ def count_tokens(input: Union[List[Dict], Dict, str],
     elif isinstance(input, str):
         return num_tokens_from_string(input)
     elif isinstance(input, dict):
-        dict_string = stringify_dict(header=kwargs['header'],
+        dict_string = stringify_dict(header=kwargs.get('header','[doc]'),
                                      dict=input,
-                                     ignore_keys=kwargs['ignore_keys'])
+                                     ignore_keys=kwargs.get('ignore_keys',[]))
         return num_tokens_from_string(dict_string)
     else:
         raise NotImplementedError("count_tokens() is not implemented for this input type.")

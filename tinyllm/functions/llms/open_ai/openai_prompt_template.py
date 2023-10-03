@@ -1,7 +1,7 @@
 from typing import List, Dict, Optional, Union
 
 from tinyllm.functions.function import Function
-from tinyllm.functions.llms.example_selector import VectorStoreExampleSelector, LocalExampleSelector
+from tinyllm.functions.llms.util.example_selector import VectorStoreExampleSelector, LocalExampleSelector
 from tinyllm.functions.llms.open_ai.util.helpers import get_system_message, count_tokens, get_user_message, \
     get_assistant_message
 from tinyllm.functions.validator import Validator
