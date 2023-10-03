@@ -1,9 +1,8 @@
-from tinyllm.functions.function import Function
-from tinyllm.functions.validator import Validator
 from typing import List, Dict, Optional, Callable
 
-from tinyllm.vector_store import VectorStore
-from sentence_transformers import util
+from tinyllm.functions.function import Function
+from tinyllm.functions.validator import Validator
+from tinyllm.util.ai_util import get_top_n_similar_vectors_index
 
 
 class InitValidator(Validator):
@@ -12,42 +11,22 @@ class InitValidator(Validator):
 class InputValidator(Validator):
     user_question: str
     k: Optional[int] = 1
-    metadata_filters: Optional[Dict] = {}
 
 class OutputValidator(Validator):
     best_examples: List[Dict]
 
-class VectorStoreExampleSelector(Function):
-    def __init__(self, collection_name: str, **kwargs):
-        val = InitValidator(collection_name=collection_name)
-        super().__init__(
-            input_validator=InputValidator,
-            output_validator=OutputValidator,
-            **kwargs
-        )
-        self.vector_store = VectorStore()
-        self.collection_name = collection_name
 
-    async def run(self, **kwargs):
-        results = await self.vector_store.similarity_search(
-            query=kwargs['user_question'],
-            k=kwargs['k'],
-            collection_filters=[self.collection_name]
-        )
-        return {'best_examples': results}
-
-
-class LocalExampleInitValidator(Validator):
-    examples: List
+class InitValidator(Validator):
+    examples: List[dict]
     embedding_function: Callable
 
 
-class LocalExampleSelector(Function):
+class ExampleSelector(Function):
     def __init__(self,
                  examples,
-                 embedding_function,
+                 embedding_function=None,
                  **kwargs):
-        val = LocalExampleInitValidator(examples=examples, embedding_function=embedding_function)
+        val = InitValidator(examples=examples, embedding_function=embedding_function)
         super().__init__(
             input_validator=InputValidator,
             output_validator=OutputValidator,
@@ -55,15 +34,15 @@ class LocalExampleSelector(Function):
         )
         self.examples = examples
         self.embedding_function = embedding_function
-        for example in examples:
-            if example.get('embeddings') is None:
-                example['embeddings'] = self.embedding_function(example)
-        self.embeddings = [example['embeddings'] for example in examples]
+        for example in self.examples:
+            if example.get('embeddings') is None and embedding_function is not None:
+                example['embeddings'] = self.embedding_function(example['USER'])
+            elif example.get('embeddings') is None and embedding_function is None:
+                raise Exception('Embedding function is not provided')
+
+        self.embeddings = [example['embeddings'] for example in self.examples]
 
     async def run(self, **kwargs):
         query_embedding = self.embedding_function(kwargs['user_question'])
-        max_cos_ind = 0
-        for i, embedding in enumerate(self.embeddings):
-            if util.cos_sim(query_embedding, embedding)[0] > util.cos_sim(query_embedding, self.embeddings[max_cos_ind])[0]:
-                max_cos_ind = i
-        return {'best_examples': [self.examples[max_cos_ind]]}
+        similar_indexes = get_top_n_similar_vectors_index(input_vector=query_embedding, vectors=self.embeddings, k=kwargs['k'])
+        return {'best_examples': [self.examples[i] for i in similar_indexes]}

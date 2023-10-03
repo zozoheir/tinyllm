@@ -19,13 +19,18 @@ class MultiSourceDocsContextBuilder(ContextBuilder):
                     header="[doc]",
                     ignore_keys=[],
                     ):
-
+        count_tokens(docs[0])
         # If list of strings, convert to list of dicts
-        if isinstance(docs, List) and isinstance(docs[0], str):
-            docs = [{"content": string} for string in docs]
+        final_docs = []
+        for source_docs in docs:
+            if isinstance(source_docs, List) and isinstance(source_docs[0], str):
+                source_docs = [{"content": doc} for doc in source_docs]
+                final_docs.append(source_docs)
+            else:
+                final_docs.append(source_docs)
 
         # Fit the multiple sources of docs based on weights
-        fitted_list = self.fit(docs,
+        fitted_list = self.fit(final_docs,
                                weights,
                                header=header,
                                ignore_keys=ignore_keys)

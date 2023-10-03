@@ -198,7 +198,7 @@ class OpenAIChat(Function):
         self.total_cost += call_metadata['cost_summary']['request_cost']
 
     @property
-    def free_context_size(self):
+    def available_token_size(self):
         memories_size = count_tokens(self.memory.memories,
                                      header='',
                                      ignore_keys=[])

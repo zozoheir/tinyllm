@@ -6,12 +6,12 @@ def get_cosine_similarity(a, b):
     b = np.array(b)
     return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
 
-def top_n_similar(input_vector, vector_list, top_n=5):
-    similarities = [get_cosine_similarity(input_vector, vector) for vector in vector_list]
-    top_similarities_indices = np.argsort(similarities)[-top_n:][::-1]
-    return top_similarities_indices
+def get_top_n_similar_vectors_index(input_vector, vectors, k=5):
+    similarities = [get_cosine_similarity(input_vector, vector) for vector in vectors]
+    top_similarities_indices = np.argsort(similarities)[-k:][::-1]
+    return [int(index) for index in top_similarities_indices]
 
-def get_embedding(text, model="text-embedding-ada-002"):
+def get_openai_embedding(text, model="text-embedding-ada-002"):
     text = text.replace("\n", " ")
     try:
         embedding = openai.Embedding.create(input=[text], model=model)['data'][0]['embedding']

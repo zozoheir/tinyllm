@@ -1,7 +1,7 @@
 from typing import List, Dict, Optional, Union
 
 from tinyllm.functions.function import Function
-from tinyllm.functions.llms.util.example_selector import VectorStoreExampleSelector, LocalExampleSelector
+from tinyllm.functions.llms.util.example_selector import ExampleSelector
 from tinyllm.functions.llms.open_ai.util.helpers import get_system_message, count_tokens, get_user_message, \
     get_assistant_message
 from tinyllm.functions.validator import Validator
@@ -10,7 +10,7 @@ from tinyllm.functions.validator import Validator
 class InitValidator(Validator):
     system_role: str
     messages: Optional[List[Dict]]
-    example_selector: Optional[Union[VectorStoreExampleSelector, LocalExampleSelector]]
+    example_selector: Optional[ExampleSelector]
 
 
 class InputValidator(Validator):
