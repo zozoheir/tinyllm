@@ -7,8 +7,6 @@ from tinyllm.functions.llms.open_ai.openai_prompt_template import OpenAIPromptTe
 from tinyllm.functions.llms.open_ai.util.helpers import get_user_message, get_assistant_message
 from tinyllm.functions.validator import Validator
 
-
-
 EXAMPLE_INPUT = """
 Context:
 The spate of recommendations ended the silent period for the nearly 30 banks that underwrote Arm’s IPO in September.
@@ -19,7 +17,7 @@ Where do you think Arm’s share price will stand by the end of 2023? Let us kno
 Question: 
 How much did Arm raise for its owner, SoftBank Group, during its IPO?
 
-Truthful answer:
+Correct answer:
 Arm raised $4.87 billion for its owner, SoftBank Group, during its IPO.
 
 Generated answer: 
@@ -32,7 +30,7 @@ its IPO. The context clearly states that the chip manufacturer (Arm) raised "$4.
 The phrase "a couple of billion dollars" is typically interpreted as meaning "two billion dollars", which is 
 significantly less than $4.87 billion. While the generated answer is in the correct ballpark, it is imprecise and 
 understates the actual amount by nearly $3 billion.
-- Truth score: 5/10
+- Correctness score: 5/10
 """
 
 examples = [
@@ -44,9 +42,9 @@ accuracy_prompt_template = OpenAIPromptTemplate(
     name="Answer Accuracy Evaluation Template",
     system_role=dedent(f"""
 ROLE:
-You are an evaluator. Given a question, a truthful answer, and a generated answer, you are to evaluate the truthfulness of the 
-predicted answer on a scale of 0 to 10. 
-You will think and reason about the truthfullness of the generated answer then provide a truth score.
+You are an evaluator. Given a question, a correct answer, and a generated answer, you are to evaluate the correctness of the 
+predicted answer on a scale of 0 to 10 with respect to the question asked and correct answer.
+You will think and reason about the correctness of the generated answer then provide a Correctness score.
 If the the generated answer is "Not enough information", the score should be 0.
 """),
     messages=examples,
@@ -57,13 +55,15 @@ If the the generated answer is "Not enough information", the score should be 0.
 class InputAnswerAccuracyEvaluator(Validator):
     context: str
     question: str
-    truthful_answer: str
+    correct_answer: str
     generated_answer: str
+
 
 class OutputAnswerAccuracyEvaluator(Validator):
     chat_response: str
 
-class AnswerTruthfulnessEvaluator(Function):
+
+class AnswerCorrectnessEvaluator(Function):
 
     def __init__(self, **kwargs):
         super().__init__(input_validator=InputAnswerAccuracyEvaluator,
@@ -83,7 +83,7 @@ class AnswerTruthfulnessEvaluator(Function):
     async def run(self, **kwargs):
         context = kwargs["context"]
         question = kwargs["question"]
-        truthful_answer = kwargs["truthful_answer"]
+        correct_answer = kwargs["correct_answer"]
         generated_answer = kwargs["generated_answer"]
         formatted_message = f"""
 Context:
@@ -92,30 +92,28 @@ Context:
 Question:
 {question}
 
-Truthful answer:
-{truthful_answer}
+Correct answer:
+{correct_answer}
 
 Generated answer:
 {generated_answer}
         """
         openai_response = await self.openai_chat(
             message=formatted_message,
-            generation_name="Answer Accuracy Evaluator")
+            generation_name="Answer Correctness Evaluator")
 
         return {"chat_response": openai_response['response']}
 
     async def process_output(self, **kwargs) -> dict:
         chat_response = kwargs["chat_response"]
         # Regex patterns
-        reasoning_pattern = r"- Reasoning: (.*?)- Truth score:"
-        truth_score_pattern = r"- Truth score: (.*)"
+        reasoning_pattern = r"- Reasoning: (.*?)- Correctness score:"
+        correct_score_pattern = r"- Correctness score: (.*)"
         reasoning_match = re.search(reasoning_pattern, chat_response, re.DOTALL)
-        truth_score_match = re.search(truth_score_pattern, chat_response)
+        truth_score_match = re.search(correct_score_pattern, chat_response)
         output_dict = {}
         if reasoning_match:
             output_dict["truth_score_reasoning"] = reasoning_match.group(1).strip()
         if truth_score_match:
-            output_dict["truth_score"] = truth_score_match.group(1).strip()
-
+            output_dict["correctness_score"] = float(truth_score_match.group(1).strip().split('/')[0]) / 10
         return output_dict
-

@@ -44,7 +44,7 @@ class InputQASetGenerator(Validator):
     n: int
 
 class OutputQASetGenerator(Validator):
-    qa_test_set: List[dict] # dict with keys: context, chat_response, question, truthful_answer
+    qa_test_set: List[dict] # dict with keys: context, chat_response, question, correct_answer
 
 
 class QASetGenerator(Function):
@@ -99,6 +99,6 @@ class QASetGenerator(Function):
             else:
                 test_data_point.update({
                     "question": question_match.group(1).strip(),
-                    "truthful_answer": answer_match.group(1).strip()
+                    "correct_answer": answer_match.group(1).strip()
                 })
         return {"qa_test_set": qa_test_set}

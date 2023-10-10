@@ -119,7 +119,7 @@ qa_test_set = loop.run_until_complete(qa_set_generator(documents=docs,
                                                        n=2))
 
 # Initialize evaluators
-answer_truth_evaluator = AnswerTruthfulnessEvaluator(
+answer_truth_evaluator = AnswerCorrectnessEvaluator(
     name="Answer Accuracy Evaluator",
 )
 
