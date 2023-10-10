@@ -19,21 +19,48 @@ print(final_context)
 ```
 
 
-#### QA Set Generator
+#### Evaluation pipeline
+
 
 ```python
-import asyncio
 
+import asyncio
 loop = asyncio.get_event_loop()
 
+kg_qa_chain = KGQAChain(
+    name="KG QA Chain",
+    is_traced=True,
+)
+
+async def rag_lambda(user_question):
+    chain_response = await kg_qa_chain(user_question=user_question)
+    return chain_response['response']
+
+# Generate test set
 docs = [
     {"text":"Fake content 1"},
     {"text":"Fake context 2"}
 ]
-
 qa_set_generator = QASetGenerator(
     name="QA Data Point Generator",
 )
-test_data_points = loop.run_until_complete(qa_set_generator(documents=docs,n=1))
+qa_test_set = loop.run_until_complete(qa_set_generator(documents=docs,
+                                                       n=2))
+
+# Initialize evaluators
+answer_truth_evaluator = AnswerTruthfulnessEvaluator(
+    name="Answer Accuracy Evaluator",
+)
+
+# Initialize pipeline
+eval_pipeline = EvaluationPipeline(
+    rag_lambda=rag_lambda,
+    qa_test_set=qa_test_set['qa_test_set'],
+    evaluators=[answer_truth_evaluator]
+)
+
+evals = loop.run_until_complete(eval_pipeline.run_evals())
+evals_df = pd.DataFrame(evals)
+
 
 ```
