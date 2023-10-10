@@ -19,3 +19,12 @@ def get_openai_embedding(text, model="text-embedding-ada-002"):
         raise e
     return embedding
 
+
+def generate_raw_ngrams(text, n):
+    tokens = text.split()
+    if len(tokens) < n:
+        return []
+    # Use a list comprehension to generate the n-grams
+    ngrams = [tuple(tokens[i:i + n]) for i in range(len(tokens) - n + 1)]
+
+    return ngrams

@@ -19,7 +19,6 @@ class MultiSourceDocsContextBuilder(ContextBuilder):
                     header="[doc]",
                     ignore_keys=[],
                     ):
-        count_tokens(docs[0])
         # If list of strings, convert to list of dicts
         final_docs = []
         for source_docs in docs:

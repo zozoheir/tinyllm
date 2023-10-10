@@ -11,7 +11,7 @@ class OpenAIBatchGenerator:
                  openai_model,
                  dicts_list: List[Dict],
                  prompt_template: OpenAIPromptTemplate,
-                 expected_completion_to_input_multiplier: int,
+                 expected_completion_to_input_multiplier: float,
                  max_posts_by_batch: int ):
         # [---prompt_template---][---batch_input---][---completion_input---]
         self.dicts_list = dicts_list
@@ -28,15 +28,17 @@ class OpenAIBatchGenerator:
         self.optimal_completion_input_size = int(self.optimal_batch_token_size * self.completion_to_input_multiplier * 0.95) # 5% buffer
 
 
-    def generate_batches(self):
+    def generate_batches(self,
+                         header,
+                         ignore_keys):
         batch = []
         for news_dict in self.dicts_list:
             current_batch_size = count_tokens(batch,
-                                              header='[post]',
-                                              ignore_keys=['timestamp', 'author', 'source','suggested_question','content'])
+                                              header=header,
+                                              ignore_keys=ignore_keys)
             news_dict_token_size = count_tokens(news_dict,
-                                                header='[post]',
-                                                ignore_keys=['timestamp','author','source''suggested_question','content'])
+                                                header=header,
+                                                ignore_keys=ignore_keys)
 
             if news_dict_token_size + current_batch_size < self.optimal_batch_token_size and len(batch) < self.max_posts_by_batch:
                 batch.append(news_dict)

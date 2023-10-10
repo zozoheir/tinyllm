@@ -1,7 +1,6 @@
 import unittest
 
 from sentence_transformers import SentenceTransformer
-from sqlalchemy import delete
 
 from tinyllm.functions.llms.util.example_selector import ExampleSelector
 from tinyllm.tests.base import AsyncioTestCase
