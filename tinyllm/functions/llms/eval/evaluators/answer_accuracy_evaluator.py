@@ -72,7 +72,7 @@ class AnswerCorrectnessEvaluator(Function):
 
         self.openai_chat = OpenAIChat(
             name="Answer Accuracy Evaluator",
-            llm_name='gpt-3.5-turbo',
+            model='gpt-3.5-turbo',
             max_tokens=400,
             prompt_template=accuracy_prompt_template,
             is_traced=True,

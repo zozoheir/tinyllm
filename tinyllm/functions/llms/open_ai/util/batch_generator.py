@@ -1,9 +1,11 @@
 from typing import List, Dict
 
+from smartpy.utility.log_util import getLogger
 from tinyllm.functions.llms.open_ai.openai_prompt_template import OpenAIPromptTemplate
 from tinyllm.functions.llms.open_ai.util.helpers import OPENAI_MODELS_CONTEXT_SIZES, count_tokens, \
     count_openai_messages_tokens
 
+logger = getLogger(__name__)
 
 class OpenAIBatchGenerator:
 
@@ -11,40 +13,38 @@ class OpenAIBatchGenerator:
                  openai_model,
                  dicts_list: List[Dict],
                  prompt_template: OpenAIPromptTemplate,
-                 expected_completion_to_input_multiplier: float,
-                 max_posts_by_batch: int ):
+                 expected_completion_to_input_multiplier: float):
         # [---prompt_template---][---batch_input---][---completion_input---]
         self.dicts_list = dicts_list
         self.prompt_template = prompt_template
         self.completion_to_input_multiplier = expected_completion_to_input_multiplier
         self.model_context_size = int(OPENAI_MODELS_CONTEXT_SIZES[openai_model])
-        self.max_posts_by_batch = max_posts_by_batch
 
         self.prompt_template_n_tokens = count_openai_messages_tokens(self.prompt_template.messages)
-        self.input_and_completion_leftover_size = int(self.model_context_size - self.prompt_template_n_tokens)
-
-        # Calculate allowed tokens by splitting the leftover space between the batch input and the allowed completion
-        self.optimal_batch_token_size = int(self.input_and_completion_leftover_size / (1 + self.completion_to_input_multiplier))
-        self.optimal_completion_input_size = int(self.optimal_batch_token_size * self.completion_to_input_multiplier * 0.95) # 5% buffer
-
+        self.leftover_tokens_for_completion = 0
 
     def generate_batches(self,
                          header,
                          ignore_keys):
         batch = []
-        for news_dict in self.dicts_list:
-            current_batch_size = count_tokens(batch,
-                                              header=header,
-                                              ignore_keys=ignore_keys)
-            news_dict_token_size = count_tokens(news_dict,
-                                                header=header,
-                                                ignore_keys=ignore_keys)
+        current_batch_size = 0
+        for unit_dict in self.dicts_list:
+            new_unit_dict_size = count_tokens(unit_dict,
+                                               header=header,
+                                               ignore_keys=ignore_keys)
+            current_batch_size += new_unit_dict_size
 
-            if news_dict_token_size + current_batch_size < self.optimal_batch_token_size and len(batch) < self.max_posts_by_batch:
-                batch.append(news_dict)
+            expected_total_tokens = current_batch_size+int(current_batch_size * self.completion_to_input_multiplier) + self.prompt_template_n_tokens
+            self.leftover_tokens_for_completion = self.model_context_size - current_batch_size - self.prompt_template_n_tokens
+            if expected_total_tokens < self.model_context_size :
+                batch.append(unit_dict)
             else:
+                logger.info(f"Yielding new batch of {len(batch)}")
                 yield batch
-                batch = [news_dict]
+                current_batch_size = 0
+                batch = [unit_dict]
 
         if len(batch) > 0:
+            logger.info(f"Yielding new batch of {len(batch)}")
+
             yield batch

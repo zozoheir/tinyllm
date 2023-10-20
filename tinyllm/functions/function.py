@@ -49,6 +49,7 @@ class FunctionInitValidator(Validator):
 
 
 class Function:
+
     def __init__(
             self,
             name,

@@ -1,4 +1,4 @@
-#### OpenAI chat 
+#### OpenAI chat
 
 ```python
 
@@ -7,12 +7,11 @@ import asyncio
 from tinyllm.functions.llms.open_ai.openai_chat import OpenAIChat
 from tinyllm.functions.llms.open_ai.openai_prompt_template import OpenAIPromptTemplate
 
-
 prompt_template = OpenAIPromptTemplate(
     name="TinyLLM Agent Prompt Template",
 )
 openai_chat = OpenAIChat(name='OpenAI Chat model',
-                         llm_name='gpt-3.5-turbo',
+                         model='gpt-3.5-turbo',
                          temperature=0,
                          is_traced=True,
                          max_tokens=100,
@@ -57,7 +56,7 @@ function_callables = {'test_function': test_function}
 
 openai_agent = OpenAIChatAgent(
     name="Test TinyLLM Agent",
-    llm_name="gpt-3.5-turbo",
+    model="gpt-3.5-turbo",
     openai_functions=test_openai_functions,
     function_callables=function_callables,
     temperature=0,
@@ -164,7 +163,7 @@ loan_classifier_prompt_template = OpenAIPromptTemplate(
 )
 
 openai_chat = OpenAIChat(name='OpenAI-GPT model',
-                         llm_name='gpt-3.5-turbo',
+                         model='gpt-3.5-turbo',
                          temperature=0,
                          n=1,
                          prompt_template=loan_classifier_prompt_template)

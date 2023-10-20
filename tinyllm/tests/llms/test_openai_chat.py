@@ -17,7 +17,7 @@ class TestOpenAIChat(AsyncioTestCase):
                                                       system_role="You are an English to Spanish translator")
 
         openai_chat = OpenAIChat(name='Test: OpenAI Chat model',
-                                 llm_name='gpt-3.5-turbo',
+                                 model='gpt-3.5-turbo',
                                  temperature=0,
                                  prompt_template=openai_prompt_template,
                                  max_tokens=100,

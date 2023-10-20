@@ -42,7 +42,7 @@ class TestOpenAIAgent(AsyncioTestCase):
 
         openai_agent = OpenAIChatAgent(
             name="Test TinyLLM Agent",
-            llm_name="gpt-3.5-turbo",
+            model="gpt-3.5-turbo",
             openai_functions=test_openai_functions,
             function_callables=function_callables,
             temperature=0,

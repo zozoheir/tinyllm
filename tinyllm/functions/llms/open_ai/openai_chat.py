@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 from typing import Optional
 import copy
@@ -30,7 +31,7 @@ class OpenAIChatInitValidator(Validator):
 
 class OpenAIChatInputValidator(Validator):
     message: str
-    llm_name: Optional[str]
+    model: Optional[str]
     temperature: Optional[float]
     max_tokens: Optional[int]
     call_metadata: Optional[dict]
@@ -44,12 +45,12 @@ class OpenAIChat(Function):
     def __init__(self,
                  prompt_template=OpenAIPromptTemplate(name="standard_prompt_template",
                                                       is_traced=False),
-                 llm_name='gpt-3.5-turbo',
+                 model='gpt-3.5-turbo',
                  temperature=0,
                  with_memory=False,
                  max_tokens=400,
                  **kwargs):
-        val = OpenAIChatInitValidator(llm_name=llm_name,
+        val = OpenAIChatInitValidator(model=model,
                                       temperature=temperature,
                                       prompt_template=prompt_template,
                                       max_tokens=max_tokens,
@@ -57,7 +58,7 @@ class OpenAIChat(Function):
                                       )
         super().__init__(input_validator=OpenAIChatInputValidator,
                          **kwargs)
-        self.llm_name = llm_name
+        self.model = model
         self.temperature = temperature
         self.n = 1
         if 'memory' not in kwargs.keys():
@@ -76,7 +77,7 @@ class OpenAIChat(Function):
 
     async def run(self, **kwargs):
         message = kwargs.pop('message')
-        llm_name = kwargs['llm_name'] if kwargs['llm_name'] is not None else self.llm_name
+        model = kwargs['model'] if kwargs['model'] is not None else self.model
         temperature = kwargs['temperature'] if kwargs['temperature'] is not None else self.temperature
         max_tokens = kwargs['max_tokens'] if kwargs['max_tokens'] is not None else self.max_tokens
         call_metadata = kwargs['call_metadata'] if kwargs['call_metadata'] is not None else {}
@@ -85,7 +86,7 @@ class OpenAIChat(Function):
 
         api_result = await self.get_completion(
             messages=messages['messages'],
-            llm_name=llm_name,
+            model=model,
             temperature=temperature,
             n=self.n,
             max_tokens=max_tokens,
@@ -116,7 +117,7 @@ class OpenAIChat(Function):
             (openai.error.RateLimitError, openai.error.Timeout, openai.error.ServiceUnavailableError))
     )
     async def get_completion(self,
-                             llm_name,
+                             model,
                              temperature,
                              n,
                              max_tokens,
@@ -128,13 +129,13 @@ class OpenAIChat(Function):
             # Create tracing generation
             self.llm_trace.create_generation(
                 name=generation_name,
-                model=llm_name,
+                model=model,
                 prompt=messages,
                 startTime=datetime.now(),
             )
             # Call OpenAI API
             api_result = await openai.ChatCompletion.acreate(
-                model=llm_name,
+                model=model,
                 temperature=temperature,
                 n=n,
                 max_tokens=max_tokens,
@@ -142,7 +143,7 @@ class OpenAIChat(Function):
                 **kwargs
             )
             model_parameters = {
-                "model": llm_name,
+                "model": model,
                 "temperature": temperature,
                 "max_tokens": max_tokens,
                 "n": n,
@@ -153,7 +154,7 @@ class OpenAIChat(Function):
             return api_result
 
         except Exception as e:
-            cost = get_openai_api_cost(model=self.llm_name,
+            cost = get_openai_api_cost(model=self.model,
                                        completion_tokens=0,
                                        prompt_tokens=count_openai_messages_tokens(messages))
             self.llm_trace.update_generation(
@@ -175,7 +176,7 @@ class OpenAIChat(Function):
 
         # Enrich the api result with metadata
         call_metadata['api_result'] = dict_to_log
-        call_metadata['cost_summary'] = get_openai_api_cost(model=self.llm_name,
+        call_metadata['cost_summary'] = get_openai_api_cost(model=self.model,
                                                             completion_tokens=api_result["usage"]['completion_tokens'],
                                                             prompt_tokens=api_result["usage"]['prompt_tokens'])
         # call_metadata['api_result'] = api_result_to_log
@@ -186,11 +187,10 @@ class OpenAIChat(Function):
             completion = str(api_result['choices'][0]['message']['function_call'])
         else:
             completion = str(api_result['choices'][0]['message']['content'])
-
         self.llm_trace.update_generation(
             endTime=datetime.now(),
             modelParameters=model_parameters,
-            completion=completion,
+            completion=json.dumps({'completion': completion}),
             metadata=call_metadata,
             usage=Usage(promptTokens=call_metadata['cost_summary']['prompt_tokens'],
                         completionTokens=call_metadata['cost_summary']['completion_tokens'])
@@ -205,14 +205,14 @@ class OpenAIChat(Function):
         prompt_template_size = count_tokens(self.prompt_template.messages,
                                             header='',
                                             ignore_keys=[])
-        return OPENAI_MODELS_CONTEXT_SIZES[self.llm_name] - prompt_template_size - memories_size - self.max_tokens - 10
+        return OPENAI_MODELS_CONTEXT_SIZES[self.model] - prompt_template_size - memories_size - self.max_tokens - 10
 
 
 class OpenAIChatStream(OpenAIChat):
 
     async def run(self, **kwargs):
         message = kwargs.pop('message')
-        llm_name = kwargs.get('llm_name', self.llm_name)
+        model = kwargs.get('model', self.model)
         temperature = kwargs.get('temperature', self.temperature)
         max_tokens = kwargs.get('max_tokens', self.max_tokens)
         call_metadata = kwargs.get('call_metadata', {})
@@ -221,13 +221,13 @@ class OpenAIChatStream(OpenAIChat):
         # Create tracing generation
         self.llm_trace.create_generation(
             name=kwargs.get('generation_name', "Assistant response"),
-            model=llm_name,
+            model=model,
             prompt=messages,
             startTime=datetime.now(),
         )
 
         response = openai.ChatCompletion.create(
-            model=self.llm_name,
+            model=self.model,
             messages=messages['messages'],
             temperature=temperature,
             max_tokens=max_tokens,

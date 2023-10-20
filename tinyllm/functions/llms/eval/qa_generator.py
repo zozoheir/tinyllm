@@ -56,7 +56,7 @@ class QASetGenerator(Function):
 
         self.openai_chat = OpenAIChat(
             name="QA Data Point Generator",
-            llm_name='gpt-3.5-turbo',
+            model='gpt-3.5-turbo',
             max_tokens=600,
             prompt_template=qa_prompt_template,
             is_traced=True,

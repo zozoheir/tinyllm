@@ -37,7 +37,7 @@ class OpenAIChatAgent(OpenAIChat):
 
     async def run(self, **kwargs):
         message = kwargs.pop('message')
-        llm_name = kwargs['llm_name'] if kwargs['llm_name'] is not None else self.llm_name
+        model = kwargs['model'] if kwargs['model'] is not None else self.model
         temperature = kwargs['temperature'] if kwargs['temperature'] is not None else self.temperature
         max_tokens = kwargs['max_tokens'] if kwargs['max_tokens'] is not None else self.max_tokens
         call_metadata = kwargs['call_metadata'] if kwargs['call_metadata'] is not None else {}
@@ -46,7 +46,7 @@ class OpenAIChatAgent(OpenAIChat):
 
         api_result = await self.get_completion(
             messages=messages['messages'],
-            llm_name=llm_name,
+            model=model,
             temperature=temperature,
             max_tokens=max_tokens,
             n=self.n,
@@ -55,9 +55,9 @@ class OpenAIChatAgent(OpenAIChat):
             function_call='auto',
         )
 
-        call_metadata['cost_summary'] = get_openai_api_cost(model=self.llm_name,
-                                                         completion_tokens=api_result["usage"]['completion_tokens'],
-                                                         prompt_tokens=api_result["usage"]['prompt_tokens'])
+        call_metadata['cost_summary'] = get_openai_api_cost(model=self.model,
+                                                            completion_tokens=api_result["usage"]['completion_tokens'],
+                                                            prompt_tokens=api_result["usage"]['prompt_tokens'])
         call_metadata['total_cost'] = self.total_cost
         if api_result['choices'][0]['finish_reason'] == 'function_call':
             self.llm_trace.create_span(
@@ -95,7 +95,7 @@ class OpenAIChatAgent(OpenAIChat):
 
             # Make API call with the function call content
             assistant_response = await self.get_assistant_response_with_function_result(
-                llm_name=self.llm_name,
+                model=self.model,
                 temperature=self.temperature,
                 max_tokens=self.max_tokens,
                 n=self.n,
@@ -111,7 +111,7 @@ class OpenAIChatAgent(OpenAIChat):
         return {'response': assistant_response}
 
     async def get_assistant_response_with_function_result(self,
-                                                          llm_name,
+                                                          model,
                                                           temperature,
                                                           max_tokens,
                                                           n,
@@ -119,7 +119,7 @@ class OpenAIChatAgent(OpenAIChat):
         # Remove functions arg to get final assistant response
         api_result = await self.get_completion(
             messages=messages,
-            llm_name=llm_name,
+            model=model,
             temperature=temperature,
             max_tokens=max_tokens,
             n=n,

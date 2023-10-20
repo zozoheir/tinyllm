@@ -5,8 +5,8 @@ from sentence_transformers import SentenceTransformer
 from tinyllm.functions.llms.util.example_selector import ExampleSelector
 from tinyllm.tests.base import AsyncioTestCase
 
-model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
-embedding_function = lambda x: model.encode(x)
+embedding_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+embedding_function = lambda x: embedding_model.encode(x)
 
 class TestRedisExampleSelector(AsyncioTestCase):
 

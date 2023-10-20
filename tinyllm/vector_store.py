@@ -1,9 +1,8 @@
-from pgvector.asyncpg import register_vector
-from sqlalchemy import asc, select, text
+from sqlalchemy import text
 import os
 
 from langchain.embeddings import OpenAIEmbeddings
-from sqlalchemy import create_engine, Column, Integer, String, UniqueConstraint, JSON, and_, or_, cast
+from sqlalchemy import Column, Integer, String, UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects.postgresql import insert
 from pgvector.sqlalchemy import Vector

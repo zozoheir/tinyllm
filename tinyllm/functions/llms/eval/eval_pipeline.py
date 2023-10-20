@@ -25,10 +25,12 @@ class EvaluationPipeline:
     def __init__(self,
                  rag_lambda,
                  qa_test_set,
-                 evaluators: List[Function]):
+                 evaluators: List[Function],
+                 metadata={}):
         self.rag_lambda = rag_lambda
         self.qa_test_set = qa_test_set
         self.evaluators = evaluators
+        self.metadata = metadata
 
     async def run_evals(self):
 
@@ -41,12 +43,13 @@ class EvaluationPipeline:
             })
 
         # Run each evaluator
-        for evaluator in self.evaluators:
-            for data_point in self.qa_test_set:
+        for data_point in self.qa_test_set:
+            data_point['scores'] = {}
+            for evaluator in self.evaluators:
                 eval_result = await evaluator(context=data_point["context"],
                                               question=data_point["question"],
                                               correct_answer=data_point["correct_answer"],
                                               generated_answer=data_point["generated_answer"])
-                data_point.update(eval_result)
+                data_point['scores'].update(eval_result)
         return self.qa_test_set
 
