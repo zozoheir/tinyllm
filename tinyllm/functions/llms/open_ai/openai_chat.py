@@ -13,7 +13,7 @@ from tinyllm.functions.llms.open_ai.openai_memory import OpenAIMemory
 from tinyllm.functions.llms.open_ai.openai_prompt_template import OpenAIPromptTemplate
 from tinyllm.functions.validator import Validator
 from tenacity import retry, stop_after_attempt, wait_random_exponential, retry_if_exception_type
-import openai
+
 
 # Define which exceptions to retry on
 def retry_on_openai_exceptions(exception):
@@ -114,7 +114,7 @@ class OpenAIChat(Function):
         stop=stop_after_attempt(5),
         wait=wait_random_exponential(min=1, max=30),
         retry=retry_if_exception_type(
-            (openai.error.RateLimitError, openai.error.Timeout, openai.error.ServiceUnavailableError))
+            (openai.error.RateLimitError, openai.error.Timeout, openai.error.ServiceUnavailableError, openai.error.APIConnectionError))
     )
     async def get_completion(self,
                              model,

@@ -4,6 +4,7 @@
 tinyllm is a lightweight framework for developing, debugging and monitoring LLM powered applications at scale. It sits as a layer between your Web application and your LLM libraries. The tinyllm tech stack:
 - Python library
 - Vector store powered by PostgresDB+pgvector
+- Langfuse integration for tracing, monitoring and debugging tinyLLM functions
 
 The goal of the library is to keep things simple and reduce the unnecessary complexity of libraries like Langchain, llama index etc..
 

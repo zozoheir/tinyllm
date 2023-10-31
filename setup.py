@@ -20,14 +20,13 @@ setup(name='tinyllm',
           'pgvector',
           'psutil',
           'psycopg2-binary',
-          'py2neo==2021.2.3',
           'pydantic==1.10.7',  # Compatible with langchain + langfuse
           'pytest==7.4.0',
           'pyyaml',
           'sqlalchemy',
           'tiktoken',
           'typing-extensions==4.5.0',  # This fixes the pydantic/subclass typing bug
-          'uuid'
+          'uuid',
       ],
       author='Othmane Zoheir',
       author_email='zozoheir@umich.edu',

@@ -95,11 +95,6 @@ class Function:
             self.llm_trace = llm_trace
 
 
-    @property
-    def graph_state(self):
-        """Returns the state of the current function."""
-        return {self.name: self.state}
-
     async def __call__(self, **kwargs):
         try:
             self.input = kwargs

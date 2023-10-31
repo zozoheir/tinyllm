@@ -4,6 +4,7 @@ Wrapper around the Langfuse API to make it easier to use.
 import os
 
 from langfuse import Langfuse
+
 from langfuse.model import CreateGeneration, CreateTrace, CreateSpan, UpdateGeneration, UpdateSpan, CreateScore
 
 langfuse_client = Langfuse(

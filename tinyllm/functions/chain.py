@@ -36,12 +36,3 @@ class Chain(Function):
             return output
         except Exception as e:
             await self.handle_exception(e)
-
-    @property
-    def graph_state(self):
-        """Returns the state of the current function and all its children."""
-        graph_state = {self.name: self.state}
-        for child in self.children:
-            graph_state.update(child.graph_state)
-        return graph_state
-
