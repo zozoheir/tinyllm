@@ -123,7 +123,7 @@ answer_truth_evaluator = AnswerCorrectnessEvaluator(
 )
 
 # Initialize pipeline
-eval_pipeline = EvaluationPipeline(
+eval_pipeline = RagEvaluationPipeline(
     rag_lambda=rag_lambda,
     qa_test_set=qa_test_set['qa_test_set'],
     evaluators=[answer_truth_evaluator]

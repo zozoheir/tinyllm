@@ -45,7 +45,7 @@ class OpenAIChatAgent(OpenAIChat):
         messages = await self.process_input_message(openai_message=get_user_message(message))
 
         api_result = await self.get_completion(
-            messages=messages['messages'],
+            messages=messages,
             model=model,
             temperature=temperature,
             max_tokens=max_tokens,
@@ -99,7 +99,7 @@ class OpenAIChatAgent(OpenAIChat):
                 temperature=self.temperature,
                 max_tokens=self.max_tokens,
                 n=self.n,
-                messages=messages['messages'],
+                messages=messages,
             )
 
         else:

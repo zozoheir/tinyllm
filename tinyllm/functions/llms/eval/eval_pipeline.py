@@ -20,7 +20,7 @@ from typing import List
 
 from tinyllm.functions.function import Function
 
-class EvaluationPipeline:
+class RagEvaluationPipeline:
 
     def __init__(self,
                  rag_lambda,

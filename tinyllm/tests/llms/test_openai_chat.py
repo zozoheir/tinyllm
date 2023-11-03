@@ -26,7 +26,7 @@ class TestOpenAIChat(AsyncioTestCase):
         result = self.loop.run_until_complete(openai_chat(message="Hello, how are you?"))
 
         self.assertEqual(openai_chat.state, States.COMPLETE)
-        self.assertEqual(result['response'], 'Hola, ¿cómo estás?')
+        self.assertEqual(result['output']['response'], 'Hola, ¿cómo estás?')
 
         result = self.loop.run_until_complete(openai_chat(message="Today is Monday"))
         self.assertEqual(openai_chat.state, States.COMPLETE)

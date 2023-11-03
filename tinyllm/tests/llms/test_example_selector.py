@@ -33,7 +33,7 @@ class TestRedisExampleSelector(AsyncioTestCase):
         query = "Find a relevant example"
         results = self.loop.run_until_complete(self.local_example_selector(user_question=query,
                                                                            k=1))
-        self.assertTrue(len(results['best_examples']) == 1)
+        self.assertTrue(len(results['output']['best_examples']) == 1)
 
 
 

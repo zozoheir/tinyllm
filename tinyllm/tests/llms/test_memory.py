@@ -15,7 +15,7 @@ class TestOpenAIMemory(AsyncioTestCase):
         result = self.loop.run_until_complete(openai_memory(openai_message=input_data))
 
         self.assertEqual(openai_memory.state, States.COMPLETE)
-        self.assertEqual(result, {'success': True})
+        self.assertEqual(result['output'], {'success': True})
         self.assertEqual(openai_memory.memories[0], {'role': 'user', 'content': 'Hi agent, how are you?'})
 
 
@@ -24,7 +24,7 @@ class TestOpenAIMemory(AsyncioTestCase):
                       'role': 'assistant'}
         result = self.loop.run_until_complete(openai_memory(openai_message=input_data))
         self.assertEqual(openai_memory.state, States.COMPLETE)
-        self.assertEqual(result, {'success': True})
+        self.assertEqual(result['output'], {'success': True})
         self.assertEqual(openai_memory.memories[1], {'role': 'assistant', 'content': 'I am good, thanks for asking. And you?'})
 
 

@@ -12,7 +12,6 @@ setup(name='tinyllm',
       install_requires=[
           'click',
           'tenacity',
-          'gradio',
           'langchain==0.0.237',
           'langfuse',
           'openai==0.27.8',

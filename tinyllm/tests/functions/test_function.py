@@ -31,7 +31,7 @@ class TestFunction(AsyncioTestCase):
         operator = AddOneOperator(name="AddOneTest")
         result = self.loop.run_until_complete(operator(value=5.0))
         self.assertIsNotNone(result)
-        self.assertEqual(result["value"], 6.0)
+        self.assertEqual(result['output']["value"], 6.0)
 
     def test_invalid_state_transition(self):
         operator = AddOneOperator(name="AddOneTest")

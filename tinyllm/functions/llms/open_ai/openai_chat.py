@@ -85,7 +85,7 @@ class OpenAIChat(Function):
         messages = await self.process_input_message(openai_message=get_user_message(message))
 
         api_result = await self.get_completion(
-            messages=messages['messages'],
+            messages=messages,
             model=model,
             temperature=temperature,
             n=self.n,
@@ -94,17 +94,20 @@ class OpenAIChat(Function):
             generation_name=kwargs.get('generation_name', "Assistant response")
         )
         assistant_response = api_result['choices'][0]['message']['content']
-        return {'response': assistant_response}
+        return {
+            "response": assistant_response,
+        }
 
     async def process_input_message(self,
                                     openai_message,
                                     **kwargs):
         # Format messages into list of dicts for OpenAI
-        messages = await self.prompt_template(openai_msg=openai_message,
+        response = await self.prompt_template(openai_msg=openai_message,
                                               memories=self.memory.memories)
         # add new memory
         await self.add_memory(new_memory=openai_message)
-        return messages
+
+        return response['output']['messages']
 
     async def process_output(self, **kwargs):
         await self.add_memory(get_assistant_message(content=kwargs['response']))
@@ -114,7 +117,8 @@ class OpenAIChat(Function):
         stop=stop_after_attempt(5),
         wait=wait_random_exponential(min=1, max=30),
         retry=retry_if_exception_type(
-            (openai.error.RateLimitError, openai.error.Timeout, openai.error.ServiceUnavailableError, openai.error.APIConnectionError))
+            (openai.error.RateLimitError, openai.error.Timeout, openai.error.ServiceUnavailableError,
+             openai.error.APIConnectionError))
     )
     async def get_completion(self,
                              model,

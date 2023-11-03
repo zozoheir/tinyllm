@@ -22,6 +22,8 @@ from tinyllm.llm_trace import LLMTrace
 from tinyllm.state import States, ALLOWED_TRANSITIONS
 from tinyllm.functions.validator import Validator
 from inspect import iscoroutinefunction
+import sys, traceback
+
 
 def pretty_print(value):
     if isinstance(value, dict):
@@ -99,25 +101,27 @@ class Function:
         try:
             self.input = kwargs
             self.transition(States.INPUT_VALIDATION)
-            kwargs = await self.validate_input(**kwargs)
+            validated_input = await self.validate_input(**kwargs)
             self.transition(States.RUNNING)
-            output = await self.run_function(**kwargs)
-            self.output = output
+            self.output = await self.run_function(**validated_input)
             self.transition(States.OUTPUT_VALIDATION)
-            self.output = await self.validate_output(**output)
+            self.output = await self.validate_output(**self.output)
             self.transition(States.PROCESSING_OUTPUT)
-            self.output = await self.process_output(**output)
+            self.output = await self.process_output(**self.output)
             self.processed_output = self.output
             self.transition(States.COMPLETE)
-            return self.output
+            return {"status": "success",
+                    "output": self.output}
         except Exception as e:
-            await self.handle_exception(e)
-
-    async def handle_exception(self, e):
-        self.error_message = str(e)
-        self.transition(States.FAILED, msg=str(e))
-        if self.required is True:
-            raise e
+            self.error_message = str(e)
+            self.transition(States.FAILED, msg=str(e))
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            traceback_details = traceback.format_exception(exc_type, exc_value, exc_traceback)
+            detailed_error_msg = f"Exception Type: {exc_type.__name__}\n" \
+                                 f"Exception Message: {str(e)}\n" \
+                                 f"Stack Trace: {''.join(traceback_details)}"
+            return {"status": "error",
+                    "message": detailed_error_msg}
 
     def transition(self, new_state: States, msg: Optional[str] = None):
         if new_state not in ALLOWED_TRANSITIONS[self.state]:

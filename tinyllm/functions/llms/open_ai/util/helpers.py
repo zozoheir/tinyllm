@@ -114,9 +114,27 @@ def count_tokens(input: Union[List[Dict], Dict, str],
     elif isinstance(input, str):
         return num_tokens_from_string(input)
     elif isinstance(input, dict):
-        dict_string = stringify_dict(header=kwargs.get('header','[doc]'),
+        dict_string = stringify_dict(header=kwargs.get('header', '[doc]'),
                                      dict=input,
-                                     ignore_keys=kwargs.get('ignore_keys',[]))
+                                     ignore_keys=kwargs.get('ignore_keys', []))
         return num_tokens_from_string(dict_string)
     else:
         raise NotImplementedError("count_tokens() is not implemented for this input type.")
+
+
+def get_openai_batch_run_config(input,
+                                prompt_template,
+                                expected_completion_to_input_multiplier=1):
+    prompt_template_size = count_tokens(prompt_template.messages)
+    input_token_size = count_tokens(input)
+    leftover_tokens = OPENAI_MODELS_CONTEXT_SIZES['gpt-3.5-turbo'] - count_tokens(
+        prompt_template.messages) - input_token_size
+    if leftover_tokens / input_token_size < expected_completion_to_input_multiplier:
+        model_name = 'gpt-3.5-turbo-16k'
+        leftover_tokens = OPENAI_MODELS_CONTEXT_SIZES['gpt-3.5-turbo-16k'] - prompt_template_size - input_token_size
+    else:
+        model_name = 'gpt-3.5-turbo'
+    return {
+        'model': model_name,
+        'max_tokens': leftover_tokens
+    }

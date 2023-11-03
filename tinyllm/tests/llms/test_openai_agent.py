@@ -53,7 +53,7 @@ class TestOpenAIAgent(AsyncioTestCase):
         result = self.loop.run_until_complete(openai_agent(message="Oh nana...what's my name?"))
 
         self.assertEqual(openai_agent.state, States.COMPLETE)
-        self.assertTrue('Elias' in result['response'])
+        self.assertTrue('Elias' in result['output']['response'])
 
 
 if __name__ == '__main__':
