@@ -1,3 +1,4 @@
+import os
 import random
 import re
 from textwrap import dedent
@@ -49,7 +50,9 @@ class OutputQASetGenerator(Validator):
 
 class QASetGenerator(Function):
 
-    def __init__(self, **kwargs):
+    def __init__(self,
+                 prompt_template=qa_prompt_template,
+                 **kwargs):
         super().__init__(input_validator=InputQASetGenerator,
                          output_validator=OutputQASetGenerator,
                          **kwargs)
@@ -58,7 +61,7 @@ class QASetGenerator(Function):
             name="QA Data Point Generator",
             model='gpt-3.5-turbo',
             max_tokens=600,
-            prompt_template=qa_prompt_template,
+            prompt_template=prompt_template,
             is_traced=True,
             llm_trace=self.llm_trace,
             with_memory=False,
@@ -70,19 +73,21 @@ class QASetGenerator(Function):
 
         qa_test_set = []
         for _ in range(n):
-
-            context = random.choice(documents)["text"]
+            doc = random.choice(documents)
+            context = doc["text"]
             formatted_context = dedent(f"""
             Relevant context for question/answer generation:
             {context}
             """)
             openai_response = await self.openai_chat(
                 message=formatted_context,
-                generation_name="QA Data Point Generator")
+                generation_name="QA Data Point Generator"
+            )
 
             qa_test_set.append({
-                "context": context,
-                "chat_response": openai_response["response"]
+                "metadata": doc["emetadata"],
+                "truth_context": context,
+                "chat_response": openai_response['output']["response"]
             })
 
         return {"qa_test_set": qa_test_set}
@@ -97,8 +102,13 @@ class QASetGenerator(Function):
             if not (question_match and answer_match):
                 raise ValueError("The provided string doesn't match the expected format.")
             else:
-                test_data_point.update({
-                    "question": question_match.group(1).strip(),
-                    "correct_answer": answer_match.group(1).strip()
-                })
+                question_match = question_match.group(1).strip()
+                answer_match = answer_match.group(1).strip()
+                if question_match and answer_match:
+                    test_data_point.update({
+                        "question": question_match,
+                        "correct_answer": answer_match
+                    })
+                else:
+                    raise ValueError("The provided string doesn't match the expected format.")
         return {"qa_test_set": qa_test_set}

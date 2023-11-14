@@ -2,6 +2,7 @@ import re
 from textwrap import dedent
 
 from tinyllm.functions.function import Function
+from tinyllm.functions.llms.eval.evaluator import Evaluator
 from tinyllm.functions.llms.open_ai.openai_chat import OpenAIChat
 from tinyllm.functions.llms.open_ai.openai_prompt_template import OpenAIPromptTemplate
 from tinyllm.functions.llms.open_ai.util.helpers import get_user_message, get_assistant_message
@@ -52,23 +53,10 @@ If the the generated answer is "Not enough information", the score should be 0.
 )
 
 
-class InputAnswerAccuracyEvaluator(Validator):
-    context: str
-    question: str
-    correct_answer: str
-    generated_answer: str
-
-
-class OutputAnswerAccuracyEvaluator(Validator):
-    chat_response: str
-
-
-class AnswerCorrectnessEvaluator(Function):
+class AnswerCorrectnessEvaluator(Evaluator):
 
     def __init__(self, **kwargs):
-        super().__init__(input_validator=InputAnswerAccuracyEvaluator,
-                         output_validator=OutputAnswerAccuracyEvaluator,
-                         **kwargs)
+        super().__init__(**kwargs)
 
         self.openai_chat = OpenAIChat(
             name="Answer Accuracy Evaluator",
@@ -81,14 +69,14 @@ class AnswerCorrectnessEvaluator(Function):
         )
 
     async def run(self, **kwargs):
-        context = kwargs["context"]
-        question = kwargs["question"]
+        context = kwargs["retrieved_chunks"]
+        question = kwargs["input"]
         correct_answer = kwargs["correct_answer"]
-        generated_answer = kwargs["generated_answer"]
+        generated_answer = kwargs["response"]
         formatted_message = f"""
 Context:
 {context}
-        
+
 Question:
 {question}
 
@@ -101,19 +89,21 @@ Generated answer:
         openai_response = await self.openai_chat(
             message=formatted_message,
             generation_name="Answer Correctness Evaluator")
-
-        return {"chat_response": openai_response['response']}
-
-    async def process_output(self, **kwargs) -> dict:
-        chat_response = kwargs["chat_response"]
+        chat_response = openai_response['output']["response"]
         # Regex patterns
         reasoning_pattern = r"- Reasoning: (.*?)- Correctness score:"
         correct_score_pattern = r"- Correctness score: (.*)"
         reasoning_match = re.search(reasoning_pattern, chat_response, re.DOTALL)
         truth_score_match = re.search(correct_score_pattern, chat_response)
-        output_dict = {}
         if reasoning_match:
-            output_dict["truth_score_reasoning"] = reasoning_match.group(1).strip()
+            truth_score_reasoning = reasoning_match.group(1).strip()
         if truth_score_match:
-            output_dict["correctness_score"] = float(truth_score_match.group(1).strip().split('/')[0]) / 10
-        return output_dict
+            correctness_score = float(truth_score_match.group(1).strip().split('/')[0]) / 10
+        return {
+            "evals": {
+                "correctness_score": correctness_score,
+            },
+            "metadata": {
+                "truth_score_reasoning": truth_score_reasoning,
+            }
+        }

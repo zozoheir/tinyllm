@@ -136,5 +136,5 @@ def get_openai_batch_run_config(input,
         model_name = 'gpt-3.5-turbo'
     return {
         'model': model_name,
-        'max_tokens': leftover_tokens
+        'max_tokens': leftover_tokens*0.99
     }

@@ -102,8 +102,8 @@ kg_qa_chain = KGQAChain(
     is_traced=True,
 )
 
-async def rag_lambda(user_question):
-    chain_response = await kg_qa_chain(user_question=user_question)
+async def rag_lambda(input):
+    chain_response = await kg_qa_chain(input=input)
     return chain_response['response']
 
 # Generate test set

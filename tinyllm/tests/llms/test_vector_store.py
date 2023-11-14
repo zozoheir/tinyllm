@@ -4,7 +4,7 @@ import os
 from sqlalchemy import delete
 
 from tinyllm.tests.base import AsyncioTestCase
-from tinyllm.vector_store import VectorStore, Embeddings
+from tinyllm.pg_vector_store import VectorStore, Embeddings
 
 
 class TestVectorStore(AsyncioTestCase):

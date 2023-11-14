@@ -21,12 +21,17 @@ def retry_on_openai_exceptions(exception):
                       (openai.error.RateLimitError,
                        openai.error.Timeout,
                        openai.error.ServiceUnavailableError,
-                       openai.error.APIError))
+                       openai.error.APIError,
+                       openai.error.APIConnectionError))
 
 
 class OpenAIChatInitValidator(Validator):
     prompt_template: OpenAIPromptTemplate  # Prompt template TYPES are validated on a model by model basis
     with_memory: bool
+    model: str
+    temperature: float
+    max_tokens: int
+    answer_format_prompt: Optional[str]
 
 
 class OpenAIChatInputValidator(Validator):
@@ -49,12 +54,15 @@ class OpenAIChat(Function):
                  temperature=0,
                  with_memory=False,
                  max_tokens=400,
+                 answer_format_prompt=None,
                  **kwargs):
         val = OpenAIChatInitValidator(model=model,
                                       temperature=temperature,
                                       prompt_template=prompt_template,
                                       max_tokens=max_tokens,
                                       with_memory=with_memory,
+                                      answer_format_prompt=answer_format_prompt,
+                                      **kwargs
                                       )
         super().__init__(input_validator=OpenAIChatInputValidator,
                          **kwargs)
@@ -70,6 +78,8 @@ class OpenAIChat(Function):
         self.with_memory = with_memory
         self.max_tokens = max_tokens
         self.total_cost = 0
+        # The context builder needs the available token size from the prompt template
+        self.answer_format_prompt_size = count_tokens(answer_format_prompt) if answer_format_prompt is not None else 0
 
     async def add_memory(self, new_memory):
         if self.with_memory is True:
@@ -113,13 +123,6 @@ class OpenAIChat(Function):
         await self.add_memory(get_assistant_message(content=kwargs['response']))
         return kwargs
 
-    @retry(
-        stop=stop_after_attempt(5),
-        wait=wait_random_exponential(min=1, max=30),
-        retry=retry_if_exception_type(
-            (openai.error.RateLimitError, openai.error.Timeout, openai.error.ServiceUnavailableError,
-             openai.error.APIConnectionError))
-    )
     async def get_completion(self,
                              model,
                              temperature,
@@ -158,9 +161,9 @@ class OpenAIChat(Function):
             return api_result
 
         except Exception as e:
-            cost = get_openai_api_cost(model=self.model,
-                                       completion_tokens=0,
-                                       prompt_tokens=count_openai_messages_tokens(messages))
+            #cost = get_openai_api_cost(model=self.model,
+            #                           completion_tokens=0,
+            #                           prompt_tokens=count_openai_messages_tokens(messages))
             self.llm_trace.update_generation(
                 completion=str({"error": str(e)}),
                 metadata={"error": str(e)},
@@ -206,10 +209,9 @@ class OpenAIChat(Function):
         memories_size = count_tokens(self.memory.memories,
                                      header='',
                                      ignore_keys=[])
-        prompt_template_size = count_tokens(self.prompt_template.messages,
-                                            header='',
-                                            ignore_keys=[])
-        return OPENAI_MODELS_CONTEXT_SIZES[self.model] - prompt_template_size - memories_size - self.max_tokens - 10
+
+        return (OPENAI_MODELS_CONTEXT_SIZES[
+            self.model] - self.prompt_template.size - memories_size - self.max_tokens - self.answer_format_prompt_size - 10)*0.99
 
 
 class OpenAIChatStream(OpenAIChat):
@@ -232,7 +234,7 @@ class OpenAIChatStream(OpenAIChat):
 
         response = openai.ChatCompletion.create(
             model=self.model,
-            messages=messages['messages'],
+            messages=messages,
             temperature=temperature,
             max_tokens=max_tokens,
             stream=True  # this time, we set stream=True

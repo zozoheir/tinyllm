@@ -9,7 +9,7 @@ class InitValidator(Validator):
     collection_name: str
 
 class InputValidator(Validator):
-    user_question: str
+    input: str
     k: Optional[int] = 1
 
 class OutputValidator(Validator):
@@ -43,6 +43,6 @@ class ExampleSelector(Function):
         self.embeddings = [example['embeddings'] for example in self.examples]
 
     async def run(self, **kwargs):
-        query_embedding = self.embedding_function(kwargs['user_question'])
+        query_embedding = self.embedding_function(kwargs['input'])
         similar_indexes = get_top_n_similar_vectors_index(input_vector=query_embedding, vectors=self.embeddings, k=kwargs['k'])
         return {'best_examples': [self.examples[i] for i in similar_indexes]}

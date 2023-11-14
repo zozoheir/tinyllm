@@ -148,3 +148,73 @@ def remove_duplicate_lines(input_string: str) -> str:
             seen_lines.add(trimmed_line)
             unique_lines.append(trimmed_line)
     return '\n'.join(unique_lines)
+
+
+import re
+
+from fuzzywuzzy import fuzz
+
+
+def find_closest_match_char_by_char(source, target):
+    max_ratio = 0
+    best_match = (0, 0)
+    n = len(source)
+
+    for start in range(n):
+        for end in range(start, n):
+            substring = source[start:end + 1]
+            ratio = fuzz.token_set_ratio(substring, target)
+            if ratio > max_ratio:
+                max_ratio = ratio
+                best_match = (start, end)
+
+    return best_match
+
+def get_smallest_chunk(source, matches):
+    # Sort matches by start index
+    matches.sort(key=lambda x: x[0])
+
+    min_chunk = (0, len(source))
+    for i in range(len(matches)):
+        for j in range(i+1, len(matches)):
+            if matches[j][0] > matches[i][1]:  # Ensuring the second element starts after the first
+                chunk_size = matches[j][1] - matches[i][0]
+                if chunk_size < (min_chunk[1] - min_chunk[0]):
+                    min_chunk = (matches[i][0], matches[j][1])
+                    break  # No need to check further as we are looking for smallest chunk
+
+    return min_chunk
+
+
+def preprocess_text(text):
+    # Convert to lower case and remove special characters
+    return re.sub(r'[^a-zA-Z0-9\s]', '', text.lower())
+
+
+def split_relationship(input_text):
+    # Split the relationship into entities and relationships
+    elements = re.findall(r'x:([^\s]+)', input_text)
+    return elements
+
+
+def get_optimal_source_chunk(triplet, source):
+    elements = triplet.split(' ')
+    source = preprocess_text(source)
+    entity_start_end = [
+        find_closest_match_char_by_char(source, element) for element in [elements[0], elements[2]]
+    ]
+    relationship_start_end = find_closest_match_char_by_char(source, elements[1])
+    start = min(entity_start_end[0][0], relationship_start_end[0])
+    end = max(entity_start_end[1][1], relationship_start_end[1])
+    start = max(0, start - 50)
+    end = min(len(source), end + 50)
+    return start, end
+
+# Test the function with a small example
+#relationship = "x:Bitcoin x:has_indicator x:Terminal_Price"
+#test_source_text = "Bitcoin's performance is measured by various indicators, including the Terminal Price, which reflects market trends."
+
+# Run the function
+#optimal_chunk_start, optimal_chunk_end = get_optimal_source_chunk(relationship, test_source_text)
+
+#print(test_source_text[optimal_chunk_start:optimal_chunk_end])

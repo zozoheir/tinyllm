@@ -10,15 +10,16 @@ Function is the building block of tinyllm. A function has 4 main components:
 - Functions, Chains, and Concurrents and
 """
 import datetime as dt
-import logging
 import uuid
 from typing import Any, Callable, Optional, Type, Dict
 import pytz
+from langfuse.client import DatasetItemClient
+from langfuse.model import CreateScore
 from pydantic import validator as field_validator
 
 from smartpy.utility.log_util import getLogger
 from tinyllm.exceptions import InvalidStateTransition
-from tinyllm.llm_trace import LLMTrace
+from tinyllm.llm_ops import LLMTrace, langfuse_client, LLMDataset
 from tinyllm.state import States, ALLOWED_TRANSITIONS
 from tinyllm.functions.validator import Validator
 from inspect import iscoroutinefunction
@@ -38,16 +39,16 @@ class FunctionInitValidator(Validator):
     name: str
     input_validator: Optional[Type[Validator]]
     output_validator: Optional[Type[Validator]]
-    run_function: Optional[Callable]
     is_traced: bool
-
-    @field_validator("run_function")
-    def validate_run_function(cls, v):
-        if v is not None and not iscoroutinefunction(v):
-            raise ValueError("run_function must be an async function")
-        return v
+    evaluators: Optional[list]
+    dataset_name: Optional[str]
 
 
+class DefaultInputValidator(Validator):
+    input: str
+
+class DefaultOutputValidator(Validator):
+    response: str
 
 
 class Function:
@@ -57,17 +58,17 @@ class Function:
             name,
             user_id=None,
             input_validator=Validator,
-            output_validator=Validator,
-            run_function=None,
+            output_validator=DefaultOutputValidator,
+            evaluators=[],
+            dataset: LLMDataset = None,
             is_traced=True,
             required=True,
-            llm_trace: LLMTrace =None,
+            llm_trace: LLMTrace = None,
     ):
         w = FunctionInitValidator(
             name=name,
             input_validator=input_validator,
             output_validator=output_validator,
-            run_function=run_function,
             is_traced=is_traced,
         )
         self.user = user_id
@@ -78,7 +79,6 @@ class Function:
 
         self.input_validator = input_validator
         self.output_validator = output_validator
-        self.run_function = run_function if run_function is not None else self.run
         self.is_traced = is_traced
         self.required = required
         self.logs = ""
@@ -88,6 +88,7 @@ class Function:
         self.input = None
         self.output = None
         self.processed_output = None
+        self.scores = []
         if llm_trace is None and is_traced is True:
             self.llm_trace = LLMTrace(
                 name=self.name,
@@ -95,7 +96,9 @@ class Function:
             )
         else:
             self.llm_trace = llm_trace
-
+        self.cache = {}
+        self.evaluators = evaluators
+        self.dataset = dataset
 
     async def __call__(self, **kwargs):
         try:
@@ -103,12 +106,15 @@ class Function:
             self.transition(States.INPUT_VALIDATION)
             validated_input = await self.validate_input(**kwargs)
             self.transition(States.RUNNING)
-            self.output = await self.run_function(**validated_input)
+            self.output = await self.run(**validated_input)
             self.transition(States.OUTPUT_VALIDATION)
             self.output = await self.validate_output(**self.output)
             self.transition(States.PROCESSING_OUTPUT)
             self.output = await self.process_output(**self.output)
             self.processed_output = self.output
+            if self.evaluators:
+                self.transition(States.EVALUATING)
+                await self.evaluate(**kwargs)
             self.transition(States.COMPLETE)
             return {"status": "success",
                     "output": self.output}
@@ -120,8 +126,16 @@ class Function:
             detailed_error_msg = f"Exception Type: {exc_type.__name__}\n" \
                                  f"Exception Message: {str(e)}\n" \
                                  f"Stack Trace: {''.join(traceback_details)}"
+            self.log(detailed_error_msg, level="error")
             return {"status": "error",
                     "message": detailed_error_msg}
+
+        finally:
+            for score in self.scores:
+                self.llm_trace.score_generation(
+                    name=score["name"],
+                    value=score["value"],
+                )
 
     def transition(self, new_state: States, msg: Optional[str] = None):
         if new_state not in ALLOWED_TRANSITIONS[self.state]:
@@ -134,6 +148,31 @@ class Function:
             f"transition to: {new_state}" + (f" ({msg})" if msg is not None else ""),
             level=log_level,
         )
+
+    async def evaluate(self,
+                       **kwargs):
+        eval_data = self.cache
+        if self.processed_output:
+            eval_data.update(self.processed_output)
+        if kwargs:
+            eval_data.update(kwargs)
+
+        item = self.dataset.create_item(
+            input=kwargs['input'],
+            expected_output=kwargs['expected_output'],
+        )
+        item_client = DatasetItemClient(item, langfuse_client)
+        item_client.link(self.llm_trace.current_generation, kwargs['run_name'])
+        for evaluator in self.evaluators:
+            evaluator_response = await evaluator(**eval_data)
+            if evaluator_response['status'] == 'success':
+                for name, value in evaluator_response['output']['evals'].items():
+                    self.llm_trace.current_generation.score(CreateScore(
+                        name=name,
+                        value=value
+                    ))
+            else:
+                self.log(evaluator_response['message'], level="error")
 
     def log(self, message, level="info"):
         log_message = f"[{self.name}] {message}"

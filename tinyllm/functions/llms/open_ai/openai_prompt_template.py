@@ -46,8 +46,8 @@ class OpenAIPromptTemplate(Function):
         messages = self.messages + kwargs['memories']
 
         if self.example_selector:
-            best_examples = await self.example_selector(user_question=kwargs['openai_msg']['content'])
-            for good_example in best_examples['best_examples']:
+            best_examples = await self.example_selector(input=kwargs['openai_msg']['content'])
+            for good_example in best_examples['output']['best_examples']:
                 messages.append(get_user_message(good_example['USER']))
                 messages.append(get_assistant_message(str(good_example['ASSISTANT'])))
 
