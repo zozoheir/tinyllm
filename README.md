@@ -18,6 +18,7 @@ pip install git+https://github.com/zozoheir/tinyllm.git
 * Various prompt utility functions for prompt optimization and string formatting
 * Test set generation for evaluation
 * Evaluation pipeline with scoring
+* Fallback strategies (different model, different chain...) 
 * Full out of the box observability of chains, agents, prompts, output processing and evaluations on Langfuse
 
 ## ⚡ How to and examples
