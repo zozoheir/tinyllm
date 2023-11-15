@@ -13,8 +13,11 @@ The goal of the library is to keep things simple and reduce the unnecessary comp
 pip install git+https://github.com/zozoheir/tinyllm.git
 ```
 ## ⚡ Features
-* OpenAI chat and agent with functions implementation
-* Evaluation with scoring
+* OpenAI chat and agent with functions
+* Vector store
+* Various prompt utility functions for prompt optimization and string formatting
+* Test set generation for evaluation
+* Evaluation pipeline with scoring
 * Full out of the box observability of chains, agents, prompts, output processing and evaluations on Langfuse
 
 ## ⚡ How to and examples
