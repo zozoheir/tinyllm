@@ -21,7 +21,7 @@ pip install git+https://github.com/zozoheir/tinyllm.git
 
 ## ⚡ How to and examples
 
-* ####  [Check all examples here](https://github.com/zozoheir/tinyllm/blob/main/tinyllm/docs/examples.md)
+* ####  [Check all examples here](https://github.com/zozoheir/tinyllm/blob/main/docs/examples.md)
 
 
 ## ⚡ Background and goals
