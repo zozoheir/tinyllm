@@ -18,6 +18,7 @@ from langfuse.model import CreateScore
 from pydantic import validator as field_validator
 
 from smartpy.utility.log_util import getLogger
+from smartpy.utility.py_util import get_exception_info
 from tinyllm.exceptions import InvalidStateTransition
 from tinyllm.llm_ops import LLMTrace, langfuse_client, LLMDataset
 from tinyllm.state import States, ALLOWED_TRANSITIONS
@@ -50,7 +51,6 @@ class DefaultInputValidator(Validator):
 class DefaultOutputValidator(Validator):
     response: str
 
-
 class Function:
 
     def __init__(
@@ -60,7 +60,7 @@ class Function:
             input_validator=Validator,
             output_validator=DefaultOutputValidator,
             evaluators=[],
-            dataset: LLMDataset = None,
+            dataset: LLMDataset = LLMDataset(name='tinyllm'),
             is_traced=True,
             required=True,
             llm_trace: LLMTrace = None,
@@ -89,6 +89,7 @@ class Function:
         self.output = None
         self.processed_output = None
         self.scores = []
+        self.llm_trace = None
         if llm_trace is None and is_traced is True:
             self.llm_trace = LLMTrace(
                 name=self.name,
@@ -121,11 +122,7 @@ class Function:
         except Exception as e:
             self.error_message = str(e)
             self.transition(States.FAILED, msg=str(e))
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            traceback_details = traceback.format_exception(exc_type, exc_value, exc_traceback)
-            detailed_error_msg = f"Exception Type: {exc_type.__name__}\n" \
-                                 f"Exception Message: {str(e)}\n" \
-                                 f"Stack Trace: {''.join(traceback_details)}"
+            detailed_error_msg = get_exception_info(e)
             self.log(detailed_error_msg, level="error")
             return {"status": "error",
                     "message": detailed_error_msg}
@@ -157,25 +154,32 @@ class Function:
         if kwargs:
             eval_data.update(kwargs)
 
-        item = self.dataset.create_item(
-            input=kwargs['input'],
-            expected_output=kwargs['expected_output'],
-        )
-        item_client = DatasetItemClient(item, langfuse_client)
-        item_client.link(self.llm_trace.current_generation, kwargs['run_name'])
+        if self.dataset:
+            item = self.dataset.create_item(
+                input=kwargs.get('input',"None"),
+                expected_output=kwargs.get('expected_output',"None"),
+            )
+            item_client = DatasetItemClient(item, langfuse_client)
+            item_client.link(self.llm_trace.current_generation, kwargs.get('run_name',"None"))
+
         for evaluator in self.evaluators:
             evaluator_response = await evaluator(**eval_data)
             if evaluator_response['status'] == 'success':
                 for name, value in evaluator_response['output']['evals'].items():
-                    self.llm_trace.current_generation.score(CreateScore(
+                    self.llm_trace.score_generation(
                         name=name,
-                        value=value
-                    ))
+                        value=value,
+                        comment=kwargs.get('score_comment', "None"),
+                    )
             else:
                 self.log(evaluator_response['message'], level="error")
 
     def log(self, message, level="info"):
         log_message = f"[{self.name}] {message}"
+        if getattr(self,'llm_trace',None):
+            if self.llm_trace.current_generation:
+                log_message = f"[{self.name}|{self.llm_trace.current_generation.id}] {message}"
+
         self.logs += "\n" + log_message
         if level == "error":
             self.logger.error(log_message)

@@ -1,3 +1,5 @@
+from typing import Optional
+
 from tinyllm.functions.function import Function
 from tinyllm.functions.validator import Validator
 
@@ -5,7 +7,7 @@ from tinyllm.functions.validator import Validator
 
 class OutputValidator(Validator):
     evals: dict
-    metadata: dict
+    metadata: Optional[dict] = {}
 
 
 class Evaluator(Function):

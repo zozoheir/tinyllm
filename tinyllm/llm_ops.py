@@ -41,6 +41,8 @@ class LLMTrace:
     def __init__(self,
                  **kwargs):
         self.trace = langfuse_client.trace(CreateTrace(**kwargs))
+        self.current_generation = None
+        self.current_span = None
 
     def create_generation(self,
                           **kwargs):
