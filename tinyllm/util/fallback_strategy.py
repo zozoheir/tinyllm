@@ -14,7 +14,8 @@ class KwargsChangeStrategy(FallbackStrategy):
     async def apply(self, func, *args, **kwargs):
         # Only update the kwargs that are specified in fallback_kwargs
         updated_kwargs = {**kwargs, **self.fallback_kwargs}
-        return await func(*args, **updated_kwargs)
+        result = await func(*args, **updated_kwargs)
+        return result
 
 class RetryStrategy(FallbackStrategy):
     def __init__(self, max_retries=3):
@@ -35,11 +36,12 @@ def fallback_decorator(func):
             exception_type = type(e)
             if exception_type in self.fallback_strategies:
                 strategy = self.fallback_strategies[exception_type]
-                return await strategy.apply(func, self, *args, **kwargs)
+                result = await strategy.apply(func, self, *args, **kwargs)
+                return result
             raise
     return wrapper
 
 # Example usage
 fallback_strategies_example = {
-    FallbackStrategy: KwargsChangeStrategy(fallback_kwargs={'model':'gpt-4-1106-preview'}),
+    Exception: KwargsChangeStrategy(fallback_kwargs={'model':'gpt-4-1106-preview'}),
 }

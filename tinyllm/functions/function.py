@@ -45,8 +45,10 @@ class FunctionInitValidator(Validator):
 class DefaultInputValidator(Validator):
     input: str
 
+
 class DefaultOutputValidator(Validator):
     response: str
+
 
 class Function:
 
@@ -125,9 +127,11 @@ class Function:
             self.transition(States.FAILED, msg=str(e))
             detailed_error_msg = get_exception_info(e)
             self.log(detailed_error_msg, level="error")
-            return {"status": "error",
-                    "message": detailed_error_msg}
-
+            if type(e) in self.fallback_strategies:
+                raise e
+            else:
+                return {"status": "error",
+                        "message": detailed_error_msg}
 
     def transition(self, new_state: States, msg: Optional[str] = None):
         if new_state not in ALLOWED_TRANSITIONS[self.state]:
@@ -151,11 +155,11 @@ class Function:
 
         if self.dataset:
             item = self.dataset.create_item(
-                input=kwargs.get('input',"None"),
-                expected_output=kwargs.get('expected_output',"None"),
+                input=kwargs.get('input', "None"),
+                expected_output=kwargs.get('expected_output', "None"),
             )
             item_client = DatasetItemClient(item, langfuse_client)
-            item_client.link(self.llm_trace.current_generation, kwargs.get('run_name',"None"))
+            item_client.link(self.llm_trace.current_generation, kwargs.get('run_name', "None"))
 
         for evaluator in self.evaluators:
             evaluator_response = await evaluator(**eval_data)
@@ -171,7 +175,7 @@ class Function:
 
     def log(self, message, level="info"):
         log_message = f"[{self.name}] {message}"
-        if getattr(self,'llm_trace',None):
+        if getattr(self, 'llm_trace', None):
             if self.llm_trace.current_generation:
                 log_message = f"[{self.name}|{self.llm_trace.current_generation.id}] {message}"
 
