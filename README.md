@@ -6,22 +6,24 @@ tinyllm is a lightweight framework for developing, debugging and monitoring LLM 
 - Vector store powered by PostgresDB+pgvector
 - Langfuse integration for tracing, monitoring and debugging tinyLLM functions
 
-The goal of the library is to keep things simple and reduce the unnecessary complexity of libraries like Langchain, llama index etc..
+The goal of the library is to keep things simple and reduce the unnecessary complexity of libraries like Langchain, llama index etc...while allowing their integration easily if needed.
 
 ## Install
 ```
 pip install git+https://github.com/zozoheir/tinyllm.git
 ```
 ## ⚡ Features
-* Integrate tiny-llm with any LLM library or existing python code or pipelines
-* Compose, debug and track LLM calls and chains at scale
-* High level abstraction of LLM/API chaining/interactions through a standardized I/O interface
-* OpenAI chat, vector store, prompt templates, chains, parallel executions, example selectors
-
+* OpenAI chat and agent with functions
+* Vector store
+* Various prompt utility functions for prompt optimization and string formatting
+* Test set generation for evaluation
+* Evaluation pipeline with scoring
+* Fallback strategies (different model, different chain...) 
+* Full out of the box observability of chains, agents, prompts, output processing and evaluations on Langfuse
 
 ## ⚡ How to and examples
 
-* ####  [Check all examples here](https://github.com/zozoheir/tinyllm/blob/main/tinyllm/docs/examples.md)
+* ####  [Check all examples here](https://github.com/zozoheir/tinyllm/blob/main/docs/examples.md)
 
 
 ## ⚡ Background and goals
