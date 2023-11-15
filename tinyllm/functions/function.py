@@ -14,8 +14,6 @@ import uuid
 from typing import Any, Callable, Optional, Type, Dict
 import pytz
 from langfuse.client import DatasetItemClient
-from langfuse.model import CreateScore
-from pydantic import validator as field_validator
 
 from smartpy.utility.log_util import getLogger
 from smartpy.utility.py_util import get_exception_info
@@ -23,8 +21,7 @@ from tinyllm.exceptions import InvalidStateTransition
 from tinyllm.llm_ops import LLMTrace, langfuse_client, LLMDataset
 from tinyllm.state import States, ALLOWED_TRANSITIONS
 from tinyllm.functions.validator import Validator
-from inspect import iscoroutinefunction
-import sys, traceback
+from tinyllm.util.fallback_strategy import fallback_decorator
 
 
 def pretty_print(value):
@@ -64,6 +61,8 @@ class Function:
             is_traced=True,
             required=True,
             llm_trace: LLMTrace = None,
+            fallback_strategies={},
+
     ):
         w = FunctionInitValidator(
             name=name,
@@ -100,7 +99,9 @@ class Function:
         self.cache = {}
         self.evaluators = evaluators
         self.dataset = dataset
+        self.fallback_strategies = fallback_strategies
 
+    @fallback_decorator
     async def __call__(self, **kwargs):
         try:
             self.input = kwargs
@@ -127,12 +128,6 @@ class Function:
             return {"status": "error",
                     "message": detailed_error_msg}
 
-        finally:
-            for score in self.scores:
-                self.llm_trace.score_generation(
-                    name=score["name"],
-                    value=score["value"],
-                )
 
     def transition(self, new_state: States, msg: Optional[str] = None):
         if new_state not in ALLOWED_TRANSITIONS[self.state]:
