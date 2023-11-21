@@ -52,7 +52,7 @@ class LLMTrace:
 
     def update_generation(self,
                           **kwargs):
-        kwargs['completion'] = json.dumps({'completion': kwargs['completion']})
+        kwargs['completion'] = json.dumps({'completion': kwargs.get('completion', "No completion")})
         self.current_generation.update(UpdateGeneration(
             **kwargs
         ))
