@@ -85,6 +85,15 @@ class OpenAIChat(Function):
         if self.with_memory is True:
             await self.memory(openai_message=new_memory)
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_random_exponential(min=1, max=10),
+        retry=retry_if_exception_type(
+            (openai.error.RateLimitError,
+             openai.error.Timeout,
+             openai.error.ServiceUnavailableError,
+             openai.error.APIConnectionError))
+    )
     async def run(self, **kwargs):
         message = kwargs.pop('message')
         model = kwargs['model'] if kwargs['model'] is not None else self.model
@@ -93,7 +102,6 @@ class OpenAIChat(Function):
         call_metadata = kwargs['call_metadata'] if kwargs['call_metadata'] is not None else {}
 
         messages = await self.process_input_message(openai_message=get_user_message(message))
-
         api_result = await self.get_completion(
             messages=messages,
             model=model,
@@ -161,7 +169,7 @@ class OpenAIChat(Function):
             return api_result
 
         except Exception as e:
-            #cost = get_openai_api_cost(model=self.model,
+            # cost = get_openai_api_cost(model=self.model,
             #                           completion_tokens=0,
             #                           prompt_tokens=count_openai_messages_tokens(messages))
             self.llm_trace.update_generation(
@@ -197,7 +205,7 @@ class OpenAIChat(Function):
         self.llm_trace.update_generation(
             endTime=datetime.now(),
             modelParameters=model_parameters,
-            completion=json.dumps({'completion': completion}),
+            completion=completion,
             metadata=call_metadata,
             usage=Usage(promptTokens=call_metadata['cost_summary']['prompt_tokens'],
                         completionTokens=call_metadata['cost_summary']['completion_tokens'])
@@ -211,7 +219,7 @@ class OpenAIChat(Function):
                                      ignore_keys=[])
 
         return (OPENAI_MODELS_CONTEXT_SIZES[
-            self.model] - self.prompt_template.size - memories_size - self.max_tokens - self.answer_format_prompt_size - 10)*0.99
+                    self.model] - self.prompt_template.size - memories_size - self.max_tokens - self.answer_format_prompt_size - 10) * 0.99
 
 
 class OpenAIChatStream(OpenAIChat):

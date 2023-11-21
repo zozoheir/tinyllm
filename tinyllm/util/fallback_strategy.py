@@ -14,7 +14,7 @@ class KwargsChangeStrategy(FallbackStrategy):
     async def apply(self, func, *args, **kwargs):
         # Only update the kwargs that are specified in fallback_kwargs
         updated_kwargs = {**kwargs, **self.fallback_kwargs}
-        result = await func(*args, **updated_kwargs)
+        result = await func(*args, **updated_kwargs, generation_name=updated_kwargs.get('generation_name', None))
         return result
 
 class RetryStrategy(FallbackStrategy):

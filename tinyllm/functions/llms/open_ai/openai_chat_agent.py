@@ -1,6 +1,6 @@
 import json
 from datetime import datetime
-from typing import List, Dict, Callable
+from typing import List, Dict, Callable, Union, Any
 
 from tinyllm.functions.llms.open_ai.util.helpers import get_function_message, get_assistant_message, get_user_message, \
     get_openai_api_cost
@@ -16,7 +16,7 @@ class OpenAIChatAgentInitValidator(Validator):
 
 
 class OpenAIChatAgentOutputValidator(Validator):
-    response: Dict
+    response: Any
 
 
 class OpenAIChatAgent(OpenAIChat):
@@ -30,6 +30,7 @@ class OpenAIChatAgent(OpenAIChat):
                                            function_callables=function_callables,
                                            prompt_template=prompt_template)
         super().__init__(prompt_template=prompt_template,
+                         output_validator=OpenAIChatAgentOutputValidator,
                          **kwargs)
         self.openai_functions = openai_functions
         self.prompt_template = prompt_template
@@ -65,8 +66,8 @@ class OpenAIChatAgent(OpenAIChat):
                 startTime=datetime.now(),
                 metadata={'api_result':api_result['choices'][0]},
             )
-        return {'response': api_result}
 
+        return {'response': api_result.to_dict()}
 
 
 
@@ -101,7 +102,6 @@ class OpenAIChatAgent(OpenAIChat):
                 n=self.n,
                 messages=messages,
             )
-
         else:
             # If no function call, just return the result
             assistant_response = kwargs['response']['choices'][0]['message']['content']

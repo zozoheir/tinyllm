@@ -1,9 +1,13 @@
+import re
+
+from fuzzywuzzy import fuzz
 import random
 from typing import List, Dict, Any, Optional
 import re
 
-
 from tinyllm.util import os_util
+
+
 
 OPENAI_MODELS_MAX_TOKENS = {
     "gpt-3.5-turbo": 4096,
@@ -148,11 +152,6 @@ def remove_duplicate_lines(input_string: str) -> str:
             seen_lines.add(trimmed_line)
             unique_lines.append(trimmed_line)
     return '\n'.join(unique_lines)
-
-
-import re
-
-from fuzzywuzzy import fuzz
 
 
 def find_closest_match_char_by_char(source, target):

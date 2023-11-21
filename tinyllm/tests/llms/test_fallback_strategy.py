@@ -22,7 +22,10 @@ class TestFunction(Function):
         )
 
     async def run(self, **kwargs):
-        if kwargs['text']=='exception':
+        return {'response': kwargs['text']}
+
+    async def process_output(self, **kwargs):
+        if kwargs['response']=='exception':
             raise CustomException('This is a custom exception')
         else:
             return {
@@ -37,4 +40,4 @@ class TestFallbackDecorator(AsyncioTestCase):
 
     def test_run_fallback(self):
         result = self.loop.run_until_complete(test_function(text='exception'))
-        self.assertTrue(result['output'] == 'success')
+        self.assertTrue(result['output']['response'] == 'success')

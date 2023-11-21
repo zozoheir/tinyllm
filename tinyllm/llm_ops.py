@@ -1,6 +1,7 @@
 """
 Wrapper around the Langfuse API to make it easier to use.
 """
+import json
 import os
 
 import pydantic
@@ -51,6 +52,7 @@ class LLMTrace:
 
     def update_generation(self,
                           **kwargs):
+        kwargs['completion'] = json.dumps({'completion': kwargs['completion']})
         self.current_generation.update(UpdateGeneration(
             **kwargs
         ))
@@ -58,6 +60,7 @@ class LLMTrace:
     def create_span(self,
                     **kwargs):
         new_span = self.trace.span(CreateSpan(**kwargs))
+        self.current_span = new_span
         return new_span
 
     def update_span(self,
