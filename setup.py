@@ -26,6 +26,7 @@ setup(name='tinyllm',
           'tiktoken',
           'typing-extensions==4.5.0',  # This fixes the pydantic/subclass typing bug
           'uuid',
+          'fuzzywuzzy'
       ],
       author='Othmane Zoheir',
       author_email='zozoheir@umich.edu',
