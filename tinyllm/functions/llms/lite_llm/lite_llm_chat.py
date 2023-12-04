@@ -11,6 +11,7 @@ from litellm import OpenAIError, acompletion
 from tinyllm.functions.function import Function
 from tinyllm.functions.llms.lite_llm.lite_llm_memory import LiteLLMMemory
 from tinyllm.functions.llms.lite_llm.util.helpers import *
+from tinyllm.functions.llms.util.example_selector import ExampleSelector
 from tinyllm.functions.validator import Validator
 from tenacity import retry, stop_after_attempt, wait_random_exponential, retry_if_exception_type
 from openai import AsyncOpenAI
@@ -39,6 +40,7 @@ class LiteLLMChatInitValidator(Validator):
     answer_format_prompt: Optional[str]
     openai_functions: Optional[Any] = None
     function_callables: Optional[Any] = None
+    example_selector: Optional[ExampleSelector] = None
 
 
 class LiteLLMChatInputValidator(Validator):
@@ -64,6 +66,7 @@ class LiteLLMChat(Function):
                  answer_format_prompt=None,
                  openai_functions=None,
                  function_callables=None,
+                 example_selector=None,
                  **kwargs):
         val = LiteLLMChatInitValidator(system_prompt=system_prompt,
                                        model=model,
@@ -73,6 +76,7 @@ class LiteLLMChat(Function):
                                        answer_format_prompt=answer_format_prompt,
                                        openai_functions=openai_functions,
                                        function_callables=function_callables,
+                                        example_selector=example_selector,
                                        **kwargs
                                        )
         super().__init__(input_validator=LiteLLMChatInputValidator,
@@ -93,6 +97,7 @@ class LiteLLMChat(Function):
         self.answer_format_prompt = answer_format_prompt
         self.openai_functions = openai_functions
         self.function_callables = function_callables
+        self.example_selector = example_selector
 
         self.total_cost = 0
         # The context builder needs the available token size from the prompt template
@@ -263,6 +268,12 @@ class LiteLLMChat(Function):
                                         **kwargs):
         system_prompt = get_system_message(content=self.system_prompt)
         examples = []  # add example selector
+        if self.example_selector and role == 'user':
+            best_examples = await self.example_selector(input=content)
+            for good_example in best_examples['output']['best_examples']:
+                examples.append(get_user_message(good_example['USER']))
+                examples.append(get_assistant_message(str(good_example['ASSISTANT'])))
+
         new_msg = get_openai_message(role,
                                      content,
                                      **kwargs)
