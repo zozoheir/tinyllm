@@ -9,8 +9,8 @@ class TestDocsContextBuilder(unittest.TestCase):
         super().setUp()
 
         # Define the initial parameters for DocsContextBuilder
-        self.start_string = "SUPPORTING DOCS"
-        self.end_string = "SUPPORTING DOCS"
+        self.start_string = "KNOWLEDGE GRAPH"
+        self.end_string = "KNOWLEDGE GRAPH"
         self.available_token_size = 1024  # set some arbitrary limit
 
         self.docs = [

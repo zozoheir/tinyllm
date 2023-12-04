@@ -4,8 +4,8 @@
 
 import asyncio
 
-from tinyllm.functions.llms.open_ai.openai_chat import OpenAIChat
-from tinyllm.functions.llms.open_ai.openai_prompt_template import OpenAIPromptTemplate
+from tinyllm.functions.llms.openai.openai_chat import OpenAIChat
+from tinyllm.functions.llms.openai.openai_prompt_template import OpenAIPromptTemplate
 
 prompt_template = OpenAIPromptTemplate(
     name="TinyLLM Agent Prompt Template",
@@ -23,10 +23,11 @@ print(response)
 ```
 
 #### OpenAI agent
+
 ```python
 import asyncio
 
-from tinyllm.functions.llms.open_ai.openai_chat_agent import OpenAIChatAgent
+from tinyllm.functions.llms.openai.openai_chat_agent import OpenAIChatAgent
 
 test_openai_functions = [
     {
@@ -46,11 +47,13 @@ test_openai_functions = [
     }
 ]
 
+
 def test_function(asked_property):
     if asked_property == "name":
         return "Elias"
     elif asked_property == "birthday":
         return "January 1st"
+
 
 function_callables = {'test_function': test_function}
 
@@ -77,8 +80,8 @@ string_list = [
     {"content": "Fake content 3", "summary": "Fake summary 3", "title": "Fake title 3"}
 ]
 
-context_builder = SingleSourceDocsContextBuilder(start_string="SUPPORTING DOCS",
-                                        end_string="SUPPORTING DOCS",
+context_builder = SingleSourceDocsContextBuilder(start_string="KNOWLEDGE GRAPH",
+                                        end_string="KNOWLEDGE GRAPH",
                                         available_token_size=1000)
 final_context = context_builder.get_context(
     docs=string_list,
@@ -97,7 +100,7 @@ print(final_context)
 import asyncio
 loop = asyncio.get_event_loop()
 
-kg_qa_chain = KGQAChain(
+kg_qa_chain = Retriever(
     name="KG QA Chain",
     is_traced=True,
 )
@@ -143,10 +146,10 @@ import asyncio
 
 from tinyllm.functions.chain import Chain
 from tinyllm.functions.decision import Decision
-from tinyllm.functions.llms.open_ai.openai_chat import OpenAIChat
+from tinyllm.functions.llms.openai.openai_chat import OpenAIChat
 from tinyllm.functions.concurrent import Concurrent
 from tinyllm.functions.function import Function
-from tinyllm.functions.llms.open_ai.openai_prompt_template import OpenAIPromptTemplate
+from tinyllm.functions.llms.openai.openai_prompt_template import OpenAIPromptTemplate
 
 good_loan_application_example = """
 The loan application showcases a commendable financial profile with an excellent credit history. The applicant's credit score

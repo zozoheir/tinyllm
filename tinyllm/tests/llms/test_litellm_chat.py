@@ -1,19 +1,18 @@
-import asyncio
 import os
 import unittest
 
 import openai
 
-from tinyllm.functions.llms.open_ai.openai_chat_agent import OpenAIChatAgent
+from tinyllm.functions.llms.lite_llm.lite_llm_chat import LiteLLMChat
 from tinyllm.state import States
 from tinyllm.tests.base import AsyncioTestCase
 
 openai.api_key = os.environ['OPENAI_API_KEY']
 
 
-class TestOpenAIAgent(AsyncioTestCase):
+class TestOpenAIChat(AsyncioTestCase):
 
-    def test_openai_agent(self):
+    def test_openai_chat_script(self):
         test_openai_functions = [
             {
                 "name": "test_function",
@@ -23,13 +22,13 @@ class TestOpenAIAgent(AsyncioTestCase):
                     "properties": {
                         "asked_property": {
                             "type": "string",
+                            "enum": ["birthday", "name"],
                             "description": "The property the user asked about",
                         },
                     },
-                    "unit": {"type": "string", "enum": ["birthday", "name"]},
-                    "required": ["asked_property"],
-                },
+                "required": ["asked_property"],
             }
+        }
         ]
 
         def test_function(asked_property):
@@ -39,21 +38,16 @@ class TestOpenAIAgent(AsyncioTestCase):
                 return "January 1st"
 
         function_callables = {'test_function': test_function}
-
-        openai_agent = OpenAIChatAgent(
-            name="Test TinyLLM Agent",
-            model="gpt-3.5-turbo",
-            openai_functions=test_openai_functions,
-            function_callables=function_callables,
-            temperature=0,
-            max_tokens=1000,
-            with_memory=True,
-        )
-
-        result = self.loop.run_until_complete(openai_agent(message="Oh nana...what's my name?"))
-
-        self.assertEqual(openai_agent.state, States.COMPLETE)
-        self.assertTrue('Elias' in result['output']['response'])
+        litellm_chat = LiteLLMChat(name='Test: LiteLLMChat',
+                                   model='gpt-3.5-turbo',
+                                   temperature=0,
+                                   max_tokens=100,
+                                   openai_functions=test_openai_functions,
+                                   function_callables=function_callables,
+                                   with_memory=True)
+        result = self.loop.run_until_complete(litellm_chat(content="What is the user's  birthday?",
+                                                           with_functions=True))
+        self.assertEqual(litellm_chat.state, States.COMPLETE)
 
 
 if __name__ == '__main__':

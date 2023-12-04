@@ -30,21 +30,24 @@ class Embeddings(Base):
 
     id = Column(Integer, primary_key=True)
     collection_name = Column(String, nullable=False)
-    embedding = Column(Vector(dim=1536))
+    embedding = Column(Vector(dim=384))
     text = Column(String)
     emetadata = Column(postgresql.JSON)
 
 
+
+
 class VectorStore:
-    def __init__(self):
+    def __init__(self,
+                 embedding_function):
         self._engine = create_async_engine(get_database_uri())
         self._Session = sessionmaker(
             bind=self._engine,
             expire_on_commit=False,
             class_=AsyncSession,
         )
-        self.embedding_function = OpenAIEmbeddings()
-        #self.create_tables()
+        self.embedding_function = embedding_function
+        # self.create_tables()
 
     def _build_metadata_filters(self, metadata_filters):
         filter_clauses = []
@@ -70,7 +73,7 @@ class VectorStore:
         if metadatas is None:
             metadatas = [None] * len(texts)
 
-        embeddings = await self.embedding_function.aembed_documents(texts=texts)
+        embeddings = self.embedding_function(texts)
 
         async with self._Session() as session:
             async with session.begin():
@@ -85,9 +88,9 @@ class VectorStore:
                     await session.execute(stmt)
                 await session.commit()
 
-
     async def similarity_search(self, query, k, collection_filters, metadata_filters=None):
-        query_embedding = await self.embedding_function.aembed_query(query)
+        query_embedding = self.embedding_function(query)
+
         async with self._Session() as session:  # Use an asynchronous session
             async with session.begin():
                 # Initialize the base SQL query
@@ -95,7 +98,7 @@ class VectorStore:
 
                 # Initialize the WHERE clauses and parameters
                 where_clauses = []
-                params = {'embedding': str(query_embedding), 'k': k}
+                params = {'embedding': str(list(query_embedding)), 'k': k}
 
                 # Apply collection filters if they exist
                 if collection_filters:

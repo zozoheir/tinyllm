@@ -1,14 +1,13 @@
-import os
 import random
 import re
 from textwrap import dedent
 from typing import List
 
 from tinyllm.functions.function import Function
-from tinyllm.functions.llms.open_ai.util.helpers import get_user_message, get_assistant_message
+from tinyllm.functions.llms.lite_llm.util import get_user_message, get_assistant_message
 from tinyllm.functions.validator import Validator
-from tinyllm.functions.llms.open_ai.openai_chat import OpenAIChat
-from tinyllm.functions.llms.open_ai.openai_prompt_template import OpenAIPromptTemplate
+from tinyllm.functions.llms.openai.openai_chat import OpenAIChat
+from tinyllm.functions.llms.openai.openai_prompt_template import OpenAIPromptTemplate
 
 INPUT_EXAMPLE = """
 Relevant context for question/answer generation:

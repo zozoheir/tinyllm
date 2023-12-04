@@ -1,10 +1,14 @@
 import unittest
 import os
 
+from sentence_transformers import SentenceTransformer
 from sqlalchemy import delete
 
 from tinyllm.tests.base import AsyncioTestCase
 from tinyllm.pg_vector_store import VectorStore, Embeddings
+
+embedding_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+embedding_function = lambda x: embedding_model.encode(x)
 
 
 class TestVectorStore(AsyncioTestCase):
@@ -12,7 +16,7 @@ class TestVectorStore(AsyncioTestCase):
     def setUp(self):
         super().setUp()
         # Environment Variables for DB
-        self.vector_store = VectorStore()
+        self.vector_store = VectorStore(embedding_function=embedding_function)
         self.test_texts = ["Hello, world!", "Hi there!", "How are you?"]
         self.collection_name = 'test_collection'
         self.metadatas = [{"type": "test"}] * len(self.test_texts)

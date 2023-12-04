@@ -1,4 +1,4 @@
-from rumorz_llms.util.models import embedding_function
+from rumorz_llms.util.models import minilm_embedding_function
 from smartpy.utility.ai_util import get_cosine_similarity
 from tinyllm.functions.llms.eval.evaluator import Evaluator
 
@@ -15,12 +15,12 @@ class RetrievalEvaluator(Evaluator):
         chunk_texts = [chunk["text"] for chunk in retrieved_chunks]
         chunk_similarities = []
 
-        question_vector = embedding_function(question)
+        question_vector = minilm_embedding_function(question)
         for chunk_text in chunk_texts:
-            chunk_vector = embedding_function(chunk_text)
+            chunk_vector = minilm_embedding_function(chunk_text)
             chunk_similarities.append(get_cosine_similarity(chunk_vector, question_vector))
 
-        truth_vector = embedding_function(truth_context)
+        truth_vector = minilm_embedding_function(truth_context)
         truth_similarity = get_cosine_similarity(truth_vector, question_vector)
         retrieved_similarity = sum(chunk_similarities) / len(chunk_similarities)
 

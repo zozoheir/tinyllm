@@ -1,7 +1,7 @@
 import unittest
 
+from tinyllm.functions.llms.lite_llm.util.helpers import count_tokens
 from tinyllm.functions.llms.util.multi_source_context_builder import MultiSourceDocsContextBuilder
-from tinyllm.functions.llms.open_ai.util.helpers import count_tokens
 
 
 class TestMultiSourceDocsContextBuilder(unittest.TestCase):
@@ -10,8 +10,8 @@ class TestMultiSourceDocsContextBuilder(unittest.TestCase):
         super().setUp()
 
         # Define the initial parameters for MultiSourceDocsContextBuilder
-        self.start_string = "SUPPORTING DOCS"
-        self.end_string = "SUPPORTING DOCS"
+        self.start_string = "KNOWLEDGE GRAPH"
+        self.end_string = "KNOWLEDGE GRAPH"
 
         self.docs_source_1 = [
             {"content": "First document from source 1."},

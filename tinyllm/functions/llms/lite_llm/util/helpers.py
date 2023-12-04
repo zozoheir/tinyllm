@@ -34,14 +34,14 @@ OPENAI_MODELS_CONTEXT_SIZES = {
 }
 
 
-def get_user_message(message):
+def get_user_message(content):
     return {'role': 'user',
-            'content': message}
+            'content': content}
 
 
-def get_system_message(message):
+def get_system_message(content):
     return {'role': 'system',
-            'content': message}
+            'content': content}
 
 
 def get_function_message(content, name):
@@ -54,6 +54,16 @@ def get_assistant_message(content):
     return {'role': 'assistant',
             'content': content}
 
+def get_openai_message(role,
+                       content,
+                       **kwargs):
+    if role not in ['user', 'system', 'function', 'assistant']:
+        raise ValueError(f"Invalid role {role}.")
+
+    msg = {'role': role,
+           'content': content}
+    msg.update(kwargs)
+    return msg
 
 def get_openai_api_cost(model: str,
                         completion_tokens: int,
