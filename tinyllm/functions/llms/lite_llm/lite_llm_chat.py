@@ -8,7 +8,7 @@ import openai
 from langfuse.model import Usage
 from litellm import OpenAIError, acompletion
 
-from tinyllm.functions.function import Function
+from tinyllm.functions.function import Function, FunctionStream
 from tinyllm.functions.llms.lite_llm.lite_llm_memory import LiteLLMMemory
 from tinyllm.functions.llms.lite_llm.util.helpers import *
 from tinyllm.functions.llms.util.example_selector import ExampleSelector
@@ -32,12 +32,12 @@ def retry_on_openai_exceptions(exception):
 
 
 class LiteLLMChatInitValidator(Validator):
-    system_prompt: str
-    with_memory: bool
-    model: str
-    temperature: float
-    max_tokens: int
-    answer_format_prompt: Optional[str]
+    system_prompt: str = "You are a helpful assistant"
+    with_memory: bool = False
+    model: str = 'gpt-3.5-turbo'
+    temperature: float = 0
+    max_tokens: int = 400
+    answer_format_prompt: Optional[str] = None
     openai_functions: Optional[Any] = None
     function_callables: Optional[Any] = None
     example_selector: Optional[ExampleSelector] = None
@@ -56,7 +56,7 @@ class LiteLLMChatOutputValidator(Validator):
     response: Any
 
 
-class LiteLLMChat(Function):
+class LiteLLM(Function):
     def __init__(self,
                  system_prompt="You are a helpful assistant",
                  model='gpt-3.5-turbo',
@@ -76,7 +76,7 @@ class LiteLLMChat(Function):
                                        answer_format_prompt=answer_format_prompt,
                                        openai_functions=openai_functions,
                                        function_callables=function_callables,
-                                        example_selector=example_selector,
+                                       example_selector=example_selector,
                                        **kwargs
                                        )
         super().__init__(input_validator=LiteLLMChatInputValidator,
@@ -129,6 +129,7 @@ class LiteLLMChat(Function):
             with_functions=with_functions,
             **kwargs
         )
+
         return {
             "response": api_result,
         }
@@ -171,8 +172,9 @@ class LiteLLMChat(Function):
         else:
             # If no function call, just return the result
             assistant_response = kwargs['response']['choices'][0]['message']['content']
-            function_msg = get_assistant_message(content=assistant_response)
-            await self.add_memory(new_memory=function_msg)
+            msg = get_openai_message(role='assistant',
+                                     content=assistant_response)
+            await self.memory(**msg)
 
         return {'response': assistant_response}
 
@@ -313,3 +315,93 @@ class LiteLLMChat(Function):
         function_result = callable(**function_args)
         self.llm_trace.update_span(endTime=datetime.now(), output={'output': function_result})
         return function_result
+
+
+class LiteLLMStream(LiteLLM, FunctionStream):
+
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_random_exponential(min=1, max=10),
+        retry=retry_if_exception_type((OpenAIError))
+    )
+    async def run(self, **kwargs):
+        content = kwargs['content']
+        model = kwargs['model'] if kwargs['model'] is not None else self.model
+        temperature = kwargs['temperature'] if kwargs['temperature'] is not None else self.temperature
+        max_tokens = kwargs['max_tokens'] if kwargs['max_tokens'] is not None else self.max_tokens
+        with_functions = kwargs['with_functions'] if kwargs['with_functions'] is not None else {}
+        call_metadata = kwargs.get('call_metadata', {})
+
+        for key in ['content', 'model', 'temperature', 'max_tokens', 'call_metadata', 'with_functions']: kwargs.pop(key)
+
+        messages = await self.generate_messages_history(role='user', content=content)
+
+        # Prepare additional arguments for the acompletion call
+        acompletion_args = {
+            "model": model,
+            "temperature": temperature,
+            "n": self.n,
+            "max_tokens": max_tokens,
+            "messages": messages,
+            "stream": True,  # Enable streaming
+            **kwargs
+        }
+        if with_functions:
+            acompletion_args['functions'] = self.openai_functions
+            acompletion_args['function_call'] = 'auto'
+
+        response = await acompletion(**acompletion_args)
+        assistant_response = ""
+        last_role = None
+        async for chunk in response:
+            if chunk['choices'][0]['delta'].role:
+                last_role = chunk['choices'][0]['delta'].role
+            if last_role=='assistant' and chunk['choices'][0]['delta'].content:
+                assistant_response += chunk['choices'][0]['delta'].content
+            yield chunk, assistant_response
+
+
+
+    async def process_output(self, **kwargs):
+
+        # Case if OpenAI decides function call
+        if kwargs['chunk_dict']['choices'][0]['finish_reason'] == 'function_call':
+            # Call the function
+            self.llm_trace.create_span(
+                name=f"Calling function: {kwargs['chunk_dict']['choices'][0]['message']['function_call']['name']}",
+                startTime=datetime.now(),
+                metadata={'api_result': kwargs['chunk_dict']['choices'][0]},
+            )
+            # Call the function
+            function_name = kwargs['chunk_dict']['choices'][0]['message']['function_call']['name']
+            function_result = await self.run_agent_function(
+                function_call_info=kwargs['chunk_dict']['choices'][0]['message']['function_call']
+            )
+            # Append function result to memory
+            function_msg = get_function_message(
+                content=function_result,
+                name=function_name
+            )
+            # Generate input messages with the function call content
+            messages = await self.generate_messages_history(role='function',
+                                                            name=function_name,
+                                                            content=function_msg['content'])
+
+            # Make API call with the function call content
+            # Remove functions arg to get final assistant response
+            api_result = await self.get_completion(
+                messages=messages,
+                model=self.model,
+                temperature=self.temperature,
+                max_tokens=self.max_tokens,
+                n=self.n,
+            )
+            assistant_response = api_result['chunk_dict'][0]['message']['content']
+        elif kwargs['chunk_dict']['choices'][0]['finish_reason'] == 'stop':
+            # If no function call, just return the result
+            assistant_response = kwargs['assistant_response']
+            msg = get_openai_message(role='assistant',
+                                     content=assistant_response)
+            await self.memory(**msg)
+
+        return {'response': assistant_response}

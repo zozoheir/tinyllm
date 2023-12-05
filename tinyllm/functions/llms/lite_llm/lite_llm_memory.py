@@ -33,5 +33,7 @@ class LiteLLMMemory(Memory):
                             header='',
                             ignore_keys=[])
 
-    def get_memories(self):
-        return self.memories
+    def get_memories(self,
+                     method='list'):
+        if method == 'list':
+            return self.memories
