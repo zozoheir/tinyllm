@@ -1,4 +1,5 @@
-from tinyllm.functions.lite_llm.lite_llm_chat import LiteLLM, LiteLLMStream
+from tinyllm.functions.lite_llm.lite_llm import LiteLLM
+from tinyllm.functions.lite_llm.lite_llm_stream import LiteLLMStream
 
 
 class LLMStore:

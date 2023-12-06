@@ -2,8 +2,8 @@ import datetime as dt
 import json
 
 from smartpy.utility.log_util import getLogger
-from tinyllm.function import Function, FunctionStream
 from tinyllm.functions.util.helpers import get_openai_message
+from tinyllm.stream import FunctionStream
 
 logger = getLogger(__name__)
 
@@ -21,10 +21,10 @@ class TinyEnvironment(FunctionStream):
 
         self.llm_store = llm_store
         self.tool_store = tool_store
-        self.tool_store.llm_trace = self.llm_trace
+        self.tool_store.trace = self.trace
         self.manager = self.llm_store.get_agent(llm=manager_llm,
                                                 llm_args=manager_args,
-                                                llm_trace=self.llm_trace)
+                                                llm_trace=self.trace)
 
     def initialize_round(self):
         assistant_response = ""

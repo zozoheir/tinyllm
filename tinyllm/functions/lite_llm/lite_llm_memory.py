@@ -1,24 +1,25 @@
 from typing import Dict
 
+from tinyllm.function import Function
 from tinyllm.functions.util.helpers import count_tokens
 from tinyllm.functions.util.memory import Memory
 from tinyllm.validator import Validator
 
 
-class LiteLLMMemoryInputValidator(Validator):
+class MemoryInputValidator(Validator):
     message: Dict
 
 
-class LiteLLMMemoryOutputValidator(Validator):
+class MemoryOutputValidator(Validator):
     memories: list
 
 
-class LiteLLMMemory(Memory):
+class Memory(Function):
     def __init__(self,
                  **kwargs):
         super().__init__(
-            input_validator=LiteLLMMemoryInputValidator,
-            output_validator=LiteLLMMemoryOutputValidator,
+            input_validator=MemoryInputValidator,
+            output_validator=MemoryOutputValidator,
             **kwargs
         )
         self.memories = []

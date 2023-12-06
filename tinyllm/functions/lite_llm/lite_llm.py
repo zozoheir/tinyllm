@@ -8,8 +8,8 @@ import openai
 from langfuse.model import Usage, CreateGeneration, UpdateGeneration
 from litellm import OpenAIError, acompletion
 
-from tinyllm.function import Function, FunctionStream
-from tinyllm.functions.lite_llm.lite_llm_memory import LiteLLMMemory
+from tinyllm.function import Function
+from tinyllm.functions.lite_llm.lite_llm_memory import Memory
 from tinyllm.functions.util.example_selector import ExampleSelector
 from tinyllm.functions.util.helpers import *
 from tinyllm.validator import Validator
@@ -68,8 +68,8 @@ class LiteLLM(Function):
         self.system_prompt = system_prompt
         self.n = 1
         if 'memory' not in kwargs.keys():
-            self.memory = LiteLLMMemory(name=f"{self.name}_memory",
-                                        is_traced=False)
+            self.memory = Memory(name=f"{self.name}_memory",
+                                 is_traced=False)
         else:
             self.memory = kwargs['memory']
 
@@ -106,7 +106,7 @@ class LiteLLM(Function):
                              generation_name="Assistant response",
                              **kwargs):
         try:
-            self.llm_trace.create_generation(
+            self.trace.create_generation(
                 name=generation_name,
                 model=model,
                 prompt=messages,
@@ -136,7 +136,7 @@ class LiteLLM(Function):
             # cost = get_openai_api_cost(model=self.model,
             #                           completion_tokens=0,
             #                           prompt_tokens=count_openai_messages_tokens(messages))
-            self.llm_trace.update_generation(
+            self.trace.update_generation(
                 completion=str({"error": str(e)}),
                 metadata={"error": str(e)},
             )
@@ -167,7 +167,7 @@ class LiteLLM(Function):
         else:
             completion = str(api_result['choices'][0]['message']['content'])
 
-        self.llm_trace.update_generation(
+        self.trace.update_generation(
             endTime=datetime.now(),
             modelParameters=model_parameters,
             completion=completion,
@@ -211,62 +211,14 @@ class LiteLLM(Function):
         start_time = datetime.now()
         callable = self.tools_callables[function_call_message['name']]
         function_args = json.loads(function_call_message['arguments'])
-        self.llm_trace.update_span(
+        self.trace.update_span(
             name=f"Running function : {function_call_message['name']}",
             startTime=start_time,
             input=function_args,
         )
         function_result = callable(**function_args)
-        self.llm_trace.update_span(endTime=datetime.now(), output={'output': function_result})
+        self.trace.update_span(endTime=datetime.now(), output={'output': function_result})
         return function_result
-
-
-class LiteLLMStream(LiteLLM, FunctionStream):
-
-    @retry(
-        stop=stop_after_attempt(3),
-        wait=wait_random_exponential(min=1, max=10),
-        retry=retry_if_exception_type((OpenAIError))
-    )
-    async def run(self, **kwargs):
-        message = kwargs.pop('message')
-        self.completion_args = kwargs
-        messages = await self.generate_messages_history(message)
-        kwargs['messages'] = messages
-        async for chunk, assistant_response in self.get_completion(**kwargs):
-            yield chunk, assistant_response
-
-    async def get_completion(self,
-                             **kwargs):
-        generation = self.llm_trace.trace.generation(CreateGeneration(
-            name='stream-completion: '+self.name,
-            startTime=datetime.now(),
-            prompt=kwargs['messages'],
-        ))
-        response = await acompletion(**kwargs)
-        assistant_response = ""
-        function_call = {
-            "name": None,
-            "arguments": ""
-        }
-        last_role = None
-        async for chunk in response:
-            if chunk['choices'][0]['delta'].role:
-                last_role = chunk['choices'][0]['delta'].role
-            if getattr(chunk.choices[0].delta, 'tool_calls', None):
-                if function_call['name'] is None:
-                    function_call['name'] = chunk.choices[0].delta.tool_calls[0].function.name
-                function_call['arguments'] += chunk.choices[0].delta.tool_calls[0].function.arguments
-                assistant_response = function_call
-            if last_role == 'assistant' and chunk['choices'][0]['delta'].content:
-                assistant_response += chunk['choices'][0]['delta'].content
-
-            yield chunk, assistant_response
-
-        generation.update(UpdateGeneration(
-            completion=assistant_response,
-            endTime=datetime.now(),
-        ))
 
 
 """

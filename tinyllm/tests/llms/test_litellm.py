@@ -1,7 +1,7 @@
 import unittest
 import os
 
-from tinyllm.functions.lite_llm.lite_llm_chat import LiteLLMStream, LiteLLM
+from tinyllm.functions.lite_llm.lite_llm import LiteLLMStream, LiteLLM
 
 import openai
 from tinyllm.tests.base import AsyncioTestCase

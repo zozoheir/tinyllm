@@ -14,6 +14,7 @@ import uuid
 from typing import Any, Optional, Type
 import pytz
 from langfuse.client import DatasetItemClient
+from langfuse.model import CreateTrace
 
 from smartpy.utility.log_util import getLogger
 from smartpy.utility.py_util import get_exception_info
@@ -93,19 +94,22 @@ class Function:
         self.output = None
         self.processed_output = None
         self.scores = []
-        self.llm_trace = None
+        self.trace = None
         if llm_trace is None and is_traced is True:
-            self.llm_trace = LLMTrace(
+            self.trace = langfuse_client.trace(CreateTrace(
                 name=self.name,
-                userId="test",
+                userId="test")
             )
+            self.generation = None
         else:
-            self.llm_trace = llm_trace
+            self.trace = llm_trace
         self.cache = {}
         self.evaluators = evaluators
         self.dataset = dataset
         self.fallback_strategies = fallback_strategies
         self.stream = stream
+        self.generation_id = None
+
 
     @fallback_decorator
     async def __call__(self, **kwargs):
@@ -163,13 +167,13 @@ class Function:
                 expected_output=kwargs.get('expected_output', "None"),
             )
             item_client = DatasetItemClient(item, langfuse_client)
-            item_client.link(self.llm_trace.current_generation, kwargs.get('run_name', "None"))
+            item_client.link(self.trace.current_generation, kwargs.get('run_name', "None"))
 
         for evaluator in self.evaluators:
             evaluator_response = await evaluator(**eval_data)
             if evaluator_response['status'] == 'success':
                 for name, value in evaluator_response['output']['evals'].items():
-                    self.llm_trace.score_generation(
+                    self.trace.score_generation(
                         name=name,
                         value=value,
                         comment=kwargs.get('score_comment', "None"),
@@ -180,8 +184,8 @@ class Function:
     def log(self, message, level="info"):
         log_message = f"[{self.name}] {message}"
         if getattr(self, 'llm_trace', None):
-            if self.llm_trace.current_generation:
-                log_message = f"[{self.name}|{self.llm_trace.current_generation.id}] {message}"
+            if self.generation_id:
+                log_message = f"[{self.name}|{self.generation_id}] {message}"
 
         self.logs += "\n" + log_message
         if level == "error":
@@ -201,32 +205,3 @@ class Function:
     async def process_output(self, **kwargs):
         return kwargs
 
-
-class FunctionStream(Function):
-
-    # @fallback_decorator
-    async def __call__(self, **kwargs):
-        try:
-            self.input = kwargs
-            self.transition(States.INPUT_VALIDATION)
-            validated_input = await self.validate_input(**kwargs)
-            self.transition(States.RUNNING)
-            async for message in self.run(**validated_input):
-                yield message
-            self.output = {'response': message}
-            self.transition(States.OUTPUT_VALIDATION)
-            self.output = await self.validate_output(**self.output)
-            self.transition(States.PROCESSING_OUTPUT)
-            self.output = await self.process_output(**self.output)
-            self.processed_output = self.output
-            if self.evaluators:
-                self.transition(States.EVALUATING)
-                await self.evaluate(**kwargs)
-            self.transition(States.COMPLETE)
-        except Exception as e:
-            self.error_message = str(e)
-            self.transition(States.FAILED, msg=str(e))
-            detailed_error_msg = get_exception_info(e)
-            self.log(detailed_error_msg, level="error")
-            if type(e) in self.fallback_strategies:
-                raise e

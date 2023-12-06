@@ -1,6 +1,6 @@
 import unittest
 
-from tinyllm.functions.lite_llm.lite_llm_memory import LiteLLMMemory
+from tinyllm.functions.lite_llm.lite_llm_memory import Memory
 from tinyllm.state import States
 from tinyllm.tests.base import AsyncioTestCase
 
@@ -8,7 +8,7 @@ from tinyllm.tests.base import AsyncioTestCase
 class TestOpenAIMemory(AsyncioTestCase):
 
     def test_openai_memory(self):
-        openai_memory = LiteLLMMemory(name="OpenAIMemoryTest")
+        openai_memory = Memory(name="OpenAIMemoryTest")
 
         # User message
         input_data = {'content': 'Hi agent, how are you?',

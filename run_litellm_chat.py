@@ -6,7 +6,6 @@ import openai
 from tinyllm.functions.environment.environment import TinyEnvironment
 from tinyllm.functions.environment.llm_store import LLMStore
 from tinyllm.functions.environment.tool_store import ToolStore
-from tinyllm.functions.lite_llm.lite_llm_chat import LiteLLMStream, LiteLLM
 
 openai.api_key = os.environ['OPENAI_API_KEY']
 
