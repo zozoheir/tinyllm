@@ -62,7 +62,7 @@ class QASetGenerator(Function):
             max_tokens=600,
             prompt_template=prompt_template,
             is_traced=True,
-            llm_trace=self.trace,
+            trace=self.trace,
             with_memory=False,
         )
 

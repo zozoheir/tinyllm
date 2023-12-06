@@ -18,17 +18,20 @@ class ToolStore:
     async def run_tool(self,
                        tool_name,
                        tool_arguments):
-        span = self.trace.span(
-            CreateSpan(
-                name="tool: " + tool_name,
-                input=tool_arguments,
-                startTime=dt.datetime.now()
+        if self.trace:
+            span = self.trace.span(
+                CreateSpan(
+                    name="tool: " + tool_name,
+                    input=tool_arguments,
+                    startTime=dt.datetime.now()
+                )
             )
-        )
         tool_response = self.tools_callables[tool_name](**tool_arguments)
-        span.update(UpdateSpan(
-            output=tool_response,
-            endTime=dt.datetime.now()
-        )
-        )
+
+        if self.trace:
+            span.update(
+                UpdateSpan(
+                    output=tool_response,
+                    endTime=dt.datetime.now())
+            )
         return get_openai_message(role='function', content=tool_response, name=tool_name)

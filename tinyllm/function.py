@@ -12,9 +12,12 @@ Function is the building block of tinyllm. A function has 4 main components:
 import datetime as dt
 import uuid
 from typing import Any, Optional, Type
+
+import pydantic
 import pytz
+from langfuse.api import CreateDatasetRequest, CreateDatasetItemRequest
 from langfuse.client import DatasetItemClient
-from langfuse.model import CreateTrace
+from langfuse.model import CreateTrace, CreateScore
 
 from smartpy.utility.log_util import getLogger
 from smartpy.utility.py_util import get_exception_info
@@ -39,6 +42,7 @@ class FunctionInitValidator(Validator):
     input_validator: Optional[Type[Validator]]
     output_validator: Optional[Type[Validator]]
     is_traced: bool
+    debug: bool
     evaluators: Optional[list]
     dataset_name: Optional[str]
     stream: Optional[bool]
@@ -61,11 +65,12 @@ class Function:
             input_validator=Validator,
             output_validator=DefaultOutputValidator,
             evaluators=[],
-            dataset: LLMDataset = LLMDataset(name='tinyllm'),
+            dataset_name=None,
             is_traced=True,
+            debug=True,
             required=True,
             stream=False,
-            llm_trace: LLMTrace = None,
+            trace=None,
             fallback_strategies={},
 
     ):
@@ -74,6 +79,7 @@ class Function:
             input_validator=input_validator,
             output_validator=output_validator,
             is_traced=is_traced,
+            debug=debug,
             stream=stream,
         )
         self.user = user_id
@@ -95,21 +101,31 @@ class Function:
         self.processed_output = None
         self.scores = []
         self.trace = None
-        if llm_trace is None and is_traced is True:
+        self.debug = debug
+        if trace is None and is_traced is True:
             self.trace = langfuse_client.trace(CreateTrace(
                 name=self.name,
                 userId="test")
             )
             self.generation = None
         else:
-            self.trace = llm_trace
+            self.trace = trace
+
         self.cache = {}
+
         self.evaluators = evaluators
-        self.dataset = dataset
+        self.dataset_name = dataset_name
+        self.dataset = None
+
+        if self.dataset_name is not None:
+            try:
+                self.dataset = langfuse_client.get_dataset(name=dataset_name)
+            except pydantic.error_wrappers.ValidationError:
+                self.dataset = langfuse_client.create_dataset(CreateDatasetRequest(name=dataset_name))
+
         self.fallback_strategies = fallback_strategies
         self.stream = stream
-        self.generation_id = None
-
+        self.generation = None
 
     @fallback_decorator
     async def __call__(self, **kwargs):
@@ -126,8 +142,11 @@ class Function:
             self.processed_output = self.output
             if self.evaluators:
                 self.transition(States.EVALUATING)
-                await self.evaluate(**kwargs)
+                await self.evaluate(generation=self.generation,
+                                    **kwargs)
+
             self.transition(States.COMPLETE)
+            langfuse_client.flush()
             return {"status": "success",
                     "output": self.output}
         except Exception as e:
@@ -135,6 +154,7 @@ class Function:
             self.transition(States.FAILED, msg=str(e))
             detailed_error_msg = get_exception_info(e)
             self.log(detailed_error_msg, level="error")
+            langfuse_client.flush()
             if type(e) in self.fallback_strategies:
                 raise e
             else:
@@ -155,43 +175,49 @@ class Function:
 
     async def evaluate(self,
                        **kwargs):
+        # Need to link item with generation + call evaluators
+
+        # Create dataset item
+        if self.dataset:
+            item = langfuse_client.create_dataset_item(
+                CreateDatasetItemRequest(dataset_name=self.dataset_name,
+                                         input=kwargs.get('input', "None"),
+                                         expected_output=kwargs.get('expected_output', "None")
+                                                         ** kwargs)
+            )
+            item_client = DatasetItemClient(item, langfuse_client)
+            item_client.link(self.trace.generation, kwargs.get('run_name', "tinyllm_function"))
+
+
+        # Create eval_data args
         eval_data = self.cache
         if self.processed_output:
             eval_data.update(self.processed_output)
         if kwargs:
             eval_data.update(kwargs)
+            eval_data['generation_id'] = self.generation
 
-        if self.dataset:
-            item = self.dataset.create_item(
-                input=kwargs.get('input', "None"),
-                expected_output=kwargs.get('expected_output', "None"),
-            )
-            item_client = DatasetItemClient(item, langfuse_client)
-            item_client.link(self.trace.current_generation, kwargs.get('run_name', "None"))
 
+        # Call evaluators and score
         for evaluator in self.evaluators:
             evaluator_response = await evaluator(**eval_data)
-            if evaluator_response['status'] == 'success':
-                for name, value in evaluator_response['output']['evals'].items():
-                    self.trace.score_generation(
-                        name=name,
-                        value=value,
-                        comment=kwargs.get('score_comment', "None"),
-                    )
-            else:
+            if evaluator_response['status'] != 'success':
                 self.log(evaluator_response['message'], level="error")
 
     def log(self, message, level="info"):
-        log_message = f"[{self.name}] {message}"
-        if getattr(self, 'llm_trace', None):
-            if self.generation_id:
-                log_message = f"[{self.name}|{self.generation_id}] {message}"
+        # Only log if debug
+        if getattr(self, 'debug', None):
+            log_message = f"[{self.name}] {message}"
+            if getattr(self, 'trace', None):
+                # Add generation id to log message if trace is enabled
+                if self.generation:
+                    log_message = f"[{self.name}|{self.generation.id}] {message}"
 
-        self.logs += "\n" + log_message
-        if level == "error":
-            self.logger.error(log_message)
-        else:
-            self.logger.info(log_message)
+            self.logs += "\n" + log_message
+            if level == "error":
+                self.logger.error(log_message)
+            else:
+                self.logger.info(log_message)
 
     async def validate_input(self, **kwargs):
         return self.input_validator(**kwargs).dict()
@@ -204,4 +230,3 @@ class Function:
 
     async def process_output(self, **kwargs):
         return kwargs
-

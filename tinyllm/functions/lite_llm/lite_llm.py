@@ -69,7 +69,9 @@ class LiteLLM(Function):
         self.n = 1
         if 'memory' not in kwargs.keys():
             self.memory = Memory(name=f"{self.name}_memory",
-                                 is_traced=False)
+                                 is_traced=self.is_traced,
+                                 debug=self.debug,
+                                 trace=self.trace)
         else:
             self.memory = kwargs['memory']
 
@@ -228,7 +230,7 @@ class LiteLLM(Function):
         # Case if OpenAI decides function call
         if kwargs['chunk_dict']['choices'][0]['finish_reason'] == 'tool_calls':
             # Call the function
-            self.llm_trace.create_span(
+            self.trace.create_span(
                 name=f"Calling function: {kwargs['assistant_response']['name']}",
                 startTime=datetime.now(),
                 metadata={'function_call': kwargs},

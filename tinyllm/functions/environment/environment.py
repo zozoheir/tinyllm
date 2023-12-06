@@ -3,7 +3,7 @@ import json
 
 from smartpy.utility.log_util import getLogger
 from tinyllm.functions.util.helpers import get_openai_message
-from tinyllm.stream import FunctionStream
+from tinyllm.function_stream import FunctionStream
 
 logger = getLogger(__name__)
 
@@ -24,7 +24,7 @@ class TinyEnvironment(FunctionStream):
         self.tool_store.trace = self.trace
         self.manager = self.llm_store.get_agent(llm=manager_llm,
                                                 llm_args=manager_args,
-                                                llm_trace=self.trace)
+                                                trace=self.trace)
 
     def initialize_round(self):
         assistant_response = ""
@@ -60,14 +60,12 @@ class TinyEnvironment(FunctionStream):
 
             # Case: the Agent decided to call a tool
             if chunk['choices'][0]['finish_reason'] == 'tool_calls':
-                tool_call['arguments'] = json.loads(tool_call['arguments'])
-                current_tool = tool_call['name']
-                tool_msg = await self.llm_store.tool_store.run_tool(current_tool,
-                                                                    tool_call['arguments'])
+                arguments = json.loads(tool_call['arguments'])
+                tool_msg = await self.llm_store.tool_store.run_tool(tool_call['name'],
+                                                                    arguments)
                 await self.manager.memory(message=NEXT_AGENT_INPUT)
                 NEXT_AGENT_INPUT = tool_msg
             else:
-
                 break
 
     def handle_stream_chunks(self,

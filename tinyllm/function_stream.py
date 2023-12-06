@@ -1,6 +1,7 @@
 import traceback
 
 from tinyllm.function import Function
+from tinyllm.llm_ops import langfuse_client
 from tinyllm.state import States
 
 
@@ -23,10 +24,13 @@ class FunctionStream(Function):
             self.processed_output = self.output
             if self.evaluators:
                 self.transition(States.EVALUATING)
-                await self.evaluate(**kwargs)
+                await self.evaluate(generation=self.generation,
+                                    **kwargs)
             self.transition(States.COMPLETE)
+            langfuse_client.flush()
         except Exception as e:
             self.error_message = str(e)
             self.transition(States.FAILED, msg=traceback.format_exception(e))
+            langfuse_client.flush()
             if type(e) in self.fallback_strategies:
                 raise e

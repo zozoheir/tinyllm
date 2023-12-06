@@ -62,7 +62,7 @@ class AnswerCorrectnessEvaluator(Evaluator):
             max_tokens=400,
             prompt_template=accuracy_prompt_template,
             is_traced=True,
-            llm_trace=self.trace,
+            trace=self.trace,
             with_memory=False,
         )
 

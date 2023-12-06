@@ -6,7 +6,7 @@ from openai import OpenAIError
 from tenacity import stop_after_attempt, wait_random_exponential, retry_if_exception_type, retry
 
 from tinyllm.functions.lite_llm.lite_llm import LiteLLM
-from tinyllm.stream import FunctionStream
+from tinyllm.function_stream import FunctionStream
 
 
 class LiteLLMStream(LiteLLM, FunctionStream):
@@ -26,8 +26,8 @@ class LiteLLMStream(LiteLLM, FunctionStream):
 
     async def get_completion(self,
                              **kwargs):
-        generation = self.trace.generation(CreateGeneration(
-            name='stream-completion: '+self.name,
+        self.generation = self.trace.generation(CreateGeneration(
+            name='stream: '+self.name,
             startTime=dt.datetime.now(),
             prompt=kwargs['messages'],
         ))
@@ -51,7 +51,7 @@ class LiteLLMStream(LiteLLM, FunctionStream):
 
             yield chunk, assistant_response
 
-        generation.update(UpdateGeneration(
+        self.generation.update(UpdateGeneration(
             completion=assistant_response,
             endTime=dt.datetime.now(),
         ))
