@@ -2,7 +2,7 @@ import unittest
 
 from sentence_transformers import SentenceTransformer
 
-from tinyllm.functions.llms.util.example_selector import ExampleSelector
+from tinyllm.functions.util.example_selector import ExampleSelector
 from tinyllm.tests.base import AsyncioTestCase
 
 embedding_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')

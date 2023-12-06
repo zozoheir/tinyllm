@@ -1,7 +1,6 @@
 import abc
 
-from tinyllm.functions.function import Function
-from tinyllm.functions.validator import Validator
+from tinyllm.function import Function
 
 
 class Memory(Function, abc.ABC):

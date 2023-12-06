@@ -2,7 +2,7 @@ from typing import List, Dict
 
 from smartpy.utility.log_util import getLogger
 from tinyllm.functions.llms.openai.openai_prompt_template import OpenAIPromptTemplate
-from tinyllm.functions.llms.lite_llm.util.helpers import OPENAI_MODELS_CONTEXT_SIZES, count_tokens, \
+from tinyllm.functions.util.helpers import OPENAI_MODELS_CONTEXT_SIZES, count_tokens, \
     count_openai_messages_tokens
 
 logger = getLogger(__name__)

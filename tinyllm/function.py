@@ -11,7 +11,7 @@ Function is the building block of tinyllm. A function has 4 main components:
 """
 import datetime as dt
 import uuid
-from typing import Any, Callable, Optional, Type, Dict
+from typing import Any, Optional, Type
 import pytz
 from langfuse.client import DatasetItemClient
 
@@ -20,7 +20,7 @@ from smartpy.utility.py_util import get_exception_info
 from tinyllm.exceptions import InvalidStateTransition
 from tinyllm.llm_ops import LLMTrace, langfuse_client, LLMDataset
 from tinyllm.state import States, ALLOWED_TRANSITIONS
-from tinyllm.functions.validator import Validator
+from tinyllm.validator import Validator
 from tinyllm.util.fallback_strategy import fallback_decorator
 
 
@@ -48,7 +48,7 @@ class DefaultInputValidator(Validator):
 
 
 class DefaultOutputValidator(Validator):
-    response: str
+    response: Any
 
 
 class Function:
@@ -204,17 +204,16 @@ class Function:
 
 class FunctionStream(Function):
 
-    #@fallback_decorator
+    # @fallback_decorator
     async def __call__(self, **kwargs):
         try:
             self.input = kwargs
             self.transition(States.INPUT_VALIDATION)
             validated_input = await self.validate_input(**kwargs)
             self.transition(States.RUNNING)
-            async for chunk, assistant_response in self.run(**validated_input):
-                yield chunk, assistant_response
-            self.output = {'chunk_dict': chunk.model_dump(),
-                           'assistant_response':assistant_response} # Last contains is the full response
+            async for message in self.run(**validated_input):
+                yield message
+            self.output = {'response': message}
             self.transition(States.OUTPUT_VALIDATION)
             self.output = await self.validate_output(**self.output)
             self.transition(States.PROCESSING_OUTPUT)
@@ -231,4 +230,3 @@ class FunctionStream(Function):
             self.log(detailed_error_msg, level="error")
             if type(e) in self.fallback_strategies:
                 raise e
-

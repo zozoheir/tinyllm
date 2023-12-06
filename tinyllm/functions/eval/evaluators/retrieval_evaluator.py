@@ -1,6 +1,6 @@
 from rumorz_llms.util.models import minilm_embedding_function
 from smartpy.utility.ai_util import get_cosine_similarity
-from tinyllm.functions.llms.eval.evaluator import Evaluator
+from tinyllm.functions.eval.evaluator import Evaluator
 
 
 class RetrievalEvaluator(Evaluator):

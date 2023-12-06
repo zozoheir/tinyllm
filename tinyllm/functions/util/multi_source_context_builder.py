@@ -1,7 +1,7 @@
 from typing import List, Dict, Optional
 
-from tinyllm.functions.llms.lite_llm.util.helpers import get_user_message, count_tokens
-from tinyllm.functions.llms.util.context_builder import ContextBuilder
+from tinyllm.functions.util.helpers import get_user_message, count_tokens
+from tinyllm.functions.util.context_builder import ContextBuilder
 from tinyllm.util.prompt_util import stringify_dict_list
 
 

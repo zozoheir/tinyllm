@@ -1,11 +1,12 @@
-from tinyllm.functions.llms.lite_llm.util.helpers import get_openai_message, count_tokens
-from tinyllm.functions.llms.util.memory import Memory
-from tinyllm.functions.validator import Validator
+from typing import Dict
+
+from tinyllm.functions.util.helpers import count_tokens
+from tinyllm.functions.util.memory import Memory
+from tinyllm.validator import Validator
 
 
 class LiteLLMMemoryInputValidator(Validator):
-    role: str
-    content: str
+    message: Dict
 
 
 class LiteLLMMemoryOutputValidator(Validator):
@@ -23,8 +24,7 @@ class LiteLLMMemory(Memory):
         self.memories = []
 
     async def run(self, **kwargs):
-        msg = get_openai_message(**kwargs)
-        self.memories.append(msg)
+        self.memories.append(kwargs['message'])
         return {'memories': self.memories[:-1]}
 
     @property

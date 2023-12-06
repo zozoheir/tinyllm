@@ -1,7 +1,7 @@
 from typing import Optional
 
-from tinyllm.functions.function import Function
-from tinyllm.functions.validator import Validator
+from tinyllm.function import Function
+from tinyllm.validator import Validator
 
 
 
