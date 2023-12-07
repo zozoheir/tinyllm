@@ -31,10 +31,10 @@ LLM Functions should behave like an API. All Functions take "role" and "content"
 * status: success or error
 * output: response from the underlying function
 
-## Streaming Function data model
-#### Input
+#### Streaming Function data model
+##### Input
 * message: dictionary with "role" and "content"
-#### Output
+##### Output
 * streaming_status: streaming or finished
 * chunk: dictionary
 
