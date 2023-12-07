@@ -36,7 +36,8 @@ LLM Functions should behave like an API. All Functions take "role" and "content"
 ##### Input
 * message: dictionary with "role" and "content"
 ##### Output
-* streaming_status: streaming or finished or error
+* streaming_status: streaming or success or error
+* type: assistant_response, tool
 * delta: dictionary response from underlying LLM model
 * completion: full text completion OR generated tool_call (JSON during streaming, then converted dictionary in the last chunk when streaming_status = "finished")
 
