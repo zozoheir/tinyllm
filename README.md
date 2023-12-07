@@ -48,7 +48,7 @@ tinyllm is integrated with Langfuse for tracing chains, functions and agents.
 
 
 ## ⚡ Classes
-The TinyLLM library consists of several key components that work together to facilitate the creation and management of Language Model Microservices (LLMs):
+The TinyLLM library consists of several key components that work together to operate and manage LLMs in prod:
 * **Function**: The base class for all LLM functions. It handles the execution of the LLM and the transition between different states in the LLM's lifecycle.
 * **FunctionStream**: The streaming equivalent of Function. 
 * **Validator**: class to validate input and output data for LLM functions.
