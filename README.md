@@ -24,6 +24,7 @@ pip install git+https://github.com/zozoheir/tinyllm.git
 ## API model
 LLM Functions should behave like an API. All Functions take "role" and "content" as input arguments and will always, even if failed, return a dictionary response.
 
+#### Function data model
 ##### Input
 * role
 * content
@@ -35,10 +36,9 @@ LLM Functions should behave like an API. All Functions take "role" and "content"
 ##### Input
 * message: dictionary with "role" and "content"
 ##### Output
-* streaming_status: streaming or finished
-* chunk: dictionary
-
-* completion: text completion OR generated tool_call (JSON during streaming, then converted dictionary in the last chunk when streaming_status = "finished")
+* streaming_status: streaming or finished or error
+* delta: dictionary response from underlying LLM model
+* completion: full text completion OR generated tool_call (JSON during streaming, then converted dictionary in the last chunk when streaming_status = "finished")
 
 
 ## ⚡ How to and examples
