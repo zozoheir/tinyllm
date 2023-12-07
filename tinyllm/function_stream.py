@@ -1,11 +1,25 @@
+import json
 import traceback
+from typing import Any
 
 from tinyllm.function import Function
 from tinyllm.llm_ops import langfuse_client
 from tinyllm.state import States
+from tinyllm.validator import Validator
 
+
+class DefaultFunctionStreamOutputValidator(Validator):
+    streaming_status: str
+    type: str # assistant_response, tool
+    delta: str
+    completion: Any
 
 class FunctionStream(Function):
+
+    def __init__(self,
+                 **kwargs):
+        super().__init__(output_validator=DefaultFunctionStreamOutputValidator,
+                         **kwargs)
 
     # @fallback_decorator
     async def __call__(self, **kwargs):
@@ -15,8 +29,16 @@ class FunctionStream(Function):
             validated_input = await self.validate_input(**kwargs)
             self.transition(States.RUNNING)
             async for message in self.run(**validated_input):
-                yield message
-            self.output = {'response': message}
+                # we only validate the final output message
+                msg = {
+                    'streaming_status': 'streaming',
+                    'type': message['type'],
+                    'delta': message['delta'],
+                    'completion': message['completion'],
+                }
+                yield msg
+            msg['streaming_status'] = 'success'
+            self.output = msg
             self.transition(States.OUTPUT_VALIDATION)
             self.output = await self.validate_output(**self.output)
             self.transition(States.PROCESSING_OUTPUT)
@@ -37,3 +59,4 @@ class FunctionStream(Function):
             langfuse_client.flush()
             if type(e) in self.fallback_strategies:
                 raise e
+

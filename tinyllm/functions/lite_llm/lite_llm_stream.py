@@ -1,4 +1,5 @@
 import datetime as dt
+import json
 
 from langfuse.model import CreateGeneration, UpdateGeneration
 from litellm import acompletion
@@ -20,21 +21,10 @@ class LiteLLMStream(LiteLLM, FunctionStream):
     async def run(self, **kwargs):
         message = get_openai_message(role=kwargs['role'],
                                      content=kwargs['content'])
-        messages = await self.generate_messages_history(message)
+        messages = await self.process_memory(message)
         kwargs['messages'] = messages
         async for msg in self.get_completion(**kwargs):
             yield msg
-
-    """
-    # Detect if function call
-    if getattr(delta, 'tool_calls', None):
-        if function_call['name'] is None:
-            function_call['name'] = delta.tool_calls[0].function.name
-        function_call['arguments'] += delta.tool_calls[0].function.arguments
-        completion = function_call
-    if last_role == 'assistant' and delta.content:
-        completion += delta.content
-    """
 
     async def get_completion(self,
                              **kwargs):
@@ -43,40 +33,39 @@ class LiteLLMStream(LiteLLM, FunctionStream):
             startTime=dt.datetime.now(),
             prompt=kwargs['messages'],
         ))
-        for i in ['role', 'content']: kwargs.pop(i)
+        kwargs.pop('content')
         response = await acompletion(**kwargs)
-        completion = ""
         function_call = {
             "name": None,
             "arguments": ""
         }
+        # OpenAI function call works as follows: function name available at delta.tool_calls[0].function.
+        # It returns a diction where: 'name' is returned only in the first chunk
+        # arguments are sent in chunks so need to keep track of them
         async for chunk in response:
-            print(chunk)
+
             status = self.get_stream_status(chunk)
             chunk_type = self.get_chunk_type(chunk)
+            delta = chunk['choices'][0]['delta'].model_dump()
 
             if status == "streaming":
-
                 if chunk_type == "completion":
-                    completion = self.handle_completion_streaming(
-                        chunk,
-                        completion
-                    )
+                    completion += delta['content']
+
                 elif chunk_type == "tool":
-                    self.handle_function_streaming(
-                        chunk,
-                        completion,
-                        function_call
-                    )
-                    print('hi')
-            elif status == "finished":
-                self.handle_finished_streaming(
-                    chunk,
-                    completion
-                )
+                    if function_call['name'] is None:
+                        function_call['name'] = delta['tool_calls'][0]['function']['name']
+                    function_call['arguments'] += delta['tool_calls'][0]['function']['arguments']
+                    completion = function_call
+
+            elif status == "success":
+                if chunk_type == 'tool':
+                    function_call['arguments'] = json.loads(function_call['arguments'])
 
             yield {
-                "status": chunk,
+                "streaming_status": status,
+                "type": chunk_type,
+                "delta": delta,
                 "completion": completion
             }
 
@@ -87,6 +76,12 @@ class LiteLLMStream(LiteLLM, FunctionStream):
 
     def get_chunk_type(self,
                        chunk):
+        chunk = chunk.model_dump()
+        delta = chunk['choices'][0]['delta']
+
+        if 'tool_calls' in delta or chunk['choices'][0]['finish_reason'] == 'tool_calls':
+            return "tool"
+
         delta = chunk['choices'][0]['delta'].model_dump()
 
         if 'tool_calls' in delta:
@@ -96,22 +91,41 @@ class LiteLLMStream(LiteLLM, FunctionStream):
 
     def get_stream_status(self,
                           chunk):
+        if chunk.model_dump()['choices'][0]['finish_reason']:
+            return "success"
+        else:
+            return "streaming"
 
-        print('hi')
-        return "streaming"
 
-    def handle_function_streaming(self,
-                                  chunk,
-                                  completion,
-                                  function_call):
+
+        """
+
+    def handle_stream_chunks(self,
+                             chunk,
+                             completion,
+                             function_call: dict):
+        # Function call
+        if getattr(chunk['choices'][0]['delta'], 'tool_calls', None):
+            completion += chunk.choices[0].delta.tool_calls[0].function.arguments
+            function_call['arguments'] += chunk.choices[0].delta.tool_calls[0].function.arguments
+            # Get function name
+            if getattr(chunk.choices[0].delta, 'tool_calls', None):
+                if function_call['name'] is None:
+                    function_call['name'] = chunk.choices[0].delta.tool_calls[0].function.name
+
+        # Assistant response
+        elif isinstance(getattr(chunk['choices'][0]['delta'], 'content', None), str):
+            completion += chunk['choices'][0]['delta'].content
+
         return chunk, completion, function_call
 
-    def handle_completion_streaming(self,
-                                    chunk,
-                                    completion):
-        return ""
 
-    def handle_finished_streaming(self,
-                                  chunk,
-                                  completion):
-        return ""
+        # Detect if function call
+        if getattr(delta, 'tool_calls', None):
+            if function_call['name'] is None:
+                function_call['name'] = delta.tool_calls[0].function.name
+            function_call['arguments'] += delta.tool_calls[0].function.arguments
+            completion = function_call
+        if last_role == 'assistant' and delta.content:
+            completion += delta.content
+        """

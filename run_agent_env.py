@@ -82,7 +82,7 @@ tiny_env = TinyEnvironment(name='TinyLLM Environment',
 
 async def run_env():
     async for message in tiny_env(user_input="What is the user's birthday?"):
-        i = 0
+        print(message)
 
 
 result = asyncio.run(run_env())

@@ -2,7 +2,6 @@ from typing import Dict
 
 from tinyllm.function import Function
 from tinyllm.functions.util.helpers import count_tokens
-from tinyllm.functions.util.memory import Memory
 from tinyllm.validator import Validator
 
 
@@ -26,7 +25,7 @@ class Memory(Function):
 
     async def run(self, **kwargs):
         self.memories.append(kwargs['message'])
-        return {'memories': self.memories[:-1]}
+        return {'memories': self.memories}
 
     @property
     def size(self):

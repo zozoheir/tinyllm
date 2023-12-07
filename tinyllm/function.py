@@ -17,12 +17,12 @@ import pydantic
 import pytz
 from langfuse.api import CreateDatasetRequest, CreateDatasetItemRequest
 from langfuse.client import DatasetItemClient
-from langfuse.model import CreateTrace, CreateScore
+from langfuse.model import CreateTrace
 
 from smartpy.utility.log_util import getLogger
 from smartpy.utility.py_util import get_exception_info
 from tinyllm.exceptions import InvalidStateTransition
-from tinyllm.llm_ops import LLMTrace, langfuse_client, LLMDataset
+from tinyllm.llm_ops import LLMTrace, langfuse_client
 from tinyllm.state import States, ALLOWED_TRANSITIONS
 from tinyllm.validator import Validator
 from tinyllm.util.fallback_strategy import fallback_decorator
@@ -49,11 +49,12 @@ class FunctionInitValidator(Validator):
 
 
 class DefaultInputValidator(Validator):
-    input: Any
+    role: Any
+    content: Any
 
 
 class DefaultOutputValidator(Validator):
-    completion: Any
+    response: Any
 
 
 class Function:

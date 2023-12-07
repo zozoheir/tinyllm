@@ -16,17 +16,17 @@ class ToolStore:
         self.trace = trace
 
     async def run_tool(self,
-                       tool_name,
-                       tool_arguments):
+                       name,
+                       arguments):
         if self.trace:
             span = self.trace.span(
                 CreateSpan(
-                    name="tool: " + tool_name,
-                    input=tool_arguments,
+                    name="tool: " + name,
+                    input=arguments,
                     startTime=dt.datetime.now()
                 )
             )
-        tool_response = self.tools_callables[tool_name](**tool_arguments)
+        tool_response = self.tools_callables[name](**arguments)
 
         if self.trace:
             span.update(
@@ -34,4 +34,4 @@ class ToolStore:
                     output=tool_response,
                     endTime=dt.datetime.now())
             )
-        return get_openai_message(role='function', content=tool_response, name=tool_name)
+        return get_openai_message(role='function', content=tool_response, name=name)
