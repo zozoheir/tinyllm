@@ -24,13 +24,20 @@ pip install git+https://github.com/zozoheir/tinyllm.git
 ## API model
 LLM Functions should behave like an API. All Functions take "role" and "content" as input arguments and will always, even if failed, return a dictionary response.
 
-#### Function data model
+#### Function model
+ Validations are provided to the Function using input_validator and output_validator keys
+
+The default model for validation is
 ##### Input
 * role
 * content
 ##### Output
+* response
+
+#### Standardized output
+No matter what, a Function will always return the following dict, to act like a web API.
 * status: success or error
-* output: response from the underlying function
+* output: {'response':...}
 
 #### Streaming Function data model
 ##### Input
