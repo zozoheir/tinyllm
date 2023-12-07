@@ -114,9 +114,8 @@ class LiteLLM(Function):
                        role,
                        content):
         if self.with_memory:
-            msg = get_openai_message(role=role,
-                                     content=content)
-            await self.memory(message=msg)
+            await self.memory(role=role,
+                              content=content)
 
     async def get_completion(self,
                              model,
@@ -145,7 +144,6 @@ class LiteLLM(Function):
             usage=Usage(promptTokens=count_tokens(messages), completionTokens=count_tokens(response_message)),
         ))
         return api_result.model_dump()
-
 
     async def prepare_messages(self,
                                message):

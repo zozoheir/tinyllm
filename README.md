@@ -1,9 +1,9 @@
 ![Screenshot 2023-07-25 at 3 48 43 AM](https://github.com/zozoheir/tiny-llm/assets/42655961/f2db0c02-c18c-45a8-8054-6cd4da474e1e)
 
 # 🕸️ tinyllm
-tinyllm is a lightweight framework for developing, debugging and monitoring LLM powered applications at scale. It sits as a layer between your Web application and your LLM libraries. The core class of the tinyllm library is Function.
-
-`Function` and its streaming equivalent FunctionStream are designed to standardize LLM function calls for production use. It provides a structured approach to handle various aspects of function execution, including input/output validation, output processing, error handling, evaluation, all while maintaining high standards of code clarity and efficiency.
+tinyllm is a lightweight framework for developing, debugging and monitoring LLM powered applications at scale. It sits as a layer between your Web application and your LLM libraries.
+`Function` and its streaming equivalent `FunctionStream` are designed to standardize LLM function calls for production use. 
+It provides a structured approach to handle various aspects of function execution, including input/output validation, output processing, error handling, evaluation, all while maintaining high standards of code clarity and efficiency.
 
 The goal of the library is to keep things simple and reduce the unnecessary complexity of libraries like Langchain, llama index etc...while allowing their integration easily if needed.
 
