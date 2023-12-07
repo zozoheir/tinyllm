@@ -51,6 +51,7 @@ class TinyEnvironment(FunctionStream):
             async for msg in self.manager(tool_choice='auto',
                                           tools=self.tool_store.tools,
                                           **input_msg):
+                assert 'status' in msg, f"Message {msg} does not have a status"
                 yield msg
 
             # Agent decides to call a tool

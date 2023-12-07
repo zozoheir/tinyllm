@@ -15,10 +15,7 @@ openai.api_key = os.environ['OPENAI_API_KEY']
 class AnswerCorrectnessEvaluator(Evaluator):
 
     async def run(self, **kwargs):
-        kwargs.keys()
-        kwargs['output'].keys()
-
-        completion = kwargs['response']['response']['completion']
+        completion = kwargs['output']['completion']
         correctness_score = 'january 1st' in completion.lower()
 
         return {

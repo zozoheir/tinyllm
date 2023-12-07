@@ -1,4 +1,3 @@
-import json
 import traceback
 from typing import Any
 
@@ -33,29 +32,21 @@ class FunctionStream(Function):
 
             # Run
             self.transition(States.RUNNING)
-            messages = []
             async for message in self.run(**validated_input):
-                # we only validate the final output message
-                msg = {
-                    'streaming_status': 'streaming',
-                    'type': message['type'],
-                    'delta': message['delta'],
-                    'completion': message['completion'],
-                }
-
                 # Output validation
+                if 'status' in message and 'output' in message:
+                    message = message['output']
                 self.transition(States.OUTPUT_VALIDATION)
-                self.validate_output(**msg)
-                messages.append(msg)
+                self.validate_output(**message)
 
                 yield {"status": "success",
-                       "output": msg}
+                       "output": message}
 
-            msg['streaming_status'] = 'completed'
+            message['streaming_status'] = 'completed'
             yield {"status": "success",
-                   "output": msg}
+                   "output": message}
 
-            self.output = msg
+            self.output = message
 
             # Process output
             self.transition(States.PROCESSING_OUTPUT)
