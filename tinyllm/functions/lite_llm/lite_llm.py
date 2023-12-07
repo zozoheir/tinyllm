@@ -67,14 +67,10 @@ class LiteLLM(Function):
                          **kwargs)
         self.system_prompt = system_prompt
         self.n = 1
-        if with_memory:
-            self.memory = Memory(name=f"{self.name}_memory",
-                                 is_traced=self.is_traced,
-                                 debug=self.debug,
-                                 trace=self.trace)
-        else:
-            self.memory = kwargs['memory']
-
+        self.memory = Memory(name=f"{self.name}_memory",
+                             is_traced=self.is_traced,
+                             debug=self.debug,
+                             trace=self.trace)
         self.with_memory = with_memory
         self.answer_format_prompt = answer_format_prompt
         self.example_selector = example_selector
@@ -92,7 +88,7 @@ class LiteLLM(Function):
     async def run(self, **kwargs):
         msg = get_openai_message(role='user',
                                  content=kwargs['content'])
-        messages = await self.process_memory(
+        messages = await self.prepare_messages(
             message=msg
         )
         kwargs['messages'] = messages
@@ -106,6 +102,10 @@ class LiteLLM(Function):
         api_result = await self.get_completion(
             **litellm_args
         )
+
+        # Memorize the interaction
+        await self.memorize(role=msg['role'],
+                            content=msg['content'])
         await self.memorize(**api_result['choices'][0]['message'])
 
         return {
@@ -115,7 +115,7 @@ class LiteLLM(Function):
     async def memorize(self,
                        role,
                        content):
-        if self.memory is not None:
+        if self.with_memory:
             msg = get_openai_message(role=role,
                                      content=content)
             await self.memory(message=msg)
@@ -152,9 +152,8 @@ class LiteLLM(Function):
 
             raise e
 
-
-    async def process_memory(self,
-                             message):
+    async def prepare_messages(self,
+                               message):
         system_prompt = get_system_message(content=self.system_prompt)
         examples = []  # add example selector
         if self.example_selector and message['role'] == 'user':
@@ -167,12 +166,7 @@ class LiteLLM(Function):
                    + self.memory.get_memories() + \
                    examples + \
                    [message]
-
-        await self.memorize(role=message['role'],
-                            content=message['content'])
-
         return messages
-
 
     @property
     def available_token_size(self):
@@ -182,5 +176,3 @@ class LiteLLM(Function):
 
         return (OPENAI_MODELS_CONTEXT_SIZES[
                     self.model] - self.prompt_template.size - memories_size - self.max_tokens - self.answer_format_prompt_size - 10) * 0.99
-
-

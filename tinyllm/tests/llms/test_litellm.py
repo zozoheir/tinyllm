@@ -46,14 +46,19 @@ class TestlitellmChat(AsyncioTestCase):
 
     def test_litellm_chat_stream(self):
 
-        litellmstream_chat = LiteLLMStream(name='Test: LiteLLMChat')
+        litellmstream_chat = LiteLLMStream(name='Test: LiteLLMChat',
+                                           with_memory=True)
 
         async def get_stream():
+            i=0
             async for msg in litellmstream_chat(role='user',
                                                 content="What is the user's  birthday?"):
-                print(msg)
+                i = msg
+            return i
 
         result = self.loop.run_until_complete(get_stream())
+
+        self.assertEqual(result['streaming_status'], 'success')
 
     def test_litellm_chat(self):
         litellm_chat = LiteLLM(name='Test: LiteLLMChat',
