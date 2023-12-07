@@ -117,7 +117,6 @@ class LiteLLM(Function):
             msg = get_openai_message(role=role,
                                      content=content)
             await self.memory(message=msg)
-            print(self.memory.memories)
 
     async def get_completion(self,
                              model,

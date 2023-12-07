@@ -111,11 +111,6 @@ class LiteLLMStream(LiteLLM, FunctionStream):
         if 'tool_calls' in delta or chunk['choices'][0]['finish_reason'] == 'tool_calls':
             return "function"
 
-        delta = chunk['choices'][0]['delta']
-
-        if 'tool_calls' in delta:
-            print('hi')
-
         return "completion"
 
     def get_stream_status(self,

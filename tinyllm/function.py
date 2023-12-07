@@ -41,6 +41,7 @@ class FunctionInitValidator(Validator):
     name: str
     input_validator: Optional[Type[Validator]]
     output_validator: Optional[Type[Validator]]
+    processed_output_validator: Optional[Type[Validator]] = None
     is_traced: bool
     debug: bool
     evaluators: Optional[list]
@@ -56,6 +57,8 @@ class DefaultInputValidator(Validator):
 class DefaultOutputValidator(Validator):
     response: Any
 
+class DefaultProcessedOutputValidator(Validator):
+    response: Any
 
 class Function:
 
@@ -65,6 +68,7 @@ class Function:
             user_id=None,
             input_validator=Validator,
             output_validator=DefaultOutputValidator,
+            processed_output_validator=None,
             evaluators=[],
             dataset_name=None,
             is_traced=True,
@@ -75,10 +79,11 @@ class Function:
             fallback_strategies={},
 
     ):
-        w = FunctionInitValidator(
+        FunctionInitValidator(
             name=name,
             input_validator=input_validator,
             output_validator=output_validator,
+            processed_output_validator=processed_output_validator,
             is_traced=is_traced,
             debug=debug,
             stream=stream,
@@ -91,6 +96,7 @@ class Function:
 
         self.input_validator = input_validator
         self.output_validator = output_validator
+        self.processed_output_validator = processed_output_validator
         self.is_traced = is_traced
         self.required = required
         self.logs = ""
@@ -131,26 +137,43 @@ class Function:
     @fallback_decorator
     async def __call__(self, **kwargs):
         try:
+            # Validate input
             self.input = kwargs
             self.transition(States.INPUT_VALIDATION)
-            validated_input = await self.validate_input(**kwargs)
+            validated_input = self.validate_input(**kwargs)
+
+            # Run
             self.transition(States.RUNNING)
             self.output = await self.run(**validated_input)
+
+            # Validate output
             self.transition(States.OUTPUT_VALIDATION)
-            self.output = await self.validate_output(**self.output)
+            self.output = self.validate_output(**self.output)
+
+            # Process output
             self.transition(States.PROCESSING_OUTPUT)
             self.processed_output = await self.process_output(**self.output)
+
+            # Validate processed output
+            self.transition(States.PROCESSED_OUTPUT_VALIDATION)
+            if self.processed_output_validator:
+                self.processed_output = self.validate_processed_output(**self.processed_output)
+
             final_output = {"status": "success",
                             "output": self.processed_output}
+
+            # Evaluate
             if self.evaluators:
                 self.transition(States.EVALUATING)
                 await self.evaluate(generation=self.generation,
                                     output=final_output,
                                     **kwargs)
 
+            # Complete
             self.transition(States.COMPLETE)
             langfuse_client.flush()
             return final_output
+
         except Exception as e:
             self.error_message = str(e)
             self.transition(States.FAILED, msg=str(e))
@@ -222,12 +245,15 @@ class Function:
             else:
                 self.logger.info(log_message)
 
-    async def validate_input(self, **kwargs):
+    def validate_input(self, **kwargs):
         return self.input_validator(**kwargs).dict()
 
-    async def validate_output(self, **kwargs):
+    def validate_output(self, **kwargs):
         return self.output_validator(**kwargs).dict()
-
+    
+    def validate_processed_output(self, **kwargs):
+        return self.processed_output_validator(**kwargs).dict()
+    
     async def run(self, **kwargs) -> Any:
         pass
 

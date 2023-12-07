@@ -9,6 +9,7 @@ class States(Enum):
     OUTPUT_VALIDATION = 'output validation'
     EVALUATING = 'evaluating'
     PROCESSING_OUTPUT = 'processing output'
+    PROCESSED_OUTPUT_VALIDATION = 'processed output validation'
     COMPLETE = 'complete'
     FAILED = 'failed'
     EVALUATION  = 'evaluation'
@@ -20,7 +21,8 @@ ALLOWED_TRANSITIONS = {
     States.INPUT_VALIDATION: [States.RUNNING, States.FAILED],
     States.RUNNING: [States.OUTPUT_VALIDATION, States.FAILED],
     States.OUTPUT_VALIDATION: [States.COMPLETE, States.PROCESSING_OUTPUT, States.OUTPUT_VALIDATION, States.FAILED],
-    States.PROCESSING_OUTPUT: [States.COMPLETE, States.FAILED, States.EVALUATING],
+    States.PROCESSING_OUTPUT: [States.PROCESSED_OUTPUT_VALIDATION, States.FAILED, States.EVALUATING],
+    States.PROCESSED_OUTPUT_VALIDATION: [States.COMPLETE, States.FAILED, States.EVALUATING],
     States.EVALUATING: [States.COMPLETE, States.FAILED],
     States.COMPLETE: [States.INPUT_VALIDATION],
     States.FAILED: [States.INPUT_VALIDATION]
