@@ -1,3 +1,4 @@
+import datetime as dt
 import json
 import os
 from datetime import datetime
@@ -92,15 +93,12 @@ class LiteLLM(Function):
             message=msg
         )
         kwargs['messages'] = messages
-        litellm_args = {
-            "messages": messages,
-            "model": kwargs['model'],
-            "temperature": kwargs['temperature'],
-            "max_tokens": kwargs['max_tokens'],
-            "n": kwargs['n'],
-        }
         api_result = await self.get_completion(
-            **litellm_args
+            messages=messages,
+            model=kwargs['model'],
+            temperature=kwargs['temperature'],
+            max_tokens=kwargs['max_tokens'],
+            n=kwargs['n'],
         )
 
         # Memorize the interaction
@@ -127,30 +125,28 @@ class LiteLLM(Function):
                              n,
                              max_tokens,
                              messages,
-                             call_metadata={},
-                             generation_name="Assistant response",
                              **kwargs):
-        try:
-            self.trace.generation(
-                CreateGeneration(
-                    name=generation_name,
-                    model=model,
-                    prompt=messages,
-                    startTime=datetime.now(),
-                )
-            )
-            api_result = await acompletion(
-                model=model,
-                temperature=temperature,
-                n=n,
-                max_tokens=max_tokens,
-                messages=messages,
-                **kwargs
-            )
-            return api_result.model_dump()
-        except Exception as e:
+        self.generation = self.trace.generation(CreateGeneration(
+            name=self.name,
+            startTime=dt.datetime.now(),
+            prompt=messages,
+        ))
+        api_result = await acompletion(
+            model=model,
+            temperature=temperature,
+            n=n,
+            max_tokens=max_tokens,
+            messages=messages,
+            **kwargs
+        )
+        response_message = api_result.model_dump()['choices'][0]['message']
+        self.generation.update(UpdateGeneration(
+            endTime=dt.datetime.now(),
+            completion=response_message,
+            usage=Usage(promptTokens=count_tokens(messages), completionTokens=count_tokens(response_message)),
+        ))
+        return api_result.model_dump()
 
-            raise e
 
     async def prepare_messages(self,
                                message):

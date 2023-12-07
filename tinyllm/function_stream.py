@@ -10,9 +10,10 @@ from tinyllm.validator import Validator
 
 class DefaultFunctionStreamOutputValidator(Validator):
     streaming_status: str
-    type: str # assistant_response, tool
-    delta: str
+    type: str  # assistant_response, tool
+    delta: dict
     completion: Any
+
 
 class FunctionStream(Function):
 
@@ -28,6 +29,7 @@ class FunctionStream(Function):
             self.transition(States.INPUT_VALIDATION)
             validated_input = await self.validate_input(**kwargs)
             self.transition(States.RUNNING)
+            messages = []
             async for message in self.run(**validated_input):
                 # we only validate the final output message
                 msg = {
@@ -36,11 +38,18 @@ class FunctionStream(Function):
                     'delta': message['delta'],
                     'completion': message['completion'],
                 }
-                yield msg
-            msg['streaming_status'] = 'success'
+                self.transition(States.OUTPUT_VALIDATION)
+                await self.validate_output(**msg)
+                messages.append(msg)
+
+                yield {"status": "success",
+                       "output": msg}
+
+            msg['streaming_status'] = 'complete'
+            yield {"status": "success",
+                   "output": msg}
+
             self.output = msg
-            self.transition(States.OUTPUT_VALIDATION)
-            self.output = await self.validate_output(**self.output)
             self.transition(States.PROCESSING_OUTPUT)
             self.processed_output = await self.process_output(**self.output)
             final_output = {"status": "success",
@@ -59,4 +68,6 @@ class FunctionStream(Function):
             langfuse_client.flush()
             if type(e) in self.fallback_strategies:
                 raise e
-
+            else:
+                yield {"status": "error",
+                       "message": traceback.format_exception(e)}

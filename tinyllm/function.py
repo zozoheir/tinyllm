@@ -179,34 +179,30 @@ class Function:
                        **kwargs):
         generation = kwargs['generation']
         output = kwargs['output']
-
+        run_name = kwargs.get('run_name', "tinyllm_function")
         # Need to link item with generation + call evaluators
 
         # Create dataset item
         if self.dataset:
             item = langfuse_client.create_dataset_item(
                 CreateDatasetItemRequest(dataset_name=self.dataset_name,
-                                         input=kwargs.get('input', "None"),
-                                         expected_output=kwargs.get('expected_output', "None")
-                                                         ** kwargs)
+                                         input=output,
+                                         expected_output="")
             )
             item_client = DatasetItemClient(item, langfuse_client)
-            item_client.link(generation, kwargs.get('run_name', "tinyllm_function"))
+            item_client.link(self.generation, run_name)
 
         # Create eval_data args
         eval_kwargs = {
+            'kwargs': kwargs,
+            'input': self.input,
             'cache': self.cache,
+            'output': self.output,
+            'processed_output': self.processed_output,
         }
-        if self.processed_output:
-            eval_kwargs['processed_output'] = self.processed_output
-
-        if kwargs:
-            eval_kwargs['kwargs'] = kwargs
-
         # Call evaluators and score
         for evaluator in self.evaluators:
             evaluator_response = await evaluator(generation=generation,
-                                                 output=output,
                                                  **eval_kwargs)
             if evaluator_response['status'] != 'success':
                 self.log(evaluator_response['message'], level="error")

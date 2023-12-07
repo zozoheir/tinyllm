@@ -24,11 +24,12 @@ class Evaluator(Function):
                          **kwargs)
 
     async def process_output(self, **kwargs):
+
         for name, score in kwargs['evals'].items():
-            kwargs['generation'].score(
+            self.input['generation'].score(
                 CreateScore(
                     name=name,
                     value=score,
-                    comment=kwargs['metadata'],
+                    comment=str(kwargs['metadata']),
                 )
             )

@@ -17,10 +17,9 @@ class States(Enum):
 ALLOWED_TRANSITIONS = {
     None: [States.INIT],
     States.INIT: [States.INPUT_VALIDATION, States.FAILED],
-    #States.READY: [States.INPUT_VALIDATION, States.FAILED],
     States.INPUT_VALIDATION: [States.RUNNING, States.FAILED],
     States.RUNNING: [States.OUTPUT_VALIDATION, States.FAILED],
-    States.OUTPUT_VALIDATION: [States.COMPLETE, States.PROCESSING_OUTPUT, States.FAILED],
+    States.OUTPUT_VALIDATION: [States.COMPLETE, States.PROCESSING_OUTPUT, States.OUTPUT_VALIDATION, States.FAILED],
     States.PROCESSING_OUTPUT: [States.COMPLETE, States.FAILED, States.EVALUATING],
     States.EVALUATING: [States.COMPLETE, States.FAILED],
     States.COMPLETE: [States.INPUT_VALIDATION],
