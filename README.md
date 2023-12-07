@@ -1,10 +1,9 @@
 ![Screenshot 2023-07-25 at 3 48 43 AM](https://github.com/zozoheir/tiny-llm/assets/42655961/f2db0c02-c18c-45a8-8054-6cd4da474e1e)
 
 # 🕸️ tinyllm
-tinyllm is a lightweight framework for developing, debugging and monitoring LLM powered applications at scale. It sits as a layer between your Web application and your LLM libraries. The tinyllm tech stack:
-- Python library
-- Vector store powered by PostgresDB+pgvector
-- Langfuse integration for tracing, monitoring and debugging tinyLLM functions
+tinyllm is a lightweight framework for developing, debugging and monitoring LLM powered applications at scale. It sits as a layer between your Web application and your LLM libraries. The core class of the tinyllm library is Function.
+
+`Function` and its streaming equivalent FunctionStream are designed to standardize LLM function calls for production use. It provides a structured approach to handle various aspects of function execution, including input/output validation, output processing, error handling, evaluation, all while maintaining high standards of code clarity and efficiency.
 
 The goal of the library is to keep things simple and reduce the unnecessary complexity of libraries like Langchain, llama index etc...while allowing their integration easily if needed.
 
@@ -12,49 +11,31 @@ The goal of the library is to keep things simple and reduce the unnecessary comp
 ```
 pip install git+https://github.com/zozoheir/tinyllm.git
 ```
-## ⚡ Features
-* litellm integration: 20+ model providers available (OpenAI, Huggingface etc ...)
-* Async streaming + chat Agents, Tools and LLM models with standardized IO models
-* Various prompt engineering functions for prompt optimization and string formatting
-* Evaluation pipeline and test generation
-* Fallback strategies (different model, different chain...) 
-* Full out of the box observability of chains, agents, prompts, output processing and evaluations on Langfuse
-* PGvector/Postgres Vector store
+## Features
+- **litellm integration:** 20+ model providers available (OpenAI, Huggingface etc ...)
+- **Prompt engineering:** utility modules for prompt engineering, optimization and string formatting
+- **Layered validation:** 3 validations happen during the Function lifecycle: input, output and output processing.
+- **IO Standardization:** Maintains consistent response patterns and failure handling across different function implementations.
+- **Observability:** Integrates with Langfuse for monitoring and tracing of function execution at scale.
+- **Memory:** conversations history 
+- **Evaluation:** Evaluators can be defined to evaluate and log the quality of the function's output in real-time
+- **PGVector store:** PostgreSQL DB with the pgvector extension for vector storage.
+- **Logging:** Records detailed logs for debugging and auditing purposes.
+- **Finite State Machine design:** Manages the function's lifecycle through defined states, ensuring controlled and predictable execution.
 
 ## API model
-LLM Functions should behave like an API. All Functions take "role" and "content" as input arguments and will always, even if failed, return a dictionary response.
+LLM Functions are designed to behave like a web API. All Functions take "role" and "content" as input arguments and will always, even if failed, return a dictionary response.
 
-#### Function model
- Validations are provided to the Function using input_validator and output_validator keys
-
-The default model for validation is
-##### Input
-* role
-* content
-##### Output
-* response
-
-#### Standardized output
-No matter what, a Function will always return the following dict, to act like a web API.
-* status: success or error
-* output: {'response':...}
-
-#### Streaming Function data model
-##### Input
-* message: dictionary with "role" and "content"
-##### Output
-* streaming_status: streaming or success or error
-* type: assistant_response, tool
-* delta: dictionary response from underlying LLM model
-* completion: full text completion OR generated tool_call (JSON during streaming, then converted dictionary in the last chunk when streaming_status = "finished")
-
-
-## ⚡ How to and examples
-
+#### Validation
+Validations are defined through a Pydantic model and are provided to the Function using input_validator, output_validator and output_processing_validator args to a Function
+ 
+## How to and examples
 * ####  [Check all examples here](https://github.com/zozoheir/tinyllm/blob/main/docs/examples.md)
+## Function and FunctionStream API model
+* ####  [Function and FunctionStream model](https://github.com/zozoheir/tinyllm/blob/main/docs/api_model.md)
 
 
-## ⚡ Background and goals
+## Background and goals
 Many of the LLM libraries today (langchain, llama-index, deep pavlov...) have made serious software design commitments which I believe were too early to make given the infancy of the industry.
 The goals of tinyllm are:
 * **Solve painpoints from current libraries**: lack of composability (within + between libraries), complex software designs, code readability, debugging and logging.
@@ -69,15 +50,12 @@ tinyllm is integrated with Langfuse for tracing chains, functions and agents.
 ## ⚡ Classes
 The TinyLLM library consists of several key components that work together to facilitate the creation and management of Language Model Microservices (LLMs):
 * **Function**: The base class for all LLM functions. It handles the execution of the LLM and the transition between different states in the LLM's lifecycle.
-* **Validator**: A utility class used to validate input and output data for LLM functions.
-* **Chain**: A function that allows the chaining of multiple LLM functions together to form a pipeline of calls.
-* **Concurrent**: A function that enables concurrent execution of multiple LLM functions, useful for ensembling/comparing from different LLMs or speeding up IO bound task execution.
-* **Decision**: A function that represents a decision point in the chain, allowing different paths to be taken based on the output of a previous LLM function.
+* **FunctionStream**: The streaming equivalent of Function. 
+* **Validator**: class to validate input and output data for LLM functions.
+* **Evaluator**: class to evaluate the quality of the output of an LLM function.
+* **VectorStore**: class to manage vector storage and search.
 
-### Tinyllm Vector Store
-The library uses a Postgres DB with the pgvector extension as a vector store. After lots of exploration, this felt like the most flexible and cost-friendly solution for managing and owning your embeddings. No need to integrate with 100 vector stores. A single good vector store works fine.
-
-### Tinyllm Configs
+### Managing configs and credentials
 Configs are managed through a tinyllm.yaml file. It gets picked up at runtime in tinyllm.__init__ and can be placed in any of /Documents, the root folder, or the current working directory. Here is a sample yaml config file:
 ```yaml
 LLM_PROVIDERS:
@@ -107,13 +85,14 @@ on a GPU/CPU level and should be abstracted away using an LLM microservice.
 Tinyllm only cares about Concurrency, Chaining and organizing IO Bound tasks.
 
 ### Logging
+The generation id is logged to quickly go from reading code to visualizating the chaining/conversation in Langfuse.
+
 ```
-INFO - 2023-07-28 01:52:34,785: [Concurrent: On good credit] transition to: States.OUTPUT_VALIDATION
-INFO - 2023-07-28 01:52:34,786: [Concurrent: On good credit] transition to: States.COMPLETE
-INFO - 2023-07-28 01:52:34,786: [Concurrent: On good credit] Pushing to db
-INFO - 2023-07-28 01:52:34,945: [Concurrent: On good credit] Creating relationship between Concurrent: On good credit and Email notification
-INFO - 2023-07-28 01:52:35,163: [Concurrent: On good credit] Creating relationship between Concurrent: On good credit and Background get_check_results
-INFO - 2023-07-28 01:52:35,666: [Chain: Loan application] transition to: States.OUTPUT_VALIDATION
-INFO - 2023-07-28 01:52:35,666: [Chain: Loan application] transition to: States.COMPLETE
-INFO - 2023-07-28 01:52:35,666: [Chain: Loan application] Pushing to db
+INFO | tinyllm.function | 2023-12-07 16:45:44,040 : [Test: LiteLLMChat_memory] transition to: States.PROCESSING_OUTPUT 
+INFO | tinyllm.function | 2023-12-07 16:45:44,040 : [Test: LiteLLMChat_memory] transition to: States.PROCESSED_OUTPUT_VALIDATION 
+INFO | tinyllm.function | 2023-12-07 16:45:44,040 : [Test: LiteLLMChat_memory] transition to: States.COMPLETE 
+INFO | tinyllm.function | 2023-12-07 16:45:44,040 : [Test: LiteLLMChat|0a6c5186-8361-4245-b555-625a0595d744] transition to: States.OUTPUT_VALIDATION 
+INFO | tinyllm.function | 2023-12-07 16:45:44,040 : [Test: LiteLLMChat|0a6c5186-8361-4245-b555-625a0595d744] transition to: States.PROCESSING_OUTPUT 
+INFO | tinyllm.function | 2023-12-07 16:45:44,041 : [Test: LiteLLMChat|0a6c5186-8361-4245-b555-625a0595d744] transition to: States.PROCESSED_OUTPUT_VALIDATION 
+INFO | tinyllm.function | 2023-12-07 16:45:44,041 : [Test: LiteLLMChat|0a6c5186-8361-4245-b555-625a0595d744] transition to: States.COMPLETE 
 ```

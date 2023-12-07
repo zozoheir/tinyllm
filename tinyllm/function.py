@@ -1,14 +1,3 @@
-"""
-Function is the building block of tinyllm. A function has 4 main components:
-    1. A name: required
-    2. An input validator: optional, but recommended
-    3. An output validator: optional, but recommended
-    4. A run function: required
-
-- Chains and Concurrent inherit from Functions.
-- When creating Functions or child classes, the above requirements apply
-- Functions, Chains, and Concurrents and
-"""
 import datetime as dt
 import uuid
 from typing import Any, Optional, Type

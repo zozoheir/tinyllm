@@ -51,7 +51,7 @@ class FunctionStream(Function):
                 yield {"status": "success",
                        "output": msg}
 
-            msg['streaming_status'] = 'complete'
+            msg['streaming_status'] = 'completed'
             yield {"status": "success",
                    "output": msg}
 

@@ -22,12 +22,12 @@ class TestlitellmChat(AsyncioTestCase):
             async for msg in litellmstream_chat(role='user',
                                                 content="What is the user's  birthday?"):
                 if msg['status'] == 'success':
-                    if msg['output']['streaming_status'] == 'complete':
+                    if msg['output']['streaming_status'] == 'completed':
                         return msg
 
         result = self.loop.run_until_complete(get_stream())
 
-        self.assertTrue(result['output']['streaming_status'], 'complete')
+        self.assertTrue(result['output']['streaming_status'], 'completed')
 
     def test_litellm_chat(self):
         litellm_chat = LiteLLM(name='Test: LiteLLMChat',
@@ -51,7 +51,7 @@ class TestlitellmChat(AsyncioTestCase):
                                    is_traced=False,
                                )],
                                with_memory=True)
-        
+
         result = self.loop.run_until_complete(litellm_chat(content="Hi"))
         self.assertEqual(result['status'], 'success')
 
