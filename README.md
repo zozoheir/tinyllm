@@ -24,10 +24,10 @@ pip install git+https://github.com/zozoheir/tinyllm.git
 ## API model
 LLM Functions should behave like an API. All Functions take "role" and "content" as input arguments and will always, even if failed, return a dictionary response.
 
-#### Input
+##### Input
 * role
 * content
-#### Output
+##### Output
 * status: success or error
 * output: response from the underlying function
 
