@@ -39,7 +39,8 @@ class LiteLLMChatInitValidator(Validator):
 
 
 class LiteLLMChatInputValidator(Validator):
-    message: Optional[dict]
+    role: str
+    content: str
     model: Optional[str] = 'gpt-3.5-turbo'
     temperature: Optional[float] = 0
     max_tokens: Optional[int] = 400

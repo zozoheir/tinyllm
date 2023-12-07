@@ -8,6 +8,7 @@ from tinyllm.validator import Validator
 
 class EvaluatorInputValidator(Validator):
     generation: Any
+    output: dict
 
 class EvaluatorOutputValidator(Validator):
     evals: dict

@@ -7,6 +7,7 @@ from tenacity import stop_after_attempt, wait_random_exponential, retry_if_excep
 
 from tinyllm.functions.lite_llm.lite_llm import LiteLLM
 from tinyllm.function_stream import FunctionStream
+from tinyllm.functions.util.helpers import get_openai_message
 
 
 class LiteLLMStream(LiteLLM, FunctionStream):
@@ -17,41 +18,100 @@ class LiteLLMStream(LiteLLM, FunctionStream):
         retry=retry_if_exception_type((OpenAIError))
     )
     async def run(self, **kwargs):
-        message = kwargs.pop('message')
-        self.completion_args = kwargs
+        message = get_openai_message(role=kwargs['role'],
+                                     content=kwargs['content'])
         messages = await self.generate_messages_history(message)
         kwargs['messages'] = messages
-        async for chunk, assistant_response in self.get_completion(**kwargs):
-            yield chunk, assistant_response
+        async for msg in self.get_completion(**kwargs):
+            yield msg
+
+    """
+    # Detect if function call
+    if getattr(delta, 'tool_calls', None):
+        if function_call['name'] is None:
+            function_call['name'] = delta.tool_calls[0].function.name
+        function_call['arguments'] += delta.tool_calls[0].function.arguments
+        completion = function_call
+    if last_role == 'assistant' and delta.content:
+        completion += delta.content
+    """
 
     async def get_completion(self,
                              **kwargs):
         self.generation = self.trace.generation(CreateGeneration(
-            name='stream: '+self.name,
+            name='stream: ' + self.name,
             startTime=dt.datetime.now(),
             prompt=kwargs['messages'],
         ))
+        for i in ['role', 'content']: kwargs.pop(i)
         response = await acompletion(**kwargs)
-        assistant_response = ""
+        completion = ""
         function_call = {
             "name": None,
             "arguments": ""
         }
-        last_role = None
         async for chunk in response:
-            if chunk['choices'][0]['delta'].role:
-                last_role = chunk['choices'][0]['delta'].role
-            if getattr(chunk.choices[0].delta, 'tool_calls', None):
-                if function_call['name'] is None:
-                    function_call['name'] = chunk.choices[0].delta.tool_calls[0].function.name
-                function_call['arguments'] += chunk.choices[0].delta.tool_calls[0].function.arguments
-                assistant_response = function_call
-            if last_role == 'assistant' and chunk['choices'][0]['delta'].content:
-                assistant_response += chunk['choices'][0]['delta'].content
+            print(chunk)
+            status = self.get_stream_status(chunk)
+            chunk_type = self.get_chunk_type(chunk)
 
-            yield chunk, assistant_response
+            if status == "streaming":
+
+                if chunk_type == "completion":
+                    completion = self.handle_completion_streaming(
+                        chunk,
+                        completion
+                    )
+                elif chunk_type == "tool":
+                    self.handle_function_streaming(
+                        chunk,
+                        completion,
+                        function_call
+                    )
+                    print('hi')
+            elif status == "finished":
+                self.handle_finished_streaming(
+                    chunk,
+                    completion
+                )
+
+            yield {
+                "status": chunk,
+                "completion": completion
+            }
 
         self.generation.update(UpdateGeneration(
-            completion=assistant_response,
+            completion=completion,
             endTime=dt.datetime.now(),
         ))
+
+    def get_chunk_type(self,
+                       chunk):
+        delta = chunk['choices'][0]['delta'].model_dump()
+
+        if 'tool_calls' in delta:
+            print('hi')
+
+        return "completion"
+
+    def get_stream_status(self,
+                          chunk):
+
+        print('hi')
+        return "streaming"
+
+    def handle_function_streaming(self,
+                                  chunk,
+                                  completion,
+                                  function_call):
+        return chunk, completion, function_call
+
+    def handle_completion_streaming(self,
+                                    chunk,
+                                    completion):
+        return ""
+
+    def handle_finished_streaming(self,
+                                  chunk,
+                                  completion):
+        return ""

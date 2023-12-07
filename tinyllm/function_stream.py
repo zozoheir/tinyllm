@@ -20,11 +20,14 @@ class FunctionStream(Function):
             self.transition(States.OUTPUT_VALIDATION)
             self.output = await self.validate_output(**self.output)
             self.transition(States.PROCESSING_OUTPUT)
-            self.output = await self.process_output(**self.output)
-            self.processed_output = self.output
+            self.processed_output = await self.process_output(**self.output)
+            final_output = {"status": "success",
+                            "output": self.processed_output}
+            yield final_output
             if self.evaluators:
                 self.transition(States.EVALUATING)
                 await self.evaluate(generation=self.generation,
+                                    output=final_output,
                                     **kwargs)
             self.transition(States.COMPLETE)
             langfuse_client.flush()

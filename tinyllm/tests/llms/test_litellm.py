@@ -1,9 +1,10 @@
 import unittest
 import os
 
-from tinyllm.functions.lite_llm.lite_llm import LiteLLMStream, LiteLLM
 
 import openai
+
+from tinyllm.functions.lite_llm.lite_llm_stream import LiteLLMStream
 from tinyllm.tests.base import AsyncioTestCase
 
 openai.api_key = os.environ['OPENAI_API_KEY']
@@ -47,18 +48,12 @@ class TestOpenAIChat(AsyncioTestCase):
 
     def test_openai_chat_stream(self):
 
-        litellmstream_chat = LiteLLMStream(name='Test: LiteLLMChat',
-                                           model='gpt-4',
-                                           temperature=0,
-                                           max_tokens=100,
-                                           openai_functions=self.test_openai_functions,
-                                           function_callables=self.function_callables,
-                                           with_memory=True)
+        litellmstream_chat = LiteLLMStream(name='Test: LiteLLMChat')
 
         async def get_stream():
-            async for api_result, response in litellmstream_chat(content="What is the user's birthday?"):
-                i = 0
-            return response
+            async for msg in litellmstream_chat(role='user',
+                                                content="What is the user's  birthday?"):
+                print(msg)
 
         result = self.loop.run_until_complete(get_stream())
 

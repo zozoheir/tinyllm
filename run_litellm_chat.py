@@ -15,6 +15,9 @@ openai.api_key = os.environ['OPENAI_API_KEY']
 class AnswerCorrectnessEvaluator(Evaluator):
 
     async def run(self, **kwargs):
+        kwargs.keys()
+        kwargs['output'].keys()
+
         completion = kwargs['response']['response']['completion']
         correctness_score = 'january 1st' in completion.lower()
 
@@ -24,7 +27,6 @@ class AnswerCorrectnessEvaluator(Evaluator):
             },
             "metadata": {}
         }
-
 
 
 tools = [
@@ -60,6 +62,7 @@ tools_callables = {'get_user_property': get_user_property}
 tool_store = ToolStore(tools=tools,
                        tools_callables=tools_callables)
 llm_store = LLMStore(tool_store=tool_store)
+# An environment = 1 manager for user interactions, 1 tool store, 1 llm store
 tiny_env = TinyEnvironment(name='TinyLLM Environment',
                            llm_store=llm_store,
                            tool_store=tool_store,
@@ -67,20 +70,19 @@ tiny_env = TinyEnvironment(name='TinyLLM Environment',
                            manager_args={
                                'name': 'manager',
                                'debug': False,
+                               'evaluators': [
+                                   AnswerCorrectnessEvaluator(
+                                       name="Answer Correctness Evaluator",
+                                       is_traced=False,
+                                   ),
+                               ]
                            },
-                           evaluators=[
-                               AnswerCorrectnessEvaluator(
-                                   name="Answer Correctness Evaluator",
-                                   is_traced=False,
-                               ),
-                           ],
                            debug=True)
 
 
 async def run_env():
-
     async for message in tiny_env(user_input="What is the user's birthday?"):
-        i=0
+        i = 0
 
 
 result = asyncio.run(run_env())

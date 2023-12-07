@@ -49,11 +49,11 @@ class FunctionInitValidator(Validator):
 
 
 class DefaultInputValidator(Validator):
-    input: str
+    input: Any
 
 
 class DefaultOutputValidator(Validator):
-    response: Any
+    completion: Any
 
 
 class Function:
@@ -138,17 +138,18 @@ class Function:
             self.transition(States.OUTPUT_VALIDATION)
             self.output = await self.validate_output(**self.output)
             self.transition(States.PROCESSING_OUTPUT)
-            self.output = await self.process_output(**self.output)
-            self.processed_output = self.output
+            self.processed_output = await self.process_output(**self.output)
+            final_output = {"status": "success",
+                            "output": self.processed_output}
             if self.evaluators:
                 self.transition(States.EVALUATING)
                 await self.evaluate(generation=self.generation,
+                                    output=final_output,
                                     **kwargs)
 
             self.transition(States.COMPLETE)
             langfuse_client.flush()
-            return {"status": "success",
-                    "output": self.output}
+            return final_output
         except Exception as e:
             self.error_message = str(e)
             self.transition(States.FAILED, msg=str(e))
@@ -175,6 +176,9 @@ class Function:
 
     async def evaluate(self,
                        **kwargs):
+        generation = kwargs['generation']
+        output = kwargs['output']
+
         # Need to link item with generation + call evaluators
 
         # Create dataset item
@@ -186,21 +190,23 @@ class Function:
                                                          ** kwargs)
             )
             item_client = DatasetItemClient(item, langfuse_client)
-            item_client.link(self.trace.generation, kwargs.get('run_name', "tinyllm_function"))
-
+            item_client.link(generation, kwargs.get('run_name', "tinyllm_function"))
 
         # Create eval_data args
-        eval_data = self.cache
+        eval_kwargs = {
+            'cache': self.cache,
+        }
         if self.processed_output:
-            eval_data.update(self.processed_output)
-        if kwargs:
-            eval_data.update(kwargs)
-            eval_data['generation_id'] = self.generation
+            eval_kwargs['processed_output'] = self.processed_output
 
+        if kwargs:
+            eval_kwargs['kwargs'] = kwargs
 
         # Call evaluators and score
         for evaluator in self.evaluators:
-            evaluator_response = await evaluator(**eval_data)
+            evaluator_response = await evaluator(generation=generation,
+                                                 output=output,
+                                                 **eval_kwargs)
             if evaluator_response['status'] != 'success':
                 self.log(evaluator_response['message'], level="error")
 
