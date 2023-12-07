@@ -13,12 +13,33 @@ The goal of the library is to keep things simple and reduce the unnecessary comp
 pip install git+https://github.com/zozoheir/tinyllm.git
 ```
 ## ⚡ Features
-* litellm integration: 20+ model providers available
-* Vector store
+* litellm integration: 20+ model providers available (OpenAI, Huggingface etc ...)
+* Async streaming + chat Agents, Tools and LLM models with standardized IO models
 * Various prompt engineering functions for prompt optimization and string formatting
 * Evaluation pipeline and test generation
 * Fallback strategies (different model, different chain...) 
 * Full out of the box observability of chains, agents, prompts, output processing and evaluations on Langfuse
+* PGvector/Postgres Vector store
+
+## API model
+LLM Functions should behave like an API. All Functions take "role" and "content" as input arguments and will always, even if failed, return a dictionary response.
+
+#### Input
+* role
+* content
+#### Output
+* status: success or error
+* output: response from the underlying function
+
+## Streaming Function data model
+#### Input
+* message: dictionary with "role" and "content"
+#### Output
+* streaming_status: streaming or finished
+* chunk: dictionary
+
+* completion: text completion OR generated tool_call (JSON during streaming, then converted dictionary in the last chunk when streaming_status = "finished")
+
 
 ## ⚡ How to and examples
 
