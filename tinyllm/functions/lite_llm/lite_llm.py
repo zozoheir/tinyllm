@@ -33,14 +33,14 @@ def retry_on_openai_exceptions(exception):
 
 
 class LiteLLMChatInitValidator(Validator):
-    system_prompt: str = "You are a helpful assistant"
-    with_memory: bool = False
+    system_prompt: str
+    with_memory: bool
     answer_format_prompt: Optional[str]
     example_selector: Optional[ExampleSelector]
 
 
 class LiteLLMChatInputValidator(Validator):
-    content: str
+    message: dict
     model: Optional[str] = 'gpt-3.5-turbo'
     temperature: Optional[float] = 0
     max_tokens: Optional[int] = 400
@@ -55,7 +55,7 @@ class LiteLLMChatOutputValidator(Validator):
 class LiteLLM(Function):
     def __init__(self,
                  system_prompt="You are a helpful assistant",
-                 with_memory=False,
+                 with_memory=True,
                  answer_format_prompt=None,
                  example_selector=None,
                  **kwargs):
@@ -87,11 +87,16 @@ class LiteLLM(Function):
         retry=retry_if_exception_type((OpenAIError))
     )
     async def run(self, **kwargs):
-        msg = get_openai_message(role='user',
-                                 content=kwargs['content'])
+        message = kwargs['message']
         messages = await self.prepare_messages(
-            message=msg
+            message=message
         )
+
+        with_tools = 'tool_choice' in kwargs and 'tools' in kwargs
+        tools_args = {}
+        if with_tools: tools_args = {'tools': kwargs['content']['tools'],
+                                     'tool_choice': kwargs['content']['tool_choice']}
+
         kwargs['messages'] = messages
         api_result = await self.get_completion(
             messages=messages,
@@ -99,23 +104,23 @@ class LiteLLM(Function):
             temperature=kwargs['temperature'],
             max_tokens=kwargs['max_tokens'],
             n=kwargs['n'],
+            **tools_args
         )
 
         # Memorize the interaction
-        await self.memorize(role=msg['role'],
-                            content=msg['content'])
-        await self.memorize(**api_result['choices'][0]['message'])
+        await self.memorize(message=message)
+        await self.memorize(message=api_result['choices'][0]['message'])
 
         return {
             "response": api_result,
         }
 
     async def memorize(self,
-                       role,
-                       content):
+                       message):
         if self.with_memory:
-            await self.memory(role=role,
-                              content=content)
+            await self.memory(message=message)
+            self.memory.memories
+
 
     async def get_completion(self,
                              model,

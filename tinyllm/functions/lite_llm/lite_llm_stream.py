@@ -19,26 +19,16 @@ class LiteLLMStream(LiteLLM, FunctionStream):
         retry=retry_if_exception_type((OpenAIError))
     )
     async def run(self, **kwargs):
-        message = get_openai_message(role=kwargs['role'],
-                                     content=kwargs['content'])
-        messages = await self.prepare_messages(message=message)
+        messages = await self.prepare_messages(message=kwargs['message'])
         kwargs['messages'] = messages
         async for msg in self.get_completion(**kwargs):
             yield msg
 
         # Memorize interaction
-        await self.memorize(role=message['role'],
-                            content=message['content'])
-        if msg['type'] == 'function':
-            await self.memorize(
-                role='function',
-                content=msg['completion'],
-            )
-        elif msg['type'] == 'completion':
-            await self.memorize(
-                role='assistant',
-                content=msg['completion'],
-            )
+        await self.memorize(message=kwargs['message'])
+        if msg['type'] == 'completion':
+            openai_msg = get_openai_message(role='assistant', content=msg['completion'])
+            await self.memorize(message=openai_msg)
 
     async def get_completion(self,
                              model,
@@ -52,6 +42,10 @@ class LiteLLMStream(LiteLLM, FunctionStream):
             startTime=dt.datetime.now(),
             prompt=messages,
         ))
+        with_tools = 'tool_choice' in kwargs and 'tools' in kwargs
+        tools_kwargs = {}
+        if with_tools: tools_kwargs = {'tools': kwargs['tools'],
+                                       'tool_choice': kwargs['tool_choice']}
         response = await acompletion(
             model=model,
             temperature=temperature,
@@ -59,6 +53,7 @@ class LiteLLMStream(LiteLLM, FunctionStream):
             max_tokens=max_tokens,
             messages=messages,
             stream=True,
+            **tools_kwargs
         )
         function_call = {
             "name": None,
@@ -80,11 +75,12 @@ class LiteLLMStream(LiteLLM, FunctionStream):
                 if chunk_type == "completion":
                     completion += delta['content']
 
-                elif chunk_type == "function":
+                elif chunk_type == "tool":
                     if function_call['name'] is None:
                         function_call['name'] = delta['tool_calls'][0]['function']['name']
-                        function_call['arguments'] += delta['tool_calls'][0]['function']['arguments']
-                        completion = function_call
+
+                    completion = function_call
+                    function_call['arguments'] += delta['tool_calls'][0]['function']['arguments']
 
             elif status == "success":
                 if chunk_type == 'tool':
@@ -109,7 +105,7 @@ class LiteLLMStream(LiteLLM, FunctionStream):
         delta = chunk['choices'][0]['delta']
 
         if 'tool_calls' in delta or chunk['choices'][0]['finish_reason'] == 'tool_calls':
-            return "function"
+            return "tool"
 
         return "completion"
 
@@ -119,35 +115,3 @@ class LiteLLMStream(LiteLLM, FunctionStream):
             return "success"
         else:
             return "streaming"
-
-        """
-
-    def handle_stream_chunks(self,
-                             chunk,
-                             completion,
-                             function_call: dict):
-        # Function call
-        if getattr(chunk['choices'][0]['delta'], 'tool_calls', None):
-            completion += chunk.choices[0].delta.tool_calls[0].function.arguments
-            function_call['arguments'] += chunk.choices[0].delta.tool_calls[0].function.arguments
-            # Get function name
-            if getattr(chunk.choices[0].delta, 'tool_calls', None):
-                if function_call['name'] is None:
-                    function_call['name'] = chunk.choices[0].delta.tool_calls[0].function.name
-
-        # Assistant response
-        elif isinstance(getattr(chunk['choices'][0]['delta'], 'content', None), str):
-            completion += chunk['choices'][0]['delta'].content
-
-        return chunk, completion, function_call
-
-
-        # Detect if function call
-        if getattr(delta, 'tool_calls', None):
-            if function_call['name'] is None:
-                function_call['name'] = delta.tool_calls[0].function.name
-            function_call['arguments'] += delta.tool_calls[0].function.arguments
-            completion = function_call
-        if last_role == 'assistant' and delta.content:
-            completion += delta.content
-        """

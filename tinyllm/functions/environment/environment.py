@@ -48,15 +48,19 @@ class TinyEnvironment(FunctionStream):
         input_msg = get_openai_message(role='user',
                                        content=user_input)
         while True:
-            async for msg in self.manager(tool_choice='auto',
-                                          tools=self.tool_store.tools,
-                                          **input_msg):
-                assert 'status' in msg, f"Message {msg} does not have a status"
+
+            print("input_msg", input_msg)
+            async for msg in self.manager(message=input_msg,
+                                          tool_choice='auto',
+                                          tools=self.tool_store.tools):
                 yield msg
 
             # Agent decides to call a tool
-            if msg['type'] == 'tool':
-                tool_msg = await self.llm_store.tool_store.run_tool(**msg['completion'])
-                await self.manager.memory(message=tool_msg)
-            elif msg['type'] == 'completion':
-                break
+            if msg['status'] == 'success':
+                msg_output = msg['output']
+                if msg_output['type'] == 'tool':
+                    input_msg = await self.llm_store.tool_store.run_tool(**msg_output['completion'])
+                elif msg_output['type'] == 'completion':
+                    break
+            else:
+                raise(Exception(msg))

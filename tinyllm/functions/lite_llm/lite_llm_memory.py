@@ -19,9 +19,7 @@ class Memory(Function):
         self.memories = []
 
     async def run(self, **kwargs):
-        msg = get_openai_message(role=kwargs['role'],
-                                 content=kwargs['content'])
-        self.memories.append(msg)
+        self.memories.append(kwargs['message'])
         return {'memories': self.memories}
 
     @property
