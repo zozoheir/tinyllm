@@ -45,10 +45,4 @@ Everythign is the same as Function, but the output format is different due to st
   }
 }
 ```
-Then, the last message yielded by the FunctionStream is the usual Function output:
-{
-  "status": "success",
-  "output": {
-    // Processed output data
-  }
-}
+
