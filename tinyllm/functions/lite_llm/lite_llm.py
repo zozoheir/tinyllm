@@ -119,7 +119,6 @@ class LiteLLM(Function):
                        message):
         if self.with_memory:
             await self.memory(message=message)
-            self.memory.memories
 
 
     async def get_completion(self,

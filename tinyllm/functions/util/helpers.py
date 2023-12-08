@@ -61,7 +61,7 @@ def get_openai_message(role,
         raise ValueError(f"Invalid role {role}.")
 
     msg = {'role': role,
-           'content': content}
+           'content': str(content)}
     msg.update(kwargs)
     return msg
 

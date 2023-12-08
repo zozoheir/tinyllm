@@ -22,7 +22,7 @@ class AnswerCorrectnessEvaluator(Evaluator):
             "metadata": {}
         }
         completion = kwargs['output']['completion']
-        if kwargs['processed_output']['type'] == 'function':
+        if kwargs['processed_output']['type'] == 'tool':
             evals = {
                 "evals": {
                     "functional_call": 1 if completion['name'] == 'get_user_property' else 0,

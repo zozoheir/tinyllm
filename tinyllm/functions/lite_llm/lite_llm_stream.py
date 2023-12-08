@@ -26,6 +26,9 @@ class LiteLLMStream(LiteLLM, FunctionStream):
 
         # Memorize interaction
         await self.memorize(message=kwargs['message'])
+        if msg['type'] == 'tool':
+            openai_msg = get_openai_message(role='function', content=msg['completion'], name=msg['completion']['name'])
+            await self.memorize(message=openai_msg)
         if msg['type'] == 'completion':
             openai_msg = get_openai_message(role='assistant', content=msg['completion'])
             await self.memorize(message=openai_msg)
@@ -82,10 +85,6 @@ class LiteLLMStream(LiteLLM, FunctionStream):
                     completion = function_call
                     function_call['arguments'] += delta['tool_calls'][0]['function']['arguments']
 
-            elif status == "success":
-                if chunk_type == 'tool':
-                    # JSON parsing of tool arguments
-                    function_call['arguments'] = json.loads(function_call['arguments'])
 
             yield {
                 "streaming_status": status,

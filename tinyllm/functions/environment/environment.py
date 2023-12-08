@@ -59,7 +59,10 @@ class TinyEnvironment(FunctionStream):
             if msg['status'] == 'success':
                 msg_output = msg['output']
                 if msg_output['type'] == 'tool':
-                    input_msg = await self.llm_store.tool_store.run_tool(**msg_output['completion'])
+                    name = msg_output['completion']['name']
+                    arguments = json.loads(msg_output['completion']['arguments'])
+                    input_msg = await self.llm_store.tool_store.run_tool(name=name,
+                                                                         arguments=arguments)
                 elif msg_output['type'] == 'completion':
                     break
             else:
