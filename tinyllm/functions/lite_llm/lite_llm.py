@@ -2,36 +2,21 @@ import datetime as dt
 import os
 from typing import Optional, Any
 
-import openai
 from langfuse.model import Usage, CreateGeneration, UpdateGeneration
 from litellm import OpenAIError, acompletion
 
-from tinyllm import tinyllm_config
 from tinyllm.function import Function
+from tinyllm.functions.example_manager import ExampleManager
 from tinyllm.functions.memory import Memory
 from tinyllm.functions.util.example_selector import ExampleSelector
 from tinyllm.functions.util.helpers import *
 from tinyllm.validator import Validator
 from tenacity import retry, stop_after_attempt, wait_random_exponential, retry_if_exception_type
-from openai import AsyncOpenAI
-
-openai_client = AsyncOpenAI(
-    api_key=os.environ.get("OPENAI_API_KEY"),
-)
-
-
-# Define which exceptions to retry on
-def retry_on_openai_exceptions(exception):
-    return isinstance(exception,
-                      (openai.error.RateLimitError,
-                       openai.error.Timeout,
-                       openai.error.ServiceUnavailableError,
-                       openai.error.APIError,
-                       openai.error.APIConnectionError))
 
 
 class LiteLLMChatInitValidator(Validator):
     system_prompt: str
+    example_manager: Optional[ExampleManager]
     with_memory: bool
     answer_format_prompt: Optional[str]
     example_selector: Optional[ExampleSelector]
@@ -53,15 +38,14 @@ class LiteLLMChatOutputValidator(Validator):
 class LiteLLM(Function):
     def __init__(self,
                  system_prompt="You are a helpful assistant",
+                 example_manager=ExampleManager(),
                  with_memory=True,
                  answer_format_prompt=None,
-                 example_selector=None,
                  **kwargs):
-        val = LiteLLMChatInitValidator(system_prompt=system_prompt,
-                                       with_memory=with_memory,
-                                       answer_format_prompt=answer_format_prompt,
-                                       example_selector=example_selector,
-                                       )
+        LiteLLMChatInitValidator(system_prompt=system_prompt,
+                                 with_memory=with_memory,
+                                 answer_format_prompt=answer_format_prompt,
+                                 example_manager=example_manager)
         super().__init__(input_validator=LiteLLMChatInputValidator,
                          **kwargs)
         self.system_prompt = system_prompt
@@ -72,7 +56,7 @@ class LiteLLM(Function):
                              trace=self.trace)
         self.with_memory = with_memory
         self.answer_format_prompt = answer_format_prompt
-        self.example_selector = example_selector
+        self.example_manager = example_manager
 
         self.total_cost = 0
         # The context builder needs the available token size from the prompt template
@@ -118,7 +102,6 @@ class LiteLLM(Function):
         if self.with_memory:
             await self.memory(message=message)
 
-
     async def get_completion(self,
                              model,
                              temperature,
@@ -149,10 +132,15 @@ class LiteLLM(Function):
 
     async def prepare_messages(self,
                                message):
+        # system prompt
+        # memories
+        # constant examples
+        # selected examples
+        # input message
         system_prompt = get_system_message(content=self.system_prompt)
-        examples = []  # add example selector
-        if self.example_selector and message['role'] == 'user':
-            best_examples = await self.example_selector(input=message['content'])
+        examples = self.example_manager.constant_examples
+        if self.example_manager.selector and message['role'] == 'user':
+            best_examples = await self.example_manager.selector(input=message['content'])
             for good_example in best_examples['output']['best_examples']:
                 examples.append(get_user_message(good_example['USER']))
                 examples.append(get_assistant_message(str(good_example['ASSISTANT'])))

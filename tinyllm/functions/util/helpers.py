@@ -135,6 +135,7 @@ def count_tokens(input: Union[List[Dict], Dict, str],
 def get_openai_batch_run_config(input,
                                 prompt_template,
                                 expected_completion_to_input_multiplier=1):
+    # TODO Add examples
     prompt_template_size = count_tokens(prompt_template.messages)
     input_token_size = count_tokens(input)
     leftover_tokens = OPENAI_MODELS_CONTEXT_SIZES['gpt-3.5-turbo'] - count_tokens(
