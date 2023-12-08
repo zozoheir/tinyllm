@@ -1,4 +1,4 @@
-![Screenshot 2023-07-25 at 3 48 43 AM](https://github.com/zozoheir/tiny-llm/assets/42655961/f2db0c02-c18c-45a8-8054-6cd4da474e1e)
+![DALL·E 2023-12-07 23 29 13 - A low polygon, ultra HD render of an Eastern bluebird dragon on a white background  The design is in isometric 3D, showcasing the mythical creature wi](https://github.com/zozoheir/tinyllm/assets/42655961/33d219ea-bd9e-46cc-93da-7dd5734e8ec7)
 
 # 🕸️ tinyllm
 tinyllm is a lightweight framework for developing, debugging and monitoring LLM powered applications at scale. It sits as a layer between your Web application and your LLM libraries.
