@@ -1,4 +1,6 @@
-<img src="https://github.com/zozoheir/tinyllm/assets/42655961/3137025b-8750-4db9-ad71-0325fd7b1f19" width="200" height="200" alt="tinyllm logo">
+<p align="center">
+  <img src="https://github.com/zozoheir/tinyllm/assets/42655961/3137025b-8750-4db9-ad71-0325fd7b1f19" width="200" height="200" alt="tinyllm logo">
+</p>
 
 # 🕸️ tinyllm
 tinyllm is a lightweight framework for developing, debugging and monitoring LLM powered applications at scale. It sits as a layer between your Web application and your LLM libraries.
