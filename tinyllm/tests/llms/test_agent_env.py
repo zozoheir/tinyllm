@@ -1,5 +1,6 @@
 import asyncio
 import os
+import unittest
 
 import openai
 from langfuse.model import CreateScore
@@ -82,12 +83,23 @@ tiny_env = AgentEnvironment(name='TinyLLM Environment',
                             },
                             debug=True)
 
+# Define the test class
+class TestAgentEnvironment(unittest.TestCase):
 
-async def run_env():
-    msgs = []
-    async for message in tiny_env(user_input="What is the user's birthday?"):
-        msgs.append(message)
+    def test_run_env_success_status(self):
+        # Define an asynchronous helper function
+        async def async_test():
+            msgs = []
+            async for message in tiny_env(user_input="What is the user's birthday?"):
+                msgs.append(message)
+            return msgs
 
+        # Run the asynchronous test
+        result = asyncio.run(async_test())
 
-result = asyncio.run(run_env())
-print(result)
+        # Verify the last message in the list
+        self.assertEqual(result[-1]['status'], 'success', "The last message status should be 'success'")
+
+# This allows the test to be run standalone
+if __name__ == '__main__':
+    unittest.main()

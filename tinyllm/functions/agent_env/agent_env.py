@@ -14,7 +14,7 @@ class TinyEnvironmentOutputValidator(Validator):
     response: dict
 
 
-class TinyEnvironment(FunctionStream):
+class AgentEnvironment(FunctionStream):
 
     def __init__(self,
                  llm_store,
@@ -49,7 +49,6 @@ class TinyEnvironment(FunctionStream):
                                        content=user_input)
         while True:
 
-            print("input_msg", input_msg)
             async for msg in self.manager(message=input_msg,
                                           tool_choice='auto',
                                           tools=self.tool_store.tools):
@@ -61,8 +60,9 @@ class TinyEnvironment(FunctionStream):
                 if msg_output['type'] == 'tool':
                     name = msg_output['completion']['name']
                     arguments = json.loads(msg_output['completion']['arguments'])
-                    input_msg = await self.llm_store.tool_store.run_tool(name=name,
+                    tool_result = await self.llm_store.tool_store.run_tool(name=name,
                                                                          arguments=arguments)
+                    input_msg = tool_result
                 elif msg_output['type'] == 'completion':
                     break
             else:
