@@ -28,17 +28,6 @@ pip install git+https://github.com/zozoheir/tinyllm.git
 - **Logging:** Records detailed logs for debugging and auditing purposes.
 - **Finite State Machine design:** Manages the function's lifecycle through defined states, ensuring controlled and predictable execution.
 
-## API model
-LLM Functions are designed to behave like a web API. All Functions will always, even if failed, return a dictionary response.
-
-#### Validation
-Validations are defined through a Pydantic model and are provided to the Function using input_validator, output_validator and output_processing_validator args to a Function
- 
-## How to and examples
-* ####  [Check all examples here](https://github.com/zozoheir/tinyllm/blob/main/docs/examples.md)
-## Function and FunctionStream API model
-* ####  [Function and FunctionStream model](https://github.com/zozoheir/tinyllm/blob/main/docs/api_model.md)
-
 
 ## Background and goals
 Many of the LLM libraries today (langchain, llama-index, deep pavlov...) have made serious software design commitments which I believe were too early to make given the infancy of the industry.
@@ -47,18 +36,15 @@ The goals of tinyllm are:
 * **High level, robust abstractions**: tinyllm is designed to be as simple as possible to use and integrate with existing and living codebases.
 * **Human and machine readable code** to enable AI powered and autonomous chain development
 
+## API model
+LLM Functions are designed to behave like a web API. All Functions will always, even if failed, return a dictionary response.
+
+#### Validation
+Validations are defined through a Pydantic model and are provided to the Function using input_validator, output_validator and output_processing_validator args to a Function
+
 ## Tracing
 tinyllm is integrated with Langfuse for tracing chains, functions and agents.
 ![Screenshot 2023-08-11 at 12 45 07 PM](https://github.com/zozoheir/tinyllm/assets/42655961/4d7c6ae9-e9a3-4795-9496-ad7905bc361e)
-
-
-## ⚡ Classes
-The TinyLLM library consists of several key components that work together to operate and manage LLMs in prod:
-* **Function**: The base class for all LLM functions. It handles the execution of the LLM and the transition between different states in the LLM's lifecycle.
-* **FunctionStream**: The streaming equivalent of Function. 
-* **Validator**: class to validate input and output data for LLM functions.
-* **Evaluator**: class to evaluate the quality of the output of an LLM function.
-* **VectorStore**: class to manage vector storage and search.
 
 ### Managing configs and credentials
 Configs are managed through a tinyllm.yaml file. It gets picked up at runtime in tinyllm.__init__ and can be placed in any of /Documents, the root folder, or the current working directory. Here is a sample yaml config file:
@@ -75,7 +61,6 @@ POSTGRES:
   TINYLLM_POSTGRES_PORT: 
   TINYLLM_POSTGRES_NAME: ""
 ```
-
 
 ## ⚡ Concurrency vs Parallelism vs Chaining
 These tend to be confusing across the board. Here's a quick explanation:
@@ -101,3 +86,13 @@ INFO | tinyllm.function | 2023-12-07 16:45:44,040 : [Test: LiteLLMChat|0a6c5186-
 INFO | tinyllm.function | 2023-12-07 16:45:44,041 : [Test: LiteLLMChat|0a6c5186-8361-4245-b555-625a0595d744] transition to: States.PROCESSED_OUTPUT_VALIDATION 
 INFO | tinyllm.function | 2023-12-07 16:45:44,041 : [Test: LiteLLMChat|0a6c5186-8361-4245-b555-625a0595d744] transition to: States.COMPLETE 
 ```
+
+
+
+ 
+## How to and examples
+* ####  [Check all examples here](https://github.com/zozoheir/tinyllm/blob/main/docs/examples.md)
+## Function and FunctionStream API model
+* ####  [Function and FunctionStream model](https://github.com/zozoheir/tinyllm/blob/main/docs/api_model.md)
+
+
