@@ -5,7 +5,8 @@ tinyllm is a lightweight framework for developing, debugging and monitoring LLM 
 `Function` and its streaming equivalent `FunctionStream` are designed to standardize LLM function calls for production use. 
 It provides a structured approach to handle various aspects of function execution, including input/output validation, output processing, error handling, evaluation, all while maintaining high standards of code clarity and efficiency.
 
-The goal of the library is to keep things simple and reduce the unnecessary complexity of libraries like Langchain, llama index etc...while allowing their integration easily if needed.
+Over time, Software 2.0 will be about LLMs as multimodal functions/APIs. Given the non-deterministic nature of LLMs, validation, IO standardization and evaluation become a core problem to solve for any app in production. tinyllm comes to solve this problem.
+Any other model or agent from any library (langchain/llama-index...) can seamlessly be integrated as a tinyllm Function.
 
 ## Install
 ```
@@ -25,7 +26,7 @@ pip install git+https://github.com/zozoheir/tinyllm.git
 - **Finite State Machine design:** Manages the function's lifecycle through defined states, ensuring controlled and predictable execution.
 
 ## API model
-LLM Functions are designed to behave like a web API. All Functions take "role" and "content" as input arguments and will always, even if failed, return a dictionary response.
+LLM Functions are designed to behave like a web API. All Functions will always, even if failed, return a dictionary response.
 
 #### Validation
 Validations are defined through a Pydantic model and are provided to the Function using input_validator, output_validator and output_processing_validator args to a Function
