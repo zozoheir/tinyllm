@@ -2,7 +2,7 @@
   <img src="https://github.com/zozoheir/tinyllm/assets/42655961/3137025b-8750-4db9-ad71-0325fd7b1f19" width="200" height="200" alt="tinyllm logo">
 </p>
 
-# 🕸️ tinyllm
+# What is tinyllm?
 tinyllm is a lightweight framework for developing, debugging and monitoring LLM powered applications at scale. It sits as a layer between your Web application and your LLM libraries.
 `Function` and its streaming equivalent `FunctionStream` are designed to standardize LLM function calls for production use. 
 It provides a structured approach to handle various aspects of function execution, including input/output validation, output processing, error handling, evaluation, all while maintaining high standards of code clarity and efficiency.
@@ -20,6 +20,7 @@ pip install git+https://github.com/zozoheir/tinyllm.git
 - **Layered validation:** 3 validations happen during the Function lifecycle: input, output and output processing.
 - **IO Standardization:** Maintains consistent response patterns and failure handling across different function implementations.
 - **Observability:** Integrates with Langfuse for monitoring and tracing of function execution at scale.
+- **Example manager**: constant and variable examples using a similarity based example selector
 - **Memory:** conversations history
 - **Agents:** tool based agents
 - **Evaluation:** Evaluators can be defined to evaluate and log the quality of the function's output in real-time
