@@ -18,7 +18,7 @@ EvalPipeline:
 """
 from typing import List
 
-from tinyllm.functions.function import Function
+from tinyllm.function import Function
 
 class RagEvaluationPipeline:
 

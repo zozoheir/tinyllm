@@ -8,7 +8,7 @@ from tinyllm.functions.llms.openai.openai_chat import OpenAIChat
 from tinyllm.functions.llms.openai.openai_prompt_template import OpenAIPromptTemplate
 
 prompt_template = OpenAIPromptTemplate(
-    name="TinyLLM Agent Prompt Template",
+    name="TinyLLM AgentEnvironment Prompt Template",
 )
 openai_chat = OpenAIChat(name='OpenAI Chat model',
                          model='gpt-3.5-turbo',
@@ -58,7 +58,7 @@ def test_function(asked_property):
 function_callables = {'test_function': test_function}
 
 openai_agent = OpenAIChatAgent(
-    name="Test TinyLLM Agent",
+    name="Test TinyLLM AgentEnvironment",
     model="gpt-3.5-turbo",
     openai_functions=test_openai_functions,
     function_callables=function_callables,
@@ -148,7 +148,7 @@ from tinyllm.functions.chain import Chain
 from tinyllm.functions.decision import Decision
 from tinyllm.functions.llms.openai.openai_chat import OpenAIChat
 from tinyllm.functions.concurrent import Concurrent
-from tinyllm.functions.function import Function
+from tinyllm.function import Function
 from tinyllm.functions.llms.openai.openai_prompt_template import OpenAIPromptTemplate
 
 good_loan_application_example = """

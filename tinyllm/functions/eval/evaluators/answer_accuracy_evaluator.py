@@ -1,10 +1,10 @@
 import re
 from textwrap import dedent
 
-from tinyllm.functions.llms.eval.evaluator import Evaluator
+from tinyllm.functions.eval.evaluator import Evaluator
 from tinyllm.functions.llms.openai.openai_chat import OpenAIChat
 from tinyllm.functions.llms.openai.openai_prompt_template import OpenAIPromptTemplate
-from tinyllm.functions.llms.lite_llm.util import get_user_message, get_assistant_message
+from tinyllm.functions.lite_llm.util import get_user_message, get_assistant_message
 
 EXAMPLE_INPUT = """
 Context:
@@ -62,7 +62,7 @@ class AnswerCorrectnessEvaluator(Evaluator):
             max_tokens=400,
             prompt_template=accuracy_prompt_template,
             is_traced=True,
-            llm_trace=self.llm_trace,
+            trace=self.trace,
             with_memory=False,
         )
 

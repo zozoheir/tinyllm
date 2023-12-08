@@ -1,6 +1,6 @@
 import unittest
 
-from tinyllm.functions.llms.util.single_source_context_builder import SingleSourceDocsContextBuilder
+from tinyllm.functions.util.single_source_context_builder import SingleSourceDocsContextBuilder
 
 
 class TestDocsContextBuilder(unittest.TestCase):

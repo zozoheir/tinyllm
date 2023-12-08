@@ -14,7 +14,9 @@ from langfuse.model import CreateGeneration, CreateDatasetRequest, CreateTrace, 
 langfuse_client = Langfuse(
     public_key=os.environ['LANGFUSE_PUBLIC_KEY'],
     secret_key=os.environ['LANGFUSE_SECRET_KEY'],
-    host="https://cloud.langfuse.com/"
+    host="https://us.cloud.langfuse.com/",
+    debug=False,
+    flush_interval=0.1,
 )
 
 
@@ -47,12 +49,12 @@ class LLMTrace:
 
     def create_generation(self,
                           **kwargs):
-        self.current_generation = self.trace.generation(CreateGeneration(
-            **kwargs))
+        self.current_generation = self.trace.generation(CreateGeneration(**kwargs))
+        kwargs.keys()
 
     def update_generation(self,
                           **kwargs):
-        #kwargs['completion'] = json.dumps({'completion': kwargs.get('completion', "No completion")})
+        # kwargs['completion'] = json.dumps({'completion': kwargs.get('completion', "No completion")})
         self.current_generation.update(UpdateGeneration(
             **kwargs
         ))

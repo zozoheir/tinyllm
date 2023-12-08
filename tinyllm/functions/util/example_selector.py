@@ -1,7 +1,7 @@
 from typing import List, Dict, Optional, Callable
 
-from tinyllm.functions.function import Function
-from tinyllm.functions.validator import Validator
+from tinyllm.function import Function
+from tinyllm.validator import Validator
 from tinyllm.util.ai_util import get_top_n_similar_vectors_index
 
 
