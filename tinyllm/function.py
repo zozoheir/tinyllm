@@ -11,7 +11,7 @@ from langfuse.model import CreateTrace
 from smartpy.utility.log_util import getLogger
 from smartpy.utility.py_util import get_exception_info
 from tinyllm.exceptions import InvalidStateTransition
-from tinyllm.llm_ops import LLMTrace, langfuse_client
+from tinyllm import langfuse_client
 from tinyllm.state import States, ALLOWED_TRANSITIONS
 from tinyllm.validator import Validator
 from tinyllm.util.fallback_strategy import fallback_decorator

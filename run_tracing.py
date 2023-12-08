@@ -3,7 +3,7 @@ from datetime import datetime
 
 from langfuse.model import CreateTrace, CreateGeneration, UpdateGeneration
 
-from tinyllm.llm_ops import langfuse_client
+from tinyllm import langfuse_client
 
 trace = langfuse_client.trace(CreateTrace(name='test'))
 

@@ -6,6 +6,7 @@ import openai
 from langfuse.model import Usage, CreateGeneration, UpdateGeneration
 from litellm import OpenAIError, acompletion
 
+from tinyllm import tinyllm_config
 from tinyllm.function import Function
 from tinyllm.functions.memory import Memory
 from tinyllm.functions.util.example_selector import ExampleSelector

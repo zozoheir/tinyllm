@@ -25,7 +25,6 @@ class TestVectorStore(AsyncioTestCase):
 
         # Adding test data
         self.loop.run_until_complete(self.vector_store.add_texts(self.test_texts, self.collection_name, self.metadatas))
-
         query = "Hello, World"
         k = 1
         collection_filters = [self.collection_name]

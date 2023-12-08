@@ -2,7 +2,7 @@ import traceback
 from typing import Any
 
 from tinyllm.function import Function
-from tinyllm.llm_ops import langfuse_client
+from tinyllm import langfuse_client
 from tinyllm.state import States
 from tinyllm.validator import Validator
 

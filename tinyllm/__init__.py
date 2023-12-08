@@ -4,6 +4,7 @@ import os
 from pathlib import Path, PosixPath
 
 from smartpy.utility.log_util import getLogger
+from langfuse import Langfuse
 
 logger = getLogger(__name__)
 
@@ -40,6 +41,14 @@ directories = [
 ]
 
 directories.append(PosixPath(os.environ['TINYLLM_YAML_DIR'].replace(' ', '')))
+tinyllm_config = load_yaml_config('tinyllm.yaml', directories)
 
-config = load_yaml_config('tinyllm.yaml', directories)
-set_env_variables(config)
+os.environ['OPENAI_API_KEY'] = tinyllm_config['LLM_PROVIDERS']['OPENAI_API_KEY']
+
+langfuse_client = Langfuse(
+    public_key=tinyllm_config['LANGFUSE']['PUBLIC_KEY'],
+    secret_key=tinyllm_config['LANGFUSE']['SECRET_KEY'],
+    host=tinyllm_config['LANGFUSE']['HOST'],
+    debug=False,
+    flush_interval=0.1,
+)
