@@ -27,6 +27,7 @@ class TestDocsContextBuilder(unittest.TestCase):
                               ignore_keys=['metadata']) for doc in self.docs]
 
         self.context_builder = SingleSourceDocsContextBuilder(
+            name="single_source_context_builder",
             start_string=self.start_string,
             end_string=self.end_string,
             available_token_size=self.available_token_size

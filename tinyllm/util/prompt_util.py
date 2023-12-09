@@ -73,10 +73,7 @@ def stringify_dict(header: str,
     return header + "\n" + dict_string_representation
 
 
-def stringify_dict_list(
-        header: str,
-        dicts: List[Dict[str, Any]],
-        ignore_keys: Optional[List[str]] = None) -> str:
+def stringify_dict_list(dicts: List[Dict[str, Any]]) -> str:
     """
     Transforms a list of dictionaries to a single formatted string.
 

@@ -8,12 +8,8 @@ from tinyllm.util.prompt_util import stringify_dict_list
 
 class SingleSourceDocsContextBuilder(ContextBuilder):
     def __init__(self,
-                 start_string: str,
-                 end_string: str,
-                 available_token_size: int):
-        self.start_string = start_string
-        self.end_string = end_string
-        self.available_token_size = available_token_size
+                 **kwargs):
+        super().__init__(**kwargs)
         self.fitted_input = None
         self.context = None
 
