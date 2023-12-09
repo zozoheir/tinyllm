@@ -180,12 +180,20 @@ class Function:
             raise InvalidStateTransition(
                 self, f"Invalid state transition from {self.state} to {new_state}"
             )
-        self.state = new_state
         log_level = "error" if new_state == States.FAILED else "info"
-        self.log(
-            f"transition to: {new_state}" + (f" ({msg})" if msg is not None else ""),
-            level=log_level,
-        )
+        if log_level == 'error':
+            self.log(
+                f"transition from {self.state} to: {new_state}" + (f" ({msg})" if msg is not None else ""),
+                level=log_level,
+            )
+        else:
+            self.log(
+                f"transition to: {new_state}" + (f" ({msg})" if msg is not None else ""),
+                level=log_level,
+            )
+
+        self.state = new_state
+
 
     async def evaluate(self,
                        **kwargs):

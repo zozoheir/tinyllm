@@ -1,15 +1,14 @@
 import datetime as dt
-import os
 from typing import Optional, Any
 
 from langfuse.model import Usage, CreateGeneration, UpdateGeneration
 from litellm import OpenAIError, acompletion
 
 from tinyllm.function import Function
-from tinyllm.functions.example_manager import ExampleManager
-from tinyllm.functions.memory import Memory
-from tinyllm.functions.util.example_selector import ExampleSelector
-from tinyllm.functions.util.helpers import *
+from tinyllm.functions.examples.example_manager import ExampleManager
+from tinyllm.functions.llm.memory import Memory
+from tinyllm.functions.examples.example_selector import ExampleSelector
+from tinyllm.functions.helpers import *
 from tinyllm.validator import Validator
 from tenacity import retry, stop_after_attempt, wait_random_exponential, retry_if_exception_type
 
@@ -63,11 +62,6 @@ class LiteLLM(Function):
         self.answer_format_prompt_size = count_tokens(answer_format_prompt) if answer_format_prompt is not None else 0
         self.completion_args = None
 
-    @retry(
-        stop=stop_after_attempt(3),
-        wait=wait_random_exponential(min=1, max=10),
-        retry=retry_if_exception_type((OpenAIError))
-    )
     async def run(self, **kwargs):
         message = kwargs['message']
         messages = await self.prepare_messages(
@@ -102,6 +96,12 @@ class LiteLLM(Function):
         if self.with_memory:
             await self.memory(message=message)
 
+
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_random_exponential(min=1, max=10),
+        retry=retry_if_exception_type((OpenAIError))
+    )
     async def get_completion(self,
                              model,
                              temperature,
@@ -139,11 +139,13 @@ class LiteLLM(Function):
         # input message
         system_prompt = get_system_message(content=self.system_prompt)
         examples = self.example_manager.constant_examples
-        if self.example_manager.selector and message['role'] == 'user':
-            best_examples = await self.example_manager.selector(input=message['content'])
+        if self.example_manager.example_selector.example_dicts and message['role'] == 'user':
+            best_examples = await self.example_manager.example_selector(input=message['content'])
             for good_example in best_examples['output']['best_examples']:
                 examples.append(get_user_message(good_example['USER']))
                 examples.append(get_assistant_message(str(good_example['ASSISTANT'])))
+
+
 
         messages = [system_prompt] \
                    + self.memory.get_memories() + \

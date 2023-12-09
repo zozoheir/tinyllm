@@ -1,14 +1,13 @@
 import datetime as dt
-import json
 
 from langfuse.model import CreateGeneration, UpdateGeneration, Usage
 from litellm import acompletion
 from openai import OpenAIError
 from tenacity import stop_after_attempt, wait_random_exponential, retry_if_exception_type, retry
 
-from tinyllm.functions.lite_llm.lite_llm import LiteLLM
+from tinyllm.functions.llm.lite_llm import LiteLLM
 from tinyllm.function_stream import FunctionStream
-from tinyllm.functions.util.helpers import get_openai_message, count_tokens
+from tinyllm.functions.helpers import get_openai_message, count_tokens
 
 
 class LiteLLMStream(LiteLLM, FunctionStream):

@@ -1,6 +1,7 @@
 import unittest
 
-from tinyllm.functions.util.single_source_context_builder import SingleSourceDocsContextBuilder
+from tinyllm.functions.rag.document import Document
+from tinyllm.functions.rag.single_source_context_builder import SingleSourceDocsContextBuilder
 
 
 class TestDocsContextBuilder(unittest.TestCase):
@@ -14,11 +15,16 @@ class TestDocsContextBuilder(unittest.TestCase):
         self.available_token_size = 1024  # set some arbitrary limit
 
         self.docs = [
-            {"content": "First document text.", "test": "test"},
-            {"content": "Second document text, which is slightly longer.", "test": "test"},
+            {"content": "First document text.",
+             "metadata": {}},
+            {"content": "Second document text, which is slightly longer.",
+             "metadata": {}},
             {"content": "Third document text.",
-             "test": "test"}
+             "metadata": {}}
         ]
+        self.docs = [Document(**doc,
+                              header="[doc]",
+                              ignore_keys=['metadata']) for doc in self.docs]
 
         self.context_builder = SingleSourceDocsContextBuilder(
             start_string=self.start_string,
@@ -28,12 +34,7 @@ class TestDocsContextBuilder(unittest.TestCase):
 
     def test_get_context(self):
         # Use the DocsContextBuilder to get the final context
-        final_context = self.context_builder.get_context(
-            docs=self.docs,
-            header="[post]",
-            ignore_keys=['test'],
-            output_format="str"
-        )
+        final_context = self.context_builder.get_context(docs=self.docs)
 
         # Assert the presence of the start and end strings in the final context
         self.assertTrue(self.start_string in final_context)
@@ -41,7 +42,7 @@ class TestDocsContextBuilder(unittest.TestCase):
         self.assertTrue("test" not in final_context)
         # Assert the presence of document texts in the final context
         for doc in self.docs:
-            self.assertTrue(doc["content"] in final_context)
+            self.assertTrue(doc.format() in final_context)
 
     def tearDown(self):
         super().tearDown()

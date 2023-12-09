@@ -2,7 +2,7 @@ import datetime as dt
 
 from langfuse.model import CreateSpan, UpdateSpan
 
-from tinyllm.functions.util.helpers import get_openai_message
+from tinyllm.functions.helpers import get_openai_message
 
 
 class ToolStore:

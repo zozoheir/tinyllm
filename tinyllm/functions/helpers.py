@@ -128,24 +128,27 @@ def count_tokens(input: Union[List[Dict], Dict, str],
                                      dict=input,
                                      ignore_keys=kwargs.get('ignore_keys', []))
         return num_tokens_from_string(dict_string)
+
     else:
         raise NotImplementedError("count_tokens() is not implemented for this input type.")
 
 
 def get_openai_batch_run_config(input,
-                                prompt_template,
+                                system_role,
+                                examples,
                                 expected_completion_to_input_multiplier=1):
     # TODO Add examples
-    prompt_template_size = count_tokens(prompt_template.messages)
+    system_role_size = count_tokens(system_role)
+    examples_size = count_tokens(examples)
+
     input_token_size = count_tokens(input)
-    leftover_tokens = OPENAI_MODELS_CONTEXT_SIZES['gpt-3.5-turbo'] - count_tokens(
-        prompt_template.messages) - input_token_size
+    leftover_tokens = OPENAI_MODELS_CONTEXT_SIZES['gpt-3.5-turbo'] - (system_role_size+examples_size) - input_token_size
     if leftover_tokens / input_token_size < expected_completion_to_input_multiplier:
         model_name = 'gpt-3.5-turbo-16k'
-        leftover_tokens = OPENAI_MODELS_CONTEXT_SIZES['gpt-3.5-turbo-16k'] - prompt_template_size - input_token_size
+        leftover_tokens = OPENAI_MODELS_CONTEXT_SIZES['gpt-3.5-turbo-16k'] - (system_role_size+examples_size) - input_token_size
     else:
         model_name = 'gpt-3.5-turbo'
     return {
         'model': model_name,
-        'max_tokens': leftover_tokens*0.99
+        'max_tokens': (expected_completion_to_input_multiplier+1)*input_token_size
     }

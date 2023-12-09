@@ -1,8 +1,7 @@
-import datetime as dt
 import json
 
 from smartpy.utility.log_util import getLogger
-from tinyllm.functions.util.helpers import get_openai_message
+from tinyllm.functions.helpers import get_openai_message
 from tinyllm.function_stream import FunctionStream
 from tinyllm.validator import Validator
 

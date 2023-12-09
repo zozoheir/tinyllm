@@ -4,9 +4,9 @@ import os
 import openai
 from langfuse.model import CreateScore
 
-from tinyllm.functions.agent_env.agent_env import AgentEnvironment
-from tinyllm.functions.agent_env.llm_store import LLMStore
-from tinyllm.functions.agent_env.tool_store import ToolStore
+from tinyllm.functions.agent.agent_env import AgentEnvironment
+from tinyllm.functions.agent.llm_store import LLMStore
+from tinyllm.functions.agent.tool_store import ToolStore
 from tinyllm.functions.eval.evaluator import Evaluator
 
 openai.api_key = os.environ['OPENAI_API_KEY']
