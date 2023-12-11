@@ -41,13 +41,14 @@ class LiteLLMStream(LiteLLM, FunctionStream):
                              **kwargs):
         self.generation = self.trace.generation(CreateGeneration(
             name=self.name,
-            startTime=dt.datetime.now(),
+            startTime=dt.datetime.utcnow(),
             prompt=messages,
         ))
         with_tools = 'tool_choice' in kwargs and 'tools' in kwargs
         tools_kwargs = {}
         if with_tools: tools_kwargs = {'tools': kwargs['tools'],
                                        'tool_choice': kwargs['tool_choice']}
+
         response = await acompletion(
             model=model,
             temperature=temperature,
@@ -84,7 +85,6 @@ class LiteLLMStream(LiteLLM, FunctionStream):
                     completion = function_call
                     function_call['arguments'] += delta['tool_calls'][0]['function']['arguments']
 
-
             yield {
                 "streaming_status": status,
                 "type": chunk_type,
@@ -94,7 +94,7 @@ class LiteLLMStream(LiteLLM, FunctionStream):
 
         self.generation.update(UpdateGeneration(
             completion=completion,
-            endTime=dt.datetime.now(),
+            endTime=dt.datetime.utcnow(),
             usage=Usage(promptTokens=count_tokens(messages), completionTokens=count_tokens(completion)),
         ))
 

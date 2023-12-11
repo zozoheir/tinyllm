@@ -14,7 +14,7 @@ from tenacity import retry, stop_after_attempt, wait_random_exponential, retry_i
 
 
 class LiteLLMChatInitValidator(Validator):
-    system_prompt: str
+    system_role: str
     example_manager: Optional[ExampleManager]
     with_memory: bool
     answer_format_prompt: Optional[str]
@@ -36,23 +36,22 @@ class LiteLLMChatOutputValidator(Validator):
 
 class LiteLLM(Function):
     def __init__(self,
-                 system_prompt="You are a helpful assistant",
+                 system_role="You are a helpful assistant",
                  example_manager=ExampleManager(),
                  with_memory=True,
                  answer_format_prompt=None,
                  **kwargs):
-        LiteLLMChatInitValidator(system_prompt=system_prompt,
+        LiteLLMChatInitValidator(system_role=system_role,
                                  with_memory=with_memory,
                                  answer_format_prompt=answer_format_prompt,
                                  example_manager=example_manager)
         super().__init__(input_validator=LiteLLMChatInputValidator,
                          **kwargs)
-        self.system_prompt = system_prompt
+        self.system_role = system_role
         self.n = 1
         self.memory = Memory(name=f"{self.name}_memory",
                              is_traced=self.is_traced,
-                             debug=self.debug,
-                             trace=self.trace)
+                             debug=self.debug)
         self.with_memory = with_memory
         self.answer_format_prompt = answer_format_prompt
         self.example_manager = example_manager
@@ -111,7 +110,7 @@ class LiteLLM(Function):
                              **kwargs):
         self.generation = self.trace.generation(CreateGeneration(
             name=self.name,
-            startTime=dt.datetime.now(),
+            startTime=dt.datetime.utcnow(),
             prompt=messages,
         ))
         api_result = await acompletion(
@@ -124,7 +123,7 @@ class LiteLLM(Function):
         )
         response_message = api_result.model_dump()['choices'][0]['message']
         self.generation.update(UpdateGeneration(
-            endTime=dt.datetime.now(),
+            endTime=dt.datetime.utcnow(),
             completion=response_message,
             usage=Usage(promptTokens=count_tokens(messages), completionTokens=count_tokens(response_message)),
         ))
@@ -137,7 +136,7 @@ class LiteLLM(Function):
         # constant examples
         # selected examples
         # input message
-        system_prompt = get_system_message(content=self.system_prompt)
+        system_role = get_system_message(content=self.system_role)
         examples = self.example_manager.constant_examples
         if self.example_manager.example_selector.example_dicts and message['role'] == 'user':
             best_examples = await self.example_manager.example_selector(input=message['content'])
@@ -147,7 +146,7 @@ class LiteLLM(Function):
 
 
 
-        messages = [system_prompt] \
+        messages = [system_role] \
                    + self.memory.get_memories() + \
                    examples + \
                    [message]

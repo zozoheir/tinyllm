@@ -64,7 +64,6 @@ class Function:
             debug=True,
             required=True,
             stream=False,
-            trace=None,
             fallback_strategies={},
 
     ):
@@ -98,14 +97,13 @@ class Function:
         self.scores = []
         self.trace = None
         self.debug = debug
-        if trace is None and is_traced is True:
+        self.is_traced = is_traced
+        if is_traced is True:
             self.trace = langfuse_client.trace(CreateTrace(
                 name=self.name,
                 userId="test")
             )
             self.generation = None
-        else:
-            self.trace = trace
 
         self.cache = {}
 
@@ -122,6 +120,18 @@ class Function:
         self.fallback_strategies = fallback_strategies
         self.stream = stream
         self.generation = None
+    
+    def __setattr__(self, key, value):
+        # Call the default set attribute method
+        super().__setattr__(key, value)
+
+        # If the attribute is a Function instance, set its trace attribute
+        if isinstance(value, Function):
+            if self.is_traced:
+                value.trace = self.trace
+            else:
+                value.trace = None
+            value.trace = self.trace
 
     @fallback_decorator
     async def __call__(self, **kwargs):

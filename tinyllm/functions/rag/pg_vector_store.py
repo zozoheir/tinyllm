@@ -1,14 +1,15 @@
-from sqlalchemy import text
-import os
+import datetime as dt
 
-from langchain.embeddings import OpenAIEmbeddings
+import tinyllm
+
+from sqlalchemy import text
 from sqlalchemy import Column, Integer, String, UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects.postgresql import insert
 from pgvector.sqlalchemy import Vector
 from sqlalchemy.dialects import postgresql
+from langfuse.model import CreateSpan, UpdateSpan
 
-import tinyllm
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 
@@ -36,9 +37,32 @@ class Embeddings(Base):
     emetadata = Column(postgresql.JSON)
 
 
+def span_call(func):
+    """Decorator to print before and after a method call."""
+    async def wrapper(*args, **kwargs):
+
+        method_name = func.__name__
+        if func.trace:
+            span = func.trace.span(
+                CreateSpan(
+                    name="Vector store: " + method_name,
+                    input=args+tuple(kwargs.values()),
+                    startTime=dt.datetime.utcnow()
+                )
+            )
+        result = await func(*args, **kwargs)
+        if func.trace:
+            span.update(
+                UpdateSpan(
+                    output=result,
+                    endTime=dt.datetime.now())
+            )
+        return result
+    return wrapper
 
 
 class VectorStore:
+
     def __init__(self,
                  embedding_function):
         self._engine = create_async_engine(get_database_uri())
@@ -89,6 +113,7 @@ class VectorStore:
                     await session.execute(stmt)
                 await session.commit()
 
+    @span_call
     async def similarity_search(self, query, k, collection_filters, metadata_filters=None):
         query_embedding = self.embedding_function(query)
 

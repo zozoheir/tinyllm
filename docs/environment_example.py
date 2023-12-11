@@ -3,8 +3,8 @@ import os
 
 import openai
 
-from tinyllm.functions.agent.agent_env import AgentEnvironment
-from tinyllm.functions.agent.llm_store import LLMStore
+from tinyllm.functions.agent.agent import Agent
+from tinyllm.functions.llm.llm_store import LLMStore
 from tinyllm.functions.agent.tool_store import ToolStore
 
 openai.api_key = os.environ['OPENAI_API_KEY']
@@ -43,11 +43,11 @@ async def run_env():
     tool_store = ToolStore(tools=tools,
                            tools_callables=tools_callables)
     llm_store = LLMStore(tool_store=tool_store)
-    manager = llm_store.get_agent(llm='lite_llm_stream',
-                                  name='TinyLLM Agent')
-    tiny_env = AgentEnvironment(llm_store=llm_store,
-                                tool_store=tool_store,
-                                manager=manager)
+    manager = llm_store.get_llm_function(llm='lite_llm_stream',
+                                         name='TinyLLM Agent')
+    tiny_env = Agent(llm_store=llm_store,
+                     tool_store=tool_store,
+                     manager_function=manager)
 
     async for message in tiny_env.run(content="What is the user's birthday?"):
         print(message)
