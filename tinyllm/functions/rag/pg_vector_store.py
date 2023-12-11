@@ -13,6 +13,8 @@ from langfuse.model import CreateSpan, UpdateSpan
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 
+from tinyllm.function import Function
+
 Base = declarative_base()
 
 
@@ -40,7 +42,8 @@ class Embeddings(Base):
 def span_call(func):
     """Decorator to print before and after a method call."""
     async def wrapper(*args, **kwargs):
-
+        if getattr(func, 'trace', None) is None:
+            return await func(*args, **kwargs)
         method_name = func.__name__
         if func.trace:
             span = func.trace.span(
@@ -61,7 +64,7 @@ def span_call(func):
     return wrapper
 
 
-class VectorStore:
+class VectorStore(Function):
 
     def __init__(self,
                  embedding_function):
