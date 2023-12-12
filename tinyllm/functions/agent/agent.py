@@ -63,10 +63,12 @@ class Agent(FunctionStream):
                     res = await self.manager.memorize(message=msg_output['delta'])
 
                     # Create tool result message memory
-                    tool_results = await self.toolkit(tool_calls=[{
-                        'name': api_tool_call['function']['name'],
-                        'arguments': json.loads(api_tool_call['function']['arguments'])
-                    }])
+                    tool_results = await self.toolkit(
+                        tool_calls=[{
+                            'name': api_tool_call['function']['name'],
+                            'arguments': json.loads(api_tool_call['function']['arguments'])
+                        }],
+                        trace=self.trace)
                     tool_result = tool_results['output']['tool_results'][0]
                     function_call_msg = get_openai_message(
                         name=tool_result['name'],

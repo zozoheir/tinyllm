@@ -21,15 +21,23 @@ class Toolkit(Function):
             input_validator=ToolkitInputValidator,
             **kwargs)
         self.tools = tools
+        # We set the tools as attributes to pass the langfuse trace to the tools
+
 
     async def run(self,
                   **kwargs):
         tasks = []
+        if kwargs.get('trace', None):
+            trace = kwargs['trace']
+        else:
+            trace = self.trace
+
         for tool_call in kwargs['tool_calls']:
             name = tool_call['name']
             arguments = tool_call['arguments']
             tasks.append(self.run_tool(name=name,
-                                       arguments=arguments))
+                                       arguments=arguments,
+                                       trace=trace))
         results = await asyncio.gather(*tasks)
         tool_results = [result['output']['response'] for result in results]
         return {'tool_results': tool_results}

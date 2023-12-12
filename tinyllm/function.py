@@ -98,19 +98,18 @@ class Function:
         self.trace = None
         self.debug = debug
         self.is_traced = is_traced
+        self.trace= None
+        self.generation = None
         if is_traced is True:
             self.trace = langfuse_client.trace(CreateTrace(
                 name=self.name,
                 userId="test")
             )
-            self.generation = None
 
         self.cache = {}
-
         self.evaluators = evaluators
         self.dataset_name = dataset_name
         self.dataset = None
-
         if self.dataset_name is not None:
             try:
                 self.dataset = langfuse_client.get_dataset(name=dataset_name)
@@ -120,17 +119,12 @@ class Function:
         self.fallback_strategies = fallback_strategies
         self.stream = stream
         self.generation = None
-    
+
     def __setattr__(self, key, value):
-        # Call the default set attribute method
         super().__setattr__(key, value)
 
         # If the attribute is a Function instance, set its trace attribute
         if isinstance(value, Function):
-            if self.is_traced:
-                value.trace = self.trace
-            else:
-                value.trace = None
             value.trace = self.trace
 
     @fallback_decorator
@@ -257,10 +251,10 @@ class Function:
 
     def validate_output(self, **kwargs):
         return self.output_validator(**kwargs).dict()
-    
+
     def validate_processed_output(self, **kwargs):
         return self.processed_output_validator(**kwargs).dict()
-    
+
     async def run(self, **kwargs) -> Any:
         pass
 

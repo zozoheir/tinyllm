@@ -1,6 +1,6 @@
 import asyncio
 
-from tinyllm import default_embedding_model
+from tinyllm import default_embedding_model, langfuse_client
 from tinyllm.functions.agent.agent import Agent
 from tinyllm.functions.agent.toolkit import Toolkit
 
@@ -11,12 +11,12 @@ from tinyllm.functions.examples.example_selector import ExampleSelector
 from tinyllm.functions.llms.llm_store import LLMStore, LLMs
 
 examples = [[{
-    "USER": "Example question",
-    "ASSISTANT": "Example answer",
+    "user": "Example question",
+    "assistant": "Example answer",
 },
     {
-        "USER": "Another example question",
-        "ASSISTANT": "Another example answer"
+        "user": "Another example question",
+        "assistant": "Another example answer"
     }
 ]]
 example_selector = ExampleSelector(
@@ -61,6 +61,7 @@ def get_user_property(asked_property):
 tools = [
     Tool(
         name="get_user_property",
+        is_traced=False,
         description="This is the tool you use retrieve ANY information about the user. Use it to answer questions about his birthday and any personal info",
         python_lambda=get_user_property,
         parameters={
@@ -74,12 +75,13 @@ tools = [
             },
             "required": ["asked_property"],
         },
+
     )
 ]
 
 toolkit = Toolkit(
     name='Toolkit',
-    tools=tools
+    tools=tools,
 )
 
 llm_store = LLMStore()
@@ -88,7 +90,7 @@ llm_function = llm_store.get_llm_function(
     system_role="You are a helpful agent that can answer questions about the user's profile using available tools.",
     name='Tinyllm manager',
     example_manager=example_manager,
-    debug=False,
+    is_traced=False,
     evaluators=[
         AnswerCorrectnessEvaluator(
             name="Answer Correctness Evaluator",
@@ -107,6 +109,7 @@ async def run_agent():
     async for message in tiny_agent(user_input="What is the user's birthday?"):
         msgs.append(message)
     return msgs
+
 
 # Run the asynchronous test
 result = asyncio.run(run_agent())

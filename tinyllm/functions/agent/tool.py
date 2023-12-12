@@ -13,8 +13,10 @@ class ToolInitValidator(Validator):
     parameters: dict
     python_lambda: Callable
 
+
 class ToolInputValidator(Validator):
     arguments: Dict
+
 
 class Tool(Function):
     def __init__(self,
@@ -37,7 +39,7 @@ class Tool(Function):
     def as_dict(self):
         return {
             "type": "function",
-            "function":{
+            "function": {
                 "name": self.name,
                 "description": self.description,
                 "parameters": self.parameters,
@@ -45,8 +47,12 @@ class Tool(Function):
         }
 
     async def run(self, **kwargs):
-        if self.trace:
-            span = self.trace.span(
+        if kwargs.get('trace', None):
+            trace = kwargs.pop('trace')
+        else:
+            trace = self.trace
+        if trace is not None:
+            span = trace.span(
                 CreateSpan(
                     name="Tool: " + self.name,
                     input=kwargs,
@@ -58,8 +64,7 @@ class Tool(Function):
             span.update(
                 UpdateSpan(
                     output=tool_response,
-                    endTime=dt.datetime.now())
+                    endTime=dt.datetime.utcnow())
             )
 
         return {'response': get_openai_message(role='tool', content=tool_response, name=self.name)}
-
