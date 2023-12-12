@@ -1,5 +1,5 @@
 <p align="center">
-    <img src="https://github.com/zozoheir/tinyllm/assets/42655961/326db3ed-5382-407f-b4ce-ffe8df240431" width="8000" height="400" alt="tinyllm logo">
+    <img src="https://github.com/zozoheir/tinyllm/assets/42655961/326db3ed-5382-407f-b4ce-ffe8df240431" width="800" height="400" alt="tinyllm logo">
 </p>
 
 
