@@ -8,3 +8,4 @@ class ExampleManager:
                  constant_examples=[]):
         self.constant_examples = constant_examples
         self.example_selector = example_selector
+

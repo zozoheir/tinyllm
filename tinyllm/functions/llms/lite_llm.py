@@ -6,7 +6,7 @@ from litellm import OpenAIError, acompletion
 
 from tinyllm.function import Function
 from tinyllm.functions.examples.example_manager import ExampleManager
-from tinyllm.functions.llm.memory import Memory
+from tinyllm.functions.memory.memory import Memory
 from tinyllm.functions.examples.example_selector import ExampleSelector
 from tinyllm.functions.helpers import *
 from tinyllm.validator import Validator
@@ -95,7 +95,6 @@ class LiteLLM(Function):
         if self.with_memory:
             await self.memory(message=message)
 
-
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_random_exponential(min=1, max=10),
@@ -137,14 +136,16 @@ class LiteLLM(Function):
         # selected examples
         # input message
         system_role = get_system_message(content=self.system_role)
-        examples = self.example_manager.constant_examples
+        examples = []
+
+        examples += self.example_manager.constant_examples
         if self.example_manager.example_selector.example_dicts and message['role'] == 'user':
             best_examples = await self.example_manager.example_selector(input=message['content'])
             for good_example in best_examples['output']['best_examples']:
-                examples.append(get_user_message(good_example['USER']))
-                examples.append(get_assistant_message(str(good_example['ASSISTANT'])))
-
-
+                usr_msg = get_openai_message(role='user', content=good_example['user'])
+                assistant_msg = get_openai_message(role='assistant', content=good_example['assistant'])
+                examples.append(usr_msg)
+                examples.append(assistant_msg)
 
         messages = [system_role] \
                    + self.memory.get_memories() + \

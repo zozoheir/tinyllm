@@ -6,7 +6,7 @@ import openai
 
 from tinyllm.functions.agent.agent import Agent
 from tinyllm.functions.agent.toolkit import Toolkit
-from tinyllm.functions.llm.llm_store import LLMStore, LLMs
+from tinyllm.functions.llms.llm_store import LLMStore, LLMs
 
 from tinyllm.functions.agent.tool import Tool
 from tinyllm.functions.eval.evaluator import Evaluator

@@ -1,7 +1,8 @@
 from enum import Enum
 
-from tinyllm.functions.llm.lite_llm import LiteLLM
-from tinyllm.functions.llm.lite_llm_stream import LiteLLMStream
+from tinyllm.functions.llms.lite_llm import LiteLLM
+from tinyllm.functions.llms.lite_llm_stream import LiteLLMStream
+
 
 class LLMs(Enum):
     LITE_LLM = LiteLLM

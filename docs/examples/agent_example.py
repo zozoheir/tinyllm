@@ -1,11 +1,34 @@
 import asyncio
 
+from tinyllm import default_embedding_model
 from tinyllm.functions.agent.agent import Agent
 from tinyllm.functions.agent.toolkit import Toolkit
-from tinyllm.functions.llm.llm_store import LLMStore, LLMs
 
 from tinyllm.functions.agent.tool import Tool
 from tinyllm.functions.eval.evaluator import Evaluator
+from tinyllm.functions.examples.example_manager import ExampleManager
+from tinyllm.functions.examples.example_selector import ExampleSelector
+from tinyllm.functions.llms.llm_store import LLMStore, LLMs
+
+examples = [[{
+    "USER": "Example question",
+    "ASSISTANT": "Example answer",
+},
+    {
+        "USER": "Another example question",
+        "ASSISTANT": "Another example answer"
+    }
+]]
+example_selector = ExampleSelector(
+    name="Test local example selector",
+    examples=[],
+    embedding_function=default_embedding_model,
+    is_traced=False
+)
+example_manager = ExampleManager(
+    constant_examples=[],
+    example_selector=example_selector,
+)
 
 
 class AnswerCorrectnessEvaluator(Evaluator):
@@ -53,6 +76,7 @@ tools = [
         },
     )
 ]
+
 toolkit = Toolkit(
     name='Toolkit',
     tools=tools
@@ -63,6 +87,7 @@ llm_function = llm_store.get_llm_function(
     llm_library=LLMs.LITE_LLM_STREAM,
     system_role="You are a helpful agent that can answer questions about the user's profile using available tools.",
     name='Tinyllm manager',
+    example_manager=example_manager,
     debug=False,
     evaluators=[
         AnswerCorrectnessEvaluator(
@@ -76,7 +101,6 @@ tiny_agent = Agent(name='TinyLLM Agent',
                    manager_function=llm_function,
                    toolkit=toolkit,
                    debug=True)
-
 
 async def run_agent():
     msgs = []

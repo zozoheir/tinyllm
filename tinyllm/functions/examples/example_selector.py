@@ -40,7 +40,7 @@ class ExampleSelector(Function):
         self.embedding_function = embedding_function
         for example in self.example_dicts:
             if example.get('embeddings') is None and embedding_function is not None:
-                example['embeddings'] = self.embedding_function(example['USER'])
+                example['embeddings'] = self.embedding_function(example['user'])
             elif example.get('embeddings') is None and embedding_function is None:
                 raise Exception('Example selector needs embedding function or existing embeddings to work')
 
