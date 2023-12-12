@@ -1,6 +1,5 @@
 from pprint import pprint
 
-import tinyllm
 from litellm import completion
 
 from tinyllm.functions.helpers import get_openai_message
