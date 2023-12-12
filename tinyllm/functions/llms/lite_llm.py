@@ -1,21 +1,20 @@
 import datetime as dt
-import os
 from typing import Optional, Any
 
 from langfuse.model import Usage, CreateGeneration, UpdateGeneration
 from litellm import OpenAIError, acompletion
 
 from tinyllm.function import Function
-from tinyllm.functions.example_manager import ExampleManager
-from tinyllm.functions.memory import Memory
-from tinyllm.functions.util.example_selector import ExampleSelector
-from tinyllm.functions.util.helpers import *
+from tinyllm.functions.examples.example_manager import ExampleManager
+from tinyllm.functions.memory.memory import Memory
+from tinyllm.functions.examples.example_selector import ExampleSelector
+from tinyllm.functions.helpers import *
 from tinyllm.validator import Validator
 from tenacity import retry, stop_after_attempt, wait_random_exponential, retry_if_exception_type
 
 
 class LiteLLMChatInitValidator(Validator):
-    system_prompt: str
+    system_role: str
     example_manager: Optional[ExampleManager]
     with_memory: bool
     answer_format_prompt: Optional[str]
@@ -37,23 +36,22 @@ class LiteLLMChatOutputValidator(Validator):
 
 class LiteLLM(Function):
     def __init__(self,
-                 system_prompt="You are a helpful assistant",
+                 system_role="You are a helpful assistant",
                  example_manager=ExampleManager(),
                  with_memory=True,
                  answer_format_prompt=None,
                  **kwargs):
-        LiteLLMChatInitValidator(system_prompt=system_prompt,
+        LiteLLMChatInitValidator(system_role=system_role,
                                  with_memory=with_memory,
                                  answer_format_prompt=answer_format_prompt,
                                  example_manager=example_manager)
         super().__init__(input_validator=LiteLLMChatInputValidator,
                          **kwargs)
-        self.system_prompt = system_prompt
+        self.system_role = system_role
         self.n = 1
         self.memory = Memory(name=f"{self.name}_memory",
                              is_traced=self.is_traced,
-                             debug=self.debug,
-                             trace=self.trace)
+                             debug=self.debug)
         self.with_memory = with_memory
         self.answer_format_prompt = answer_format_prompt
         self.example_manager = example_manager
@@ -63,11 +61,6 @@ class LiteLLM(Function):
         self.answer_format_prompt_size = count_tokens(answer_format_prompt) if answer_format_prompt is not None else 0
         self.completion_args = None
 
-    @retry(
-        stop=stop_after_attempt(3),
-        wait=wait_random_exponential(min=1, max=10),
-        retry=retry_if_exception_type((OpenAIError))
-    )
     async def run(self, **kwargs):
         message = kwargs['message']
         messages = await self.prepare_messages(
@@ -102,6 +95,11 @@ class LiteLLM(Function):
         if self.with_memory:
             await self.memory(message=message)
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_random_exponential(min=1, max=10),
+        retry=retry_if_exception_type((OpenAIError))
+    )
     async def get_completion(self,
                              model,
                              temperature,
@@ -111,7 +109,7 @@ class LiteLLM(Function):
                              **kwargs):
         self.generation = self.trace.generation(CreateGeneration(
             name=self.name,
-            startTime=dt.datetime.now(),
+            startTime=dt.datetime.utcnow(),
             prompt=messages,
         ))
         api_result = await acompletion(
@@ -124,7 +122,7 @@ class LiteLLM(Function):
         )
         response_message = api_result.model_dump()['choices'][0]['message']
         self.generation.update(UpdateGeneration(
-            endTime=dt.datetime.now(),
+            endTime=dt.datetime.utcnow(),
             completion=response_message,
             usage=Usage(promptTokens=count_tokens(messages), completionTokens=count_tokens(response_message)),
         ))
@@ -137,15 +135,19 @@ class LiteLLM(Function):
         # constant examples
         # selected examples
         # input message
-        system_prompt = get_system_message(content=self.system_prompt)
-        examples = self.example_manager.constant_examples
-        if self.example_manager.selector and message['role'] == 'user':
-            best_examples = await self.example_manager.selector(input=message['content'])
-            for good_example in best_examples['output']['best_examples']:
-                examples.append(get_user_message(good_example['USER']))
-                examples.append(get_assistant_message(str(good_example['ASSISTANT'])))
+        system_role = get_system_message(content=self.system_role)
+        examples = []
 
-        messages = [system_prompt] \
+        examples += self.example_manager.constant_examples
+        if self.example_manager.example_selector.example_dicts and message['role'] == 'user':
+            best_examples = await self.example_manager.example_selector(input=message['content'])
+            for good_example in best_examples['output']['best_examples']:
+                usr_msg = get_openai_message(role='user', content=good_example['user'])
+                assistant_msg = get_openai_message(role='assistant', content=good_example['assistant'])
+                examples.append(usr_msg)
+                examples.append(assistant_msg)
+
+        messages = [system_role] \
                    + self.memory.get_memories() + \
                    examples + \
                    [message]

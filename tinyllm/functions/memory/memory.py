@@ -1,13 +1,13 @@
-from typing import Dict
-
 from tinyllm.function import Function
-from tinyllm.functions.util.helpers import count_tokens, get_openai_message
+from tinyllm.functions.helpers import count_tokens
 from tinyllm.validator import Validator
 
 
 class MemoryOutputValidator(Validator):
     memories: list
 
+class MemoryInputValidator(Validator):
+    message: dict
 
 class Memory(Function):
     def __init__(self,

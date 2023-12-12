@@ -1,14 +1,13 @@
 import datetime as dt
-import json
 
 from langfuse.model import CreateGeneration, UpdateGeneration, Usage
 from litellm import acompletion
 from openai import OpenAIError
 from tenacity import stop_after_attempt, wait_random_exponential, retry_if_exception_type, retry
 
-from tinyllm.functions.lite_llm.lite_llm import LiteLLM
+from tinyllm.functions.llms.lite_llm import LiteLLM
 from tinyllm.function_stream import FunctionStream
-from tinyllm.functions.util.helpers import get_openai_message, count_tokens
+from tinyllm.functions.helpers import get_openai_message, count_tokens
 
 
 class LiteLLMStream(LiteLLM, FunctionStream):
@@ -26,12 +25,10 @@ class LiteLLMStream(LiteLLM, FunctionStream):
 
         # Memorize interaction
         await self.memorize(message=kwargs['message'])
-        if msg['type'] == 'tool':
-            openai_msg = get_openai_message(role='function', content=msg['completion'], name=msg['completion']['name'])
-            await self.memorize(message=openai_msg)
         if msg['type'] == 'completion':
             openai_msg = get_openai_message(role='assistant', content=msg['completion'])
             await self.memorize(message=openai_msg)
+        # Tool calls are memorized in the Agent function
 
     async def get_completion(self,
                              model,
@@ -42,13 +39,14 @@ class LiteLLMStream(LiteLLM, FunctionStream):
                              **kwargs):
         self.generation = self.trace.generation(CreateGeneration(
             name=self.name,
-            startTime=dt.datetime.now(),
+            startTime=dt.datetime.utcnow(),
             prompt=messages,
         ))
-        with_tools = 'tool_choice' in kwargs and 'tools' in kwargs
+        with_tools = 'tools' in kwargs
         tools_kwargs = {}
         if with_tools: tools_kwargs = {'tools': kwargs['tools'],
-                                       'tool_choice': kwargs['tool_choice']}
+                                       'tool_choice': kwargs.get('tool_choice', 'auto')}
+
         response = await acompletion(
             model=model,
             temperature=temperature,
@@ -58,6 +56,10 @@ class LiteLLMStream(LiteLLM, FunctionStream):
             stream=True,
             **tools_kwargs
         )
+
+
+        # We need to track 2 things: the response delta and the function_call
+        delta_to_return = None
         function_call = {
             "name": None,
             "arguments": ""
@@ -66,6 +68,7 @@ class LiteLLMStream(LiteLLM, FunctionStream):
         # OpenAI function call works as follows: function name available at delta.tool_calls[0].function.
         # It returns a diction where: 'name' is returned only in the first chunk
         # tool argument tokens are sent in chunks after so need to keep track of them
+
         async for chunk in response:
             chunk_dict = chunk.model_dump()
             status = self.get_stream_status(chunk_dict)
@@ -74,28 +77,28 @@ class LiteLLMStream(LiteLLM, FunctionStream):
 
             # If streaming , we need to store chunks of the completion/function call
             if status == "streaming":
-
                 if chunk_type == "completion":
                     completion += delta['content']
 
                 elif chunk_type == "tool":
                     if function_call['name'] is None:
                         function_call['name'] = delta['tool_calls'][0]['function']['name']
+                    if delta_to_return is None:
+                        delta_to_return = delta
 
                     completion = function_call
                     function_call['arguments'] += delta['tool_calls'][0]['function']['arguments']
 
-
             yield {
                 "streaming_status": status,
                 "type": chunk_type,
-                "delta": delta,
+                "delta": delta_to_return or '',
                 "completion": completion
             }
 
         self.generation.update(UpdateGeneration(
             completion=completion,
-            endTime=dt.datetime.now(),
+            endTime=dt.datetime.utcnow(),
             usage=Usage(promptTokens=count_tokens(messages), completionTokens=count_tokens(completion)),
         ))
 
@@ -103,7 +106,7 @@ class LiteLLMStream(LiteLLM, FunctionStream):
                        chunk):
         delta = chunk['choices'][0]['delta']
 
-        if 'tool_calls' in delta or chunk['choices'][0]['finish_reason'] == 'tool_calls':
+        if delta.get('tool_calls', None) is not None or chunk['choices'][0]['finish_reason'] == 'tool_calls':
             return "tool"
 
         return "completion"

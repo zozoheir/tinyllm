@@ -4,7 +4,7 @@ from textwrap import dedent
 from tinyllm.functions.eval.evaluator import Evaluator
 from tinyllm.functions.llms.openai.openai_chat import OpenAIChat
 from tinyllm.functions.llms.openai.openai_prompt_template import OpenAIPromptTemplate
-from tinyllm.functions.lite_llm.util import get_user_message, get_assistant_message
+from tinyllm.functions.llms.util import get_user_message, get_assistant_message
 
 EXAMPLE_INPUT = """
 Context:

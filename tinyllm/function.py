@@ -64,7 +64,6 @@ class Function:
             debug=True,
             required=True,
             stream=False,
-            trace=None,
             fallback_strategies={},
 
     ):
@@ -98,21 +97,19 @@ class Function:
         self.scores = []
         self.trace = None
         self.debug = debug
-        if trace is None and is_traced is True:
+        self.is_traced = is_traced
+        self.trace= None
+        self.generation = None
+        if is_traced is True:
             self.trace = langfuse_client.trace(CreateTrace(
                 name=self.name,
                 userId="test")
             )
-            self.generation = None
-        else:
-            self.trace = trace
 
         self.cache = {}
-
         self.evaluators = evaluators
         self.dataset_name = dataset_name
         self.dataset = None
-
         if self.dataset_name is not None:
             try:
                 self.dataset = langfuse_client.get_dataset(name=dataset_name)
@@ -122,6 +119,13 @@ class Function:
         self.fallback_strategies = fallback_strategies
         self.stream = stream
         self.generation = None
+
+    def __setattr__(self, key, value):
+        super().__setattr__(key, value)
+
+        # If the attribute is a Function instance, set its trace attribute
+        if isinstance(value, Function):
+            value.trace = self.trace
 
     @fallback_decorator
     async def __call__(self, **kwargs):
@@ -180,12 +184,20 @@ class Function:
             raise InvalidStateTransition(
                 self, f"Invalid state transition from {self.state} to {new_state}"
             )
-        self.state = new_state
         log_level = "error" if new_state == States.FAILED else "info"
-        self.log(
-            f"transition to: {new_state}" + (f" ({msg})" if msg is not None else ""),
-            level=log_level,
-        )
+        if log_level == 'error':
+            self.log(
+                f"transition from {self.state} to: {new_state}" + (f" ({msg})" if msg is not None else ""),
+                level=log_level,
+            )
+        else:
+            self.log(
+                f"transition to: {new_state}" + (f" ({msg})" if msg is not None else ""),
+                level=log_level,
+            )
+
+        self.state = new_state
+
 
     async def evaluate(self,
                        **kwargs):
@@ -239,10 +251,10 @@ class Function:
 
     def validate_output(self, **kwargs):
         return self.output_validator(**kwargs).dict()
-    
+
     def validate_processed_output(self, **kwargs):
         return self.processed_output_validator(**kwargs).dict()
-    
+
     async def run(self, **kwargs) -> Any:
         pass
 

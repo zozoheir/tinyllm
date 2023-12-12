@@ -1,6 +1,6 @@
 import unittest
 
-from tinyllm.functions.memory import Memory
+from tinyllm.functions.memory.memory import Memory
 from tinyllm.state import States
 from tinyllm.tests.base import AsyncioTestCase
 

@@ -1,16 +1,20 @@
 import unittest
 
+from tinyllm import default_embedding_model
 from tinyllm.functions.eval.evaluator import Evaluator
-from tinyllm.functions.lite_llm.lite_llm import LiteLLM
-from tinyllm.functions.lite_llm.lite_llm_stream import LiteLLMStream
-from tinyllm.functions.util.helpers import get_openai_message
+from tinyllm.functions.examples.example_manager import ExampleManager
+from tinyllm.functions.llms.lite_llm import LiteLLM
+from tinyllm.functions.llms.lite_llm_stream import LiteLLMStream
+from tinyllm.functions.helpers import get_openai_message
 from tinyllm.tests.base import AsyncioTestCase
 
 
 class TestlitellmChat(AsyncioTestCase):
 
-    def test_litellm_chat_stream(self):
+    def setUp(self):
+        super().setUp()
 
+    def test_litellm_chat_stream(self):
         litellmstream_chat = LiteLLMStream(name='Test: LiteLLM Stream',
                                            with_memory=True)
 
@@ -18,7 +22,7 @@ class TestlitellmChat(AsyncioTestCase):
             message = get_openai_message(role='user',
                                          content="Hi")
             async for msg in litellmstream_chat(message=message):
-                i=0
+                i = 0
             return msg
 
         result = self.loop.run_until_complete(get_stream())

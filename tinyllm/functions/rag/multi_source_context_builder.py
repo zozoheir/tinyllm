@@ -1,8 +1,7 @@
 from typing import List, Dict, Optional
 
-from tinyllm.functions.util.helpers import get_user_message, count_tokens
-from tinyllm.functions.util.context_builder import ContextBuilder
-from tinyllm.util.prompt_util import stringify_dict_list
+from tinyllm.functions.rag.context_builder import ContextBuilder
+from tinyllm.functions.rag.document import Document
 
 
 def remove_duplicate_dicts(list_of_lists):
@@ -32,55 +31,35 @@ def remove_duplicate_dicts(list_of_lists):
     return unique_list_of_lists
 
 
+
 class MultiSourceDocsContextBuilder(ContextBuilder):
-    def __init__(self, start_string: str, end_string: str, available_token_size: int):
-        self.start_string = start_string
-        self.end_string = end_string
-        self.available_token_size = available_token_size
-        self.fitted_list = None
-        self.context = None
+    def __init__(self,
+                 **kwargs):
+        super().__init__(**kwargs)
+        self.fitted_doc_list = None
 
     def get_context(self,
-                    docs: List,
+                    docs: List[Document],
                     weights: Optional[List[float]] = None,
-                    output_format="str",
-                    header="[doc]",
-                    ignore_keys=[],
                     ):
-        # If list of strings, convert to list of dicts
-        final_docs = []
-        for source_docs in docs:
-            if isinstance(source_docs, List) and isinstance(source_docs[0], str):
-                source_docs = [{"text": doc} for doc in source_docs]
-                final_docs.append(source_docs)
-            else:
-                final_docs.append(source_docs)
-
         # Remove duplicates
-        final_docs = remove_duplicate_dicts(final_docs)
+        final_docs = remove_duplicate_dicts(docs)
 
         # Fit the multiple sources of docs based on weights
-        self.fitted_list = self.fit(final_docs,
-                                    weights,
-                                    header=header,
-                                    ignore_keys=ignore_keys)
+        self.fitted_doc_list = self.fit(final_docs,
+                                        weights)
 
         # Convert to appropriate format
-        fitted_context_string = stringify_dict_list(header=header, dicts=self.fitted_list, ignore_keys=ignore_keys)
+        fitted_context_string = '/n'.join([doc.format() for doc in self.fitted_doc_list])
 
         # Format the final context
         formatted_context = self.format_context(fitted_context_string)
 
-        if output_format == "openai":
-            return get_user_message(formatted_context)
-        elif output_format == "str":
-            return formatted_context
+        return formatted_context
 
     def fit(self,
             docs: List,
             weights: Optional[List[float]] = None,
-            header="[doc]",
-            ignore_keys=[],
             ) -> List[Dict]:
 
         # If weights are not provided, distribute docs evenly
@@ -103,9 +82,7 @@ class MultiSourceDocsContextBuilder(ContextBuilder):
             # For each doc source, count how many docs can fit into its token size
             current_tokens = 0
             for doc in doc_list:
-                doc_tokens = count_tokens(doc,
-                                          header=header,
-                                          ignore_keys=ignore_keys)
+                doc_tokens = doc.size
                 if current_tokens + doc_tokens <= token_size:
                     fitted_docs.append(doc)
                     current_tokens += doc_tokens

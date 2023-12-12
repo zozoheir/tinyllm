@@ -11,13 +11,13 @@ for i in range(10):
     generation = trace.generation(CreateGeneration(
         name=f"gen {i}",
         prompt='output',
-        startTime=datetime.now(),
+        startTime=datetime.utcnow(),
         metadata={'api_result': i}
     ))
     time.sleep(1)
     generation.update(UpdateGeneration(
         name=f"gen {i}",
-        endTime=datetime.now(),
+        endTime=datetime.utcnow(),
         completion='output',
         metadata={'api_result': i}
     ))

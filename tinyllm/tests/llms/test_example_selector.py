@@ -2,23 +2,28 @@ import unittest
 
 from sentence_transformers import SentenceTransformer
 
-from tinyllm.functions.util.example_selector import ExampleSelector
+from tinyllm.functions.examples.example_manager import ExampleManager
+from tinyllm.functions.examples.example_selector import ExampleSelector
+from tinyllm.functions.helpers import get_openai_message
+from tinyllm.functions.llms.lite_llm import LiteLLM
 from tinyllm.tests.base import AsyncioTestCase
 
 embedding_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
 embedding_function = lambda x: embedding_model.encode(x)
 
+
 class TestRedisExampleSelector(AsyncioTestCase):
 
     def setUp(self):
         super().setUp()
-        self.example_texts = [{
-            "USER": "Example question",
-            "ASSISTANT": "Example answer",
-        },
+        self.example_texts = [
             {
-                "USER": "Another example question",
-                "ASSISTANT": "Another example answer"
+                "user": "Example question",
+                "assistant": "Example answer",
+            },
+            {
+                "user": "Another example question",
+                "assistant": "Another example answer"
             }
         ]
 
@@ -35,6 +40,18 @@ class TestRedisExampleSelector(AsyncioTestCase):
                                                                            k=1))
         self.assertTrue(len(results['output']['best_examples']) == 1)
 
+    def test_litellm_selector(self):
+        example_manager = ExampleManager(
+            example_selector=self.local_example_selector,
+        )
+        message = get_openai_message(role='user',
+                                     content="Hi")
+        litellm_chat = LiteLLM(name='Test: LiteLLMChat with example selector',
+                               example_manager=example_manager,
+                               with_memory=True)
+        result = self.loop.run_until_complete(litellm_chat(message=message))
+
+        self.assertEqual(result['status'], 'success')
 
 
 if __name__ == '__main__':
