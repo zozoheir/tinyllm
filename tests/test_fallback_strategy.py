@@ -1,5 +1,5 @@
 from tinyllm.function import Function
-from tinyllm.tests.base import AsyncioTestCase
+from tests.base import AsyncioTestCase
 from tinyllm.util.fallback_strategy import KwargsChangeStrategy
 
 

@@ -1,6 +1,6 @@
 from enum import Enum
 
-from tinyllm.functions.helpers import count_tokens
+from tinyllm.functions.util.helpers import count_tokens
 from tinyllm.util.prompt_util import stringify_dict
 
 
@@ -29,9 +29,9 @@ class Document:
         return count_tokens(content)
 
     def format(self):
-        if self.type == DocumentTypes.DICTIONARY:
+        if self.type == DocumentTypes.TEXT:
+            return self.content
+        elif self.type == DocumentTypes.DICTIONARY:
             return stringify_dict(header=self.header,
                                   dict=self.content,
                                   ignore_keys=self.ignore_keys)
-        elif self.type == DocumentTypes.TEXT:
-            return self.content

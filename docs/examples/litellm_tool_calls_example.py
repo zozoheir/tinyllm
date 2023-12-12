@@ -2,7 +2,7 @@ from pprint import pprint
 
 from litellm import completion
 
-from tinyllm.functions.helpers import get_openai_message
+from tinyllm.functions.util.helpers import get_openai_message
 
 tools = [
     {

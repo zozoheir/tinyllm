@@ -1,7 +1,7 @@
 import asyncio
 
 from tinyllm import default_embedding_model, langfuse_client
-from tinyllm.functions.agent.agent import Agent
+from tinyllm.functions.agent.agent_stream import Agent
 from tinyllm.functions.agent.toolkit import Toolkit
 
 from tinyllm.functions.agent.tool import Tool

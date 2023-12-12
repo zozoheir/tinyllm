@@ -8,7 +8,7 @@ from tinyllm.function import Function
 from tinyllm.functions.examples.example_manager import ExampleManager
 from tinyllm.functions.memory.memory import Memory
 from tinyllm.functions.examples.example_selector import ExampleSelector
-from tinyllm.functions.helpers import *
+from tinyllm.functions.util.helpers import *
 from tinyllm.validator import Validator
 from tenacity import retry, stop_after_attempt, wait_random_exponential, retry_if_exception_type
 

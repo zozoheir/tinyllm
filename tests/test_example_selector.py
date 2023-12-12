@@ -4,9 +4,9 @@ from sentence_transformers import SentenceTransformer
 
 from tinyllm.functions.examples.example_manager import ExampleManager
 from tinyllm.functions.examples.example_selector import ExampleSelector
-from tinyllm.functions.helpers import get_openai_message
+from tinyllm.functions.util.helpers import get_openai_message
 from tinyllm.functions.llms.lite_llm import LiteLLM
-from tinyllm.tests.base import AsyncioTestCase
+from tests.base import AsyncioTestCase
 
 embedding_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
 embedding_function = lambda x: embedding_model.encode(x)

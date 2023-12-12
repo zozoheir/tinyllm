@@ -1,8 +1,7 @@
 import unittest
 
-from tinyllm.functions.helpers import count_tokens
 from tinyllm.functions.rag.document import Document
-from tinyllm.functions.rag.multi_source_context_builder import MultiSourceDocsContextBuilder
+from tinyllm.functions.rag.context_builder.multi_source_context_builder import MultiSourceDocsContextBuilder
 
 
 class TestMultiSourceDocsContextBuilder(unittest.TestCase):

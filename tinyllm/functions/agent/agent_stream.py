@@ -2,6 +2,8 @@ import json
 
 from smartpy.utility.log_util import getLogger
 from tinyllm.function import Function
+from tinyllm.function_stream import FunctionStream
+from tinyllm.functions.agent.agent import Agent
 
 from tinyllm.functions.agent.toolkit import Toolkit
 from tinyllm.functions.util.helpers import get_openai_message
@@ -21,15 +23,7 @@ class TinyEnvironmentOutputValidator(Validator):
     response: dict
 
 
-class Agent(Function):
-
-    def __init__(self,
-                 manager_llm: Function,
-                 toolkit: Toolkit,
-                 **kwargs):
-        super().__init__(**kwargs)
-        self.toolkit = toolkit
-        self.manager_llm = manager_llm
+class AgentStream(Agent, FunctionStream):
 
     async def run(self,
                   user_input):
@@ -38,8 +32,9 @@ class Agent(Function):
                                               content=user_input)
         while True:
 
-            msg = await self.manager_llm(message=input_openai_msg,
-                                         tools=self.toolkit.as_dicts())
+            async for msg in self.manager_llm(message=input_openai_msg,
+                                              tools=self.toolkit.as_dicts()):
+                yield msg
 
             # Agent decides to call a tool
             if msg['status'] == 'success':

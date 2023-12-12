@@ -1,10 +1,9 @@
 import unittest
-import os
 
 from sentence_transformers import SentenceTransformer
 from sqlalchemy import delete
 
-from tinyllm.tests.base import AsyncioTestCase
+from tests.base import AsyncioTestCase
 from tinyllm.functions.rag.pg_vector_store import VectorStore, Embeddings
 
 embedding_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')

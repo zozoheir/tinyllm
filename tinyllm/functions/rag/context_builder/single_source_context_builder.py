@@ -1,6 +1,6 @@
 from typing import List, Dict
 
-from tinyllm.functions.rag.context_builder import ContextBuilder
+from tinyllm.functions.rag.context_builder.context_builder import ContextBuilder
 from tinyllm.functions.rag.document import Document
 
 

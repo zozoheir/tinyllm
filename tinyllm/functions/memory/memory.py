@@ -1,5 +1,5 @@
 from tinyllm.function import Function
-from tinyllm.functions.helpers import count_tokens
+from tinyllm.functions.util.helpers import count_tokens
 from tinyllm.validator import Validator
 
 

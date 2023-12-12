@@ -1,7 +1,7 @@
 import unittest
 
 from tinyllm.functions.rag.document import Document
-from tinyllm.functions.rag.single_source_context_builder import SingleSourceDocsContextBuilder
+from tinyllm.functions.rag.context_builder.single_source_context_builder import SingleSourceDocsContextBuilder
 
 
 class TestDocsContextBuilder(unittest.TestCase):

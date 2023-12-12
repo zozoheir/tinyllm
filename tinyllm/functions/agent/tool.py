@@ -4,7 +4,7 @@ from typing import Dict, Callable
 from langfuse.model import CreateSpan, UpdateSpan
 
 from tinyllm.function import Function
-from tinyllm.functions.helpers import get_openai_message
+from tinyllm.functions.util.helpers import get_openai_message
 from tinyllm.validator import Validator
 
 

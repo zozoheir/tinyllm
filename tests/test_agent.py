@@ -1,17 +1,14 @@
 import asyncio
-import os
 import unittest
 
-import openai
-
+from tests.base import AsyncioTestCase
 from tinyllm.functions.agent.agent import Agent
+from tinyllm.functions.agent.agent_stream import AgentStream
 from tinyllm.functions.agent.toolkit import Toolkit
 from tinyllm.functions.llms.llm_store import LLMStore, LLMs
 
 from tinyllm.functions.agent.tool import Tool
 from tinyllm.functions.eval.evaluator import Evaluator
-
-openai.api_key = os.environ['OPENAI_API_KEY']
 
 
 class AnswerCorrectnessEvaluator(Evaluator):
@@ -65,7 +62,7 @@ toolkit = Toolkit(
 )
 
 llm_store = LLMStore()
-llm_function = llm_store.get_llm_function(
+manager_llm = llm_store.get_llm_function(
     llm_library=LLMs.LITE_LLM_STREAM,
     system_role="You are a helpful agent that can answer questions about the user's profile using available tools.",
     name='Tinyllm manager',
@@ -78,17 +75,16 @@ llm_function = llm_store.get_llm_function(
     ]
 )
 
-tiny_agent = Agent(name='TinyLLM Agent',
-                   manager_function=llm_function,
-                   toolkit=toolkit,
-                   debug=True)
-
 
 # Define the test class
-class TestAgentEnvironment(unittest.TestCase):
+class TestStreamingAgent(AsyncioTestCase):
 
-    def test_run_env_success_status(self):
-        # Define an asynchronous helper function
+    def test_agent_stream(self):
+        tiny_agent = AgentStream(name='Test: agent stream',
+                                 manager_llm=manager_llm,
+                                 toolkit=toolkit,
+                                 debug=True)
+
         async def async_test():
             msgs = []
             async for message in tiny_agent(user_input="What is the user's birthday?"):
@@ -96,10 +92,23 @@ class TestAgentEnvironment(unittest.TestCase):
             return msgs
 
         # Run the asynchronous test
-        result = asyncio.run(async_test())
+        result = self.loop.run_until_complete(async_test())
         # Verify the last message in the list
         self.assertEqual(result[-1]['status'], 'success', "The last message status should be 'success'")
         self.assertTrue("january 1st" in result[-1]['output']['completion'].lower())
+
+    def test_agent(self):
+        tiny_agent = Agent(name='Test: agent stream',
+                           manager_llm=manager_llm,
+                           toolkit=toolkit,
+                           debug=True)
+
+        # Run the asynchronous test
+        result = self.loop.run_until_complete(tiny_agent(user_input="What is the user's birthday?"))
+        # Verify the last message in the list
+        self.assertEqual(result[-1]['status'], 'success', "The last message status should be 'success'")
+        self.assertTrue("january 1st" in result[-1]['output']['completion'].lower())
+
 
 # This allows the test to be run standalone
 if __name__ == '__main__':

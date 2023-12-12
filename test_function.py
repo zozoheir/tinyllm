@@ -1,6 +1,6 @@
 import unittest
 
-from tinyllm.tests.base import AsyncioTestCase
+from tests.base import AsyncioTestCase
 from tinyllm.function import Function
 from tinyllm.exceptions import InvalidStateTransition
 from tinyllm.validator import Validator

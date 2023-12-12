@@ -1,12 +1,10 @@
 import unittest
 
-from tinyllm import default_embedding_model
 from tinyllm.functions.eval.evaluator import Evaluator
-from tinyllm.functions.examples.example_manager import ExampleManager
 from tinyllm.functions.llms.lite_llm import LiteLLM
 from tinyllm.functions.llms.lite_llm_stream import LiteLLMStream
-from tinyllm.functions.helpers import get_openai_message
-from tinyllm.tests.base import AsyncioTestCase
+from tinyllm.functions.util.helpers import get_openai_message
+from tests.base import AsyncioTestCase
 
 
 class TestlitellmChat(AsyncioTestCase):
