@@ -1,6 +1,8 @@
 <p align="center">
-  <img src="https://github.com/zozoheir/tinyllm/assets/42655961/3137025b-8750-4db9-ad71-0325fd7b1f19" width="200" height="200" alt="tinyllm logo">
+    <img src="https://github.com/zozoheir/tinyllm/assets/42655961/326db3ed-5382-407f-b4ce-ffe8df240431" width="200" height="200" alt="tinyllm logo">
 </p>
+
+![DALL·E 2023-12-12 01 01 34 - A minimalist and futuristic banner designed for a blockchain startup named 'tinyllm'  The banner features a sleek, subtle white logo shaped like the l](https://github.com/zozoheir/tinyllm/assets/42655961/326db3ed-5382-407f-b4ce-ffe8df240431)
 
 # What is tinyllm?
 tinyllm is a lightweight framework for developing, debugging and monitoring LLM powered applications at scale. It sits as a layer between your Web application and your LLM libraries.
