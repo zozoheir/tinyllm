@@ -57,4 +57,4 @@ langfuse_client = Langfuse(
 
 
 embedding_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
-standard_embedding_function = lambda x: embedding_model.encode(x)
+default_embedding_model = lambda x: embedding_model.encode(x)

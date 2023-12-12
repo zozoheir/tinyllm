@@ -97,7 +97,6 @@ class TestAgentEnvironment(unittest.TestCase):
 
         # Run the asynchronous test
         result = asyncio.run(async_test())
-
         # Verify the last message in the list
         self.assertEqual(result[-1]['status'], 'success', "The last message status should be 'success'")
         self.assertTrue("january 1st" in result[-1]['output']['completion'].lower())

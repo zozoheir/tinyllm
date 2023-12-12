@@ -57,7 +57,7 @@ def get_assistant_message(content):
 def get_openai_message(role,
                        content,
                        **kwargs):
-    if role not in ['user', 'system', 'function', 'assistant']:
+    if role not in ['user', 'system', 'function','tool', 'assistant']:
         raise ValueError(f"Invalid role {role}.")
 
     msg = {'role': role,

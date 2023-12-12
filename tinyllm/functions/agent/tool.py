@@ -61,5 +61,5 @@ class Tool(Function):
                     endTime=dt.datetime.now())
             )
 
-        return {'response': get_openai_message(role='function', content=tool_response, name=self.name)}
+        return {'response': get_openai_message(role='tool', content=tool_response, name=self.name)}
 

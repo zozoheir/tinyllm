@@ -73,21 +73,6 @@ def stringify_dict(header: str,
     return header + "\n" + dict_string_representation
 
 
-def stringify_dict_list(dicts: List[Dict[str, Any]]) -> str:
-    """
-    Transforms a list of dictionaries to a single formatted string.
-
-    :param text_header: The header of the text.
-    :param dicts: A list of dictionaries to transform.
-    :param ignore_keys: A list of keys to omit. Default is None.
-    :return: A formatted string.
-    """
-    ignore_keys = ignore_keys or []
-    return stringify_string_list(
-        paragraphs=[stringify_dict(header, data_dict, ignore_keys) for data_dict in dicts],
-        separator="\n\n-------\n\n"
-    )
-
 
 def remove_imports(code: str) -> str:
     lines = code.split('\n')
@@ -205,12 +190,3 @@ def get_optimal_source_chunk(triplet, source):
     start = max(0, start - 50)
     end = min(len(source), end + 50)
     return start, end
-
-# Test the function with a small example
-#relationship = "x:Bitcoin x:has_indicator x:Terminal_Price"
-#test_source_text = "Bitcoin's performance is measured by various indicators, including the Terminal Price, which reflects market trends."
-
-# Run the function
-#optimal_chunk_start, optimal_chunk_end = get_optimal_source_chunk(relationship, test_source_text)
-
-#print(test_source_text[optimal_chunk_start:optimal_chunk_end])

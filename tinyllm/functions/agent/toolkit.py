@@ -36,9 +36,11 @@ class Toolkit(Function):
 
     async def run_tool(self,
                        name: str,
-                       arguments: Dict):
+                       arguments: Dict,
+                       **kwargs):
         tool = [tool for tool in self.tools if tool.name == name][0]
-        tool_result = await tool(arguments=arguments)
+        tool_result = await tool(arguments=arguments,
+                                 **kwargs)
         return tool_result
 
     def as_dicts(self):

@@ -7,7 +7,7 @@ def main():
 
 @main.command()
 def agent():
-    import tinyllm.app.app
+    click.echo("Available soon!")
 
 if __name__ == "__main__":
     main()

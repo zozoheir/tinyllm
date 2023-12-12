@@ -6,6 +6,8 @@ from tinyllm.validator import Validator
 class MemoryOutputValidator(Validator):
     memories: list
 
+class MemoryInputValidator(Validator):
+    message: dict
 
 class Memory(Function):
     def __init__(self,
