@@ -21,9 +21,11 @@ pip install git+https://github.com/zozoheir/tinyllm.git
 - **Layered validation:** 3 validations happen during the Function lifecycle: input, output and output processing.
 - **IO Standardization:** Maintains consistent response patterns and failure handling across different function implementations.
 - **Observability:** Integrates with Langfuse for monitoring and tracing of function execution at scale.
-- **Example manager**: constant and variable examples using a similarity based example selector
+- **Agents:** An agent is an LLM with Memory, a Toolkit and an ExampleManager
+- **Tools and Toolkits**: let your Agent run python functions using Tools
+- **Example manager**: constant examples + variable examples using and example selector with similarity search
 - **Memory:** conversations history
-- **Agents:** tool based agents
+- **Retrieval Augmented Generation**: RAG tools to search and generate answers
 - **Evaluation:** Evaluators can be defined to evaluate and log the quality of the function's output in real-time
 - **PGVector store:** PostgreSQL DB with the pgvector extension for vector storage.
 - **Logging:** Records detailed logs for debugging and auditing purposes.
