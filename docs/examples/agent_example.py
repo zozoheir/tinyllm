@@ -34,19 +34,13 @@ example_manager = ExampleManager(
 class AnswerCorrectnessEvaluator(Evaluator):
 
     async def run(self, **kwargs):
+        response = kwargs['output']['response']
         evals = {
             "evals": {
+                "correct_answer": 1 if 'january' in response['choices'][0]['message']['content'].lower() else 0
             },
             "metadata": {}
         }
-        completion = kwargs['output']['completion']
-        if kwargs['processed_output']['type'] == 'tool':
-            evals = {
-                "evals": {
-                    "functional_call": 1 if completion['name'] == 'get_user_property' else 0,
-                },
-                "metadata": {}
-            }
 
         return evals
 
@@ -85,8 +79,8 @@ toolkit = Toolkit(
 )
 
 llm_store = LLMStore()
-llm_function = llm_store.get_llm_function(
-    llm_library=LLMs.LITE_LLM_STREAM,
+manager_llm = llm_store.get_llm_function(
+    llm_library=LLMs.LITE_LLM,
     system_role="You are a helpful agent that can answer questions about the user's profile using available tools.",
     name='Tinyllm manager',
     example_manager=example_manager,
@@ -97,20 +91,20 @@ llm_function = llm_store.get_llm_function(
             is_traced=False,
         ),
     ]
+
 )
 
 tiny_agent = Agent(name='TinyLLM Agent',
-                   manager_function=llm_function,
+                   manager_llm=manager_llm,
                    toolkit=toolkit,
-                   debug=True)
+                   debug=True,
+
+                   )
 
 async def run_agent():
-    msgs = []
-    async for message in tiny_agent(user_input="What is the user's birthday?"):
-        msgs.append(message)
-    return msgs
+    result = await tiny_agent(user_input="What is the user's birthday?")
+    return result
 
 
 # Run the asynchronous test
 result = asyncio.run(run_agent())
-print(result[-1])

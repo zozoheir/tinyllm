@@ -101,7 +101,7 @@ class Function:
         self.debug = debug
         self.is_traced = is_traced
         self.trace = None
-        self.generation = None
+        self.parent_observation = None
         if is_traced is True:
             self.trace = langfuse_client.trace(CreateTrace(
                 name=self.name,
@@ -122,13 +122,12 @@ class Function:
         self.stream = stream
         self.generation = None
 
-    def __setattr__(self, key, value):
-        super().__setattr__(key, value)
-
-        # If the attribute is a Function instance, set its trace attribute
-        if isinstance(value, Function):
-            value.trace = self.trace
-
+    #def __setattr__(self, key, value):
+    #    super().__setattr__(key, value)
+    #
+    #    # If the attribute is a Function instance, set its trace attribute
+    #    if isinstance(value, Function):
+    #        value.trace = self.trace
 
     @fallback_decorator
     async def __call__(self, **kwargs):
@@ -161,9 +160,9 @@ class Function:
             # Evaluate
             if self.evaluators:
                 self.transition(States.EVALUATING)
-                await self.evaluate(generation=self.generation,
-                                    output=final_output)
-
+                #await self.evaluate(generation=self.generation,
+                #                    output=final_output,
+                #                    **kwargs)
 
             # Complete
             self.transition(States.COMPLETE)
@@ -262,3 +261,4 @@ class Function:
 
     async def process_output(self, **kwargs):
         return kwargs
+

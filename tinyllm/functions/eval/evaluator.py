@@ -1,5 +1,6 @@
-from typing import Optional, Any
+from typing import Optional, Any, Type, Union
 
+from langfuse.client import StatefulClient, StatefulSpanClient, StatefulGenerationClient
 from langfuse.model import CreateScore
 
 from tinyllm.function import Function
@@ -7,8 +8,9 @@ from tinyllm.validator import Validator
 
 
 class EvaluatorInputValidator(Validator):
-    generation: Any
-    output: dict
+    observation: Union[StatefulGenerationClient, StatefulSpanClient]
+    output: Any
+    function: Any
 
 class EvaluatorOutputValidator(Validator):
     evals: dict
@@ -26,7 +28,7 @@ class Evaluator(Function):
     async def process_output(self, **kwargs):
 
         for name, score in kwargs['evals'].items():
-            self.input['generation'].score(
+            self.input['observation'].score(
                 CreateScore(
                     name=name,
                     value=score,

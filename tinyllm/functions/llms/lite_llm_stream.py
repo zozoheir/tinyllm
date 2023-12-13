@@ -8,6 +8,7 @@ from tenacity import stop_after_attempt, wait_random_exponential, retry_if_excep
 from tinyllm.functions.llms.lite_llm import LiteLLM
 from tinyllm.function_stream import FunctionStream
 from tinyllm.functions.util.helpers import get_openai_message, count_tokens
+from tinyllm.util.trace_util import langfuse_generation
 
 
 class LiteLLMStream(LiteLLM, FunctionStream):

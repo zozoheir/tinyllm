@@ -20,7 +20,7 @@ class AnswerCorrectnessEvaluator(Evaluator):
             "metadata": {}
         }
 
-        completion = kwargs['output']['completion']
+        completion = kwargs['output']['response']['choices'][0]['message']['content']
         evals = {
             "evals": {
                 "correct_answer": 1 if 'january 1st' in completion.lower() else 0

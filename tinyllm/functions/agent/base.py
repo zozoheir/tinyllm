@@ -4,9 +4,11 @@ from tinyllm.functions.util.helpers import get_openai_message
 class AgentBase:
 
     async def memorize(self,
-                       message):
+                       message,
+                       **kwargs):
         if self.memory is not None:
-            return await self.memory(message=message)
+            return await self.memory(message=message,
+                                     **kwargs)
 
     async def prepare_messages(self,
                                message):

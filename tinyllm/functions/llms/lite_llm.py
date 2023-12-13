@@ -9,6 +9,7 @@ from tinyllm.functions.examples.example_manager import ExampleManager
 from tinyllm.functions.memory.memory import Memory
 from tinyllm.functions.examples.example_selector import ExampleSelector
 from tinyllm.functions.util.helpers import *
+from tinyllm.util.trace_util import langfuse_generation
 from tinyllm.validator import Validator
 from tenacity import retry, stop_after_attempt, wait_random_exponential, retry_if_exception_type
 
@@ -66,6 +67,7 @@ class LiteLLM(Function):
             temperature=kwargs['temperature'],
             max_tokens=kwargs['max_tokens'],
             n=kwargs['n'],
+            parent_observation=kwargs.get('parent_observation', None),
             **tools_args
         )
 
@@ -82,18 +84,15 @@ class LiteLLM(Function):
         wait=wait_random_exponential(min=1, max=10),
         retry=retry_if_exception_type((OpenAIError))
     )
+    @langfuse_generation
     async def get_completion(self,
                              model,
                              temperature,
                              n,
                              max_tokens,
                              messages,
+                             parent_observation=None,
                              **kwargs):
-        self.generation = self.trace.generation(CreateGeneration(
-            name=self.name,
-            startTime=dt.datetime.utcnow(),
-            prompt=messages,
-        ))
         api_result = await acompletion(
             model=model,
             temperature=temperature,
@@ -102,10 +101,4 @@ class LiteLLM(Function):
             messages=messages,
             **kwargs
         )
-        response_message = api_result.model_dump()['choices'][0]['message']
-        self.generation.update(UpdateGeneration(
-            endTime=dt.datetime.utcnow(),
-            completion=response_message,
-            usage=Usage(promptTokens=count_tokens(messages), completionTokens=count_tokens(response_message)),
-        ))
         return api_result.model_dump()

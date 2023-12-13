@@ -35,6 +35,7 @@ class TestlitellmChat(AsyncioTestCase):
 
     def test_litellm_chat_evaluator(self):
         class SuccessFullRunEvaluator(Evaluator):
+            print('evaluator')
             async def run(self, **kwargs):
                 return {
                     "evals": {
@@ -44,10 +45,11 @@ class TestlitellmChat(AsyncioTestCase):
                 }
 
         litellm_chat = LiteLLM(name='Test: LiteLLMChat evaluation',
-                               evaluators=[SuccessFullRunEvaluator(
-                                   name="Successful run evaluator",
-                                   is_traced=False,
-                               )])
+                               evaluators=[
+                                   SuccessFullRunEvaluator(
+                                       name="Successful run evaluator",
+                                       is_traced=False,
+                                   )])
         message = get_openai_message(role='user',
                                      content="Hi")
         result = self.loop.run_until_complete(litellm_chat(messages=[message]))

@@ -1,5 +1,8 @@
+import datetime as dt
 import json
 from typing import Union, Optional
+
+from langfuse.model import CreateSpan
 
 from smartpy.utility.log_util import getLogger
 from tinyllm.function import Function
@@ -8,8 +11,8 @@ from tinyllm.functions.agent.base import AgentBase
 from tinyllm.functions.agent.toolkit import Toolkit
 from tinyllm.functions.examples.example_manager import ExampleManager
 from tinyllm.functions.memory.memory import Memory
-from tinyllm.functions.util.helpers import get_openai_message, get_system_message, count_tokens, \
-    OPENAI_MODELS_CONTEXT_SIZES
+from tinyllm.functions.util.helpers import get_openai_message
+from tinyllm.util.trace_util import langfuse_span
 from tinyllm.validator import Validator
 
 logger = getLogger(__name__)
@@ -39,12 +42,15 @@ class Agent(AgentBase, Function):
         self.memory = memory
         self.example_manager = example_manager
 
+    @langfuse_span(name='User interaction', input_key='user_input')
     async def run(self,
-                  user_input):
+                  user_input,
+                  **kwargs):
 
         input_openai_msg = get_openai_message(role='user',
                                               content=user_input)
-        await self.memorize(message=input_openai_msg)
+        await self.memorize(message=input_openai_msg,
+                            parent_observation=self.parent_observation)
 
         while True:
 
@@ -52,7 +58,8 @@ class Agent(AgentBase, Function):
                 message=input_openai_msg
             )
             msg = await self.manager_llm(messages=messages,
-                                         tools=self.toolkit.as_dict_list())
+                                         tools=self.toolkit.as_dict_list(),
+                                         parent_observation=self.parent_observation)
 
             if msg['status'] == 'success':
                 is_tool_call = msg['output']['response']['choices'][0]['finish_reason'] == 'tool_calls'
@@ -66,7 +73,8 @@ class Agent(AgentBase, Function):
                     first_choice_message['content'] = ''
                     tool_calls = first_choice_message['tool_calls']
 
-                    res = await self.memorize(message=first_choice_message)
+                    res = await self.memorize(message=first_choice_message,
+                                              parent_observation=self.parent_observation)
 
                     # Memorize tool result
                     tool_call = tool_calls[0]
@@ -75,7 +83,7 @@ class Agent(AgentBase, Function):
                             'name': tool_call['function']['name'],
                             'arguments': json.loads(tool_call['function']['arguments'])
                         }],
-                        trace=self.trace)
+                        parent_observation=self.parent_observation)
                     tool_result = tool_results['output']['tool_results'][0]
                     function_call_msg = get_openai_message(
                         name=tool_result['name'],
@@ -84,16 +92,14 @@ class Agent(AgentBase, Function):
                         tool_call_id=tool_call['id']
                     )
 
-
                     # Set next input
                     input_openai_msg = function_call_msg
 
-                else :
+                else:
                     # Agent decides to respond
                     return {'response': msg['output']['response']}
             else:
                 raise (Exception(msg))
-
 
 
 """
