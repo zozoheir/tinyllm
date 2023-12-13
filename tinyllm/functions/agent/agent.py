@@ -1,68 +1,79 @@
 import json
+from typing import Union, Optional
 
 from smartpy.utility.log_util import getLogger
 from tinyllm.function import Function
+from tinyllm.functions.agent.base import AgentBase
 
 from tinyllm.functions.agent.toolkit import Toolkit
-from tinyllm.functions.util.helpers import get_openai_message
+from tinyllm.functions.examples.example_manager import ExampleManager
+from tinyllm.functions.memory.memory import Memory
+from tinyllm.functions.util.helpers import get_openai_message, get_system_message, count_tokens, \
+    OPENAI_MODELS_CONTEXT_SIZES
 from tinyllm.validator import Validator
 
 logger = getLogger(__name__)
 
 
-class TinyEnvironmentInitValidator(Validator):
+class AgentInitValidator(Validator):
     manager_llm: Function
-    planner_function: Function
     toolkit: Toolkit
+    memory: Union[Memory, None]
+    example_manager: Optional[ExampleManager]
 
 
-class TinyEnvironmentOutputValidator(Validator):
-    type: str
-    response: dict
-
-
-class Agent(Function):
+class Agent(AgentBase, Function):
 
     def __init__(self,
                  manager_llm: Function,
                  toolkit: Toolkit,
+                 memory=Memory(name='agent_memory', is_traced=False),
+                 example_manager=ExampleManager(),
                  **kwargs):
+        AgentInitValidator(manager_llm=manager_llm,
+                           toolkit=toolkit,
+                           memory=memory)
         super().__init__(**kwargs)
         self.toolkit = toolkit
         self.manager_llm = manager_llm
+        self.memory = memory
+        self.example_manager = example_manager
 
     async def run(self,
                   user_input):
 
         input_openai_msg = get_openai_message(role='user',
                                               content=user_input)
+        await self.memorize(message=input_openai_msg)
+
         while True:
 
-            msg = await self.manager_llm(message=input_openai_msg,
-                                         tools=self.toolkit.as_dicts())
+            messages = await self.prepare_messages(
+                message=input_openai_msg
+            )
+            msg = await self.manager_llm(messages=messages,
+                                         tools=self.toolkit.as_dict_list())
 
-            # Agent decides to call a tool
             if msg['status'] == 'success':
-                msg_output = msg['output']
-                if msg_output['type'] == 'tool':
+                is_tool_call = msg['output']['response']['choices'][0]['finish_reason'] == 'tool_calls'
+
+                if is_tool_call:
+                    # Agent decides to call a tool
                     # TODO When ready, implement parallel function calls
-                    api_tool_call = msg_output['delta']['tool_calls'][0]
-                    msg_output['delta'].pop('function_call')
 
-                    # Create tool call message memory
-                    json_tool_call = {
-                        'name': msg_output['completion']['name'],
-                        'arguments': msg_output['completion']['arguments']
-                    }
-                    api_tool_call['function'] = json_tool_call
-                    msg_output['delta']['content'] = ''
-                    res = await self.manager_llm.memorize(message=msg_output['delta'])
+                    # Memorize tool call
+                    first_choice_message = msg['output']['response']['choices'][0]['message']
+                    first_choice_message['content'] = ''
+                    tool_calls = first_choice_message['tool_calls']
 
-                    # Create tool result message memory
+                    res = await self.memorize(message=first_choice_message)
+
+                    # Memorize tool result
+                    tool_call = tool_calls[0]
                     tool_results = await self.toolkit(
                         tool_calls=[{
-                            'name': api_tool_call['function']['name'],
-                            'arguments': json.loads(api_tool_call['function']['arguments'])
+                            'name': tool_call['function']['name'],
+                            'arguments': json.loads(tool_call['function']['arguments'])
                         }],
                         trace=self.trace)
                     tool_result = tool_results['output']['tool_results'][0]
@@ -70,11 +81,33 @@ class Agent(Function):
                         name=tool_result['name'],
                         role='tool',
                         content=tool_result['content'],
-                        tool_call_id=api_tool_call['id']
+                        tool_call_id=tool_call['id']
                     )
+
+
+                    # Set next input
                     input_openai_msg = function_call_msg
 
-                elif msg_output['type'] == 'completion':
-                    break
+                else :
+                    # Agent decides to respond
+                    return {'response': msg['output']['response']}
             else:
                 raise (Exception(msg))
+
+
+
+"""
+
+    @property
+    def available_token_size(self):
+        memories_size = 0
+        if self.memory:
+            memories_size = count_tokens(self.memory.memories,
+                                         header='',
+                                         ignore_keys=[])
+            system_role_size = count_tokens(get_openai_message(role='system',
+                                                               content=self.manager_llm.system_role))
+        return (OPENAI_MODELS_CONTEXT_SIZES[
+                    self.model] - system_role_size - memories_size - self.max_tokens - self.answer_format_prompt_size - 10) * 0.99
+
+"""

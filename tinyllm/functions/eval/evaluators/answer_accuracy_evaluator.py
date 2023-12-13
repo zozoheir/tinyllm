@@ -63,7 +63,6 @@ class AnswerCorrectnessEvaluator(Evaluator):
             prompt_template=accuracy_prompt_template,
             is_traced=True,
             trace=self.trace,
-            with_memory=False,
         )
 
     async def run(self, **kwargs):

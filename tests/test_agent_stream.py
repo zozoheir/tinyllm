@@ -21,12 +21,13 @@ class AnswerCorrectnessEvaluator(Evaluator):
         }
 
         completion = kwargs['output']['completion']
-        evals = {
-            "evals": {
-                "correct_answer": 1 if 'january 1st' in completion.lower() else 0
-            },
-            "metadata": {}
-        }
+        if kwargs['processed_output']['type'] == 'tool':
+            evals = {
+                "evals": {
+                    "functional_call": 1 if completion['name'] == 'get_user_property' else 0,
+                },
+                "metadata": {}
+            }
 
         return evals
 
@@ -67,30 +68,36 @@ llm_store = LLMStore()
 # Define the test class
 class TestStreamingAgent(AsyncioTestCase):
 
-    def test_agent(self):
-        manager_llm = llm_store.get_llm_function(
-            llm_library=LLMs.LITE_LLM,
+    def test_agent_stream(self):
+        manager_llm_stream = llm_store.get_llm_function(
+            llm_library=LLMs.LITE_LLM_STREAM,
             system_role="You are a helpful agent that can answer questions about the user's profile using available tools.",
             name='Tinyllm manager',
-            debug=False
+            debug=False,
         )
-        tiny_agent = Agent(name='Test: agent stream',
-                           manager_llm=manager_llm,
-                           toolkit=toolkit,
-                           evaluators=[
-                               AnswerCorrectnessEvaluator(
-                                   name="Answer Correctness Evaluator",
-                                   is_traced=False,
-                               ),
-                           ],
-                           debug=True)
+
+        tiny_agent = AgentStream(name='Test: agent stream',
+                                 manager_llm=manager_llm_stream,
+                                 toolkit=toolkit,
+                                 evaluators=[
+                                     AnswerCorrectnessEvaluator(
+                                         name="Functional call corrector",
+                                         is_traced=False,
+                                     ),
+                                 ],
+                                 debug=True)
+
+        async def async_test():
+            msgs = []
+            async for message in tiny_agent(user_input="What is the user's birthday?"):
+                msgs.append(message)
+            return msgs
 
         # Run the asynchronous test
-        result = self.loop.run_until_complete(tiny_agent(user_input="What is the user's birthday?"))
-        first_choice_message = result['output']['response']['choices'][0]['message']
+        result = self.loop.run_until_complete(async_test())
         # Verify the last message in the list
-        self.assertEqual(result['status'], 'success')
-        self.assertTrue('january 1st' in first_choice_message['content'].lower())
+        self.assertEqual(result[-1]['status'], 'success', "The last message status should be 'success'")
+        self.assertTrue("january 1st" in result[-1]['output']['completion'].lower())
 
 
 # This allows the test to be run standalone

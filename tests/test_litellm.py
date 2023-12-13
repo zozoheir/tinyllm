@@ -13,13 +13,12 @@ class TestlitellmChat(AsyncioTestCase):
         super().setUp()
 
     def test_litellm_chat_stream(self):
-        litellmstream_chat = LiteLLMStream(name='Test: LiteLLM Stream',
-                                           with_memory=True)
+        litellmstream_chat = LiteLLMStream(name='Test: LiteLLM Stream')
 
         async def get_stream():
             message = get_openai_message(role='user',
                                          content="Hi")
-            async for msg in litellmstream_chat(message=message):
+            async for msg in litellmstream_chat(messages=[message]):
                 i = 0
             return msg
 
@@ -30,9 +29,8 @@ class TestlitellmChat(AsyncioTestCase):
     def test_litellm_chat(self):
         message = get_openai_message(role='user',
                                      content="Hi")
-        litellm_chat = LiteLLM(name='Test: LiteLLMChat',
-                               with_memory=True)
-        result = self.loop.run_until_complete(litellm_chat(message=message))
+        litellm_chat = LiteLLM(name='Test: LiteLLMChat')
+        result = self.loop.run_until_complete(litellm_chat(messages=[message]))
         self.assertEqual(result['status'], 'success')
 
     def test_litellm_chat_evaluator(self):
@@ -49,11 +47,10 @@ class TestlitellmChat(AsyncioTestCase):
                                evaluators=[SuccessFullRunEvaluator(
                                    name="Successful run evaluator",
                                    is_traced=False,
-                               )],
-                               with_memory=True)
+                               )])
         message = get_openai_message(role='user',
                                      content="Hi")
-        result = self.loop.run_until_complete(litellm_chat(message=message))
+        result = self.loop.run_until_complete(litellm_chat(messages=[message]))
         self.assertEqual(result['status'], 'success')
 
 

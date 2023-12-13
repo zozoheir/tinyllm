@@ -12,7 +12,7 @@ embedding_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
 embedding_function = lambda x: embedding_model.encode(x)
 
 
-class TestRedisExampleSelector(AsyncioTestCase):
+class TestExampleSelector(AsyncioTestCase):
 
     def setUp(self):
         super().setUp()
@@ -47,9 +47,8 @@ class TestRedisExampleSelector(AsyncioTestCase):
         message = get_openai_message(role='user',
                                      content="Hi")
         litellm_chat = LiteLLM(name='Test: LiteLLMChat with example selector',
-                               example_manager=example_manager,
-                               with_memory=True)
-        result = self.loop.run_until_complete(litellm_chat(message=message))
+                               example_manager=example_manager)
+        result = self.loop.run_until_complete(litellm_chat(messages=[message]))
 
         self.assertEqual(result['status'], 'success')
 

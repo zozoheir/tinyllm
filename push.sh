@@ -4,7 +4,7 @@
 VENV_PATH="/Users/othmanezoheir/venv/rumorz-jobs-2/bin/python"
 
 # Run unittest discovery in the tinyllm/tests directory
-if $VENV_PATH -m unittest discover tinyllm/tests; then
+if $VENV_PATH -m unittest discover tests; then
     # If tests pass, proceed to add, commit, and push changes to git
     git add .
     echo "Enter commit message:"

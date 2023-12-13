@@ -15,14 +15,11 @@ from tenacity import retry, stop_after_attempt, wait_random_exponential, retry_i
 
 class LiteLLMChatInitValidator(Validator):
     system_role: str
-    example_manager: Optional[ExampleManager]
-    with_memory: bool
     answer_format_prompt: Optional[str]
-    example_selector: Optional[ExampleSelector]
 
 
 class LiteLLMChatInputValidator(Validator):
-    message: dict
+    messages: List[Dict]
     model: Optional[str] = 'gpt-3.5-turbo'
     temperature: Optional[float] = 0
     max_tokens: Optional[int] = 400
@@ -38,21 +35,18 @@ class LiteLLM(Function):
     def __init__(self,
                  system_role="You are a helpful assistant",
                  example_manager=ExampleManager(),
-                 with_memory=True,
+                 memory=None,
                  answer_format_prompt=None,
                  **kwargs):
         LiteLLMChatInitValidator(system_role=system_role,
-                                 with_memory=with_memory,
+                                 memory=memory,
                                  answer_format_prompt=answer_format_prompt,
                                  example_manager=example_manager)
         super().__init__(input_validator=LiteLLMChatInputValidator,
                          **kwargs)
         self.system_role = system_role
         self.n = 1
-        self.memory = Memory(name=f"{self.name}_memory",
-                             is_traced=self.is_traced,
-                             debug=self.debug)
-        self.with_memory = with_memory
+        self.memory = memory
         self.answer_format_prompt = answer_format_prompt
         self.example_manager = example_manager
 
@@ -62,19 +56,12 @@ class LiteLLM(Function):
         self.completion_args = None
 
     async def run(self, **kwargs):
-        message = kwargs['message']
-        messages = await self.prepare_messages(
-            message=message
-        )
-
-        with_tools = 'tool_choice' in kwargs and 'tools' in kwargs
+        with_tools = 'tools' in kwargs
         tools_args = {}
-        if with_tools: tools_args = {'tools': kwargs['content']['tools'],
-                                     'tool_choice': kwargs['content']['tool_choice']}
-
-        kwargs['messages'] = messages
+        if with_tools: tools_args = {'tools': kwargs['tools'],
+                                     'tool_choice': kwargs.get('tool_choice', 'auto')}
         api_result = await self.get_completion(
-            messages=messages,
+            messages=kwargs['messages'],
             model=kwargs['model'],
             temperature=kwargs['temperature'],
             max_tokens=kwargs['max_tokens'],
@@ -83,17 +70,12 @@ class LiteLLM(Function):
         )
 
         # Memorize the interaction
-        await self.memorize(message=message)
-        await self.memorize(message=api_result['choices'][0]['message'])
+        # await self.memorize(message=message)
+        # await self.memorize(message=api_result['choices'][0]['message'])
 
         return {
             "response": api_result,
         }
-
-    async def memorize(self,
-                       message):
-        if self.with_memory:
-            await self.memory(message=message)
 
     @retry(
         stop=stop_after_attempt(3),
@@ -127,37 +109,3 @@ class LiteLLM(Function):
             usage=Usage(promptTokens=count_tokens(messages), completionTokens=count_tokens(response_message)),
         ))
         return api_result.model_dump()
-
-    async def prepare_messages(self,
-                               message):
-        # system prompt
-        # memories
-        # constant examples
-        # selected examples
-        # input message
-        system_role = get_system_message(content=self.system_role)
-        examples = []
-
-        examples += self.example_manager.constant_examples
-        if self.example_manager.example_selector.example_dicts and message['role'] == 'user':
-            best_examples = await self.example_manager.example_selector(input=message['content'])
-            for good_example in best_examples['output']['best_examples']:
-                usr_msg = get_openai_message(role='user', content=good_example['user'])
-                assistant_msg = get_openai_message(role='assistant', content=good_example['assistant'])
-                examples.append(usr_msg)
-                examples.append(assistant_msg)
-
-        messages = [system_role] \
-                   + self.memory.get_memories() + \
-                   examples + \
-                   [message]
-        return messages
-
-    @property
-    def available_token_size(self):
-        memories_size = count_tokens(self.memory.memories,
-                                     header='',
-                                     ignore_keys=[])
-
-        return (OPENAI_MODELS_CONTEXT_SIZES[
-                    self.model] - self.prompt_template.size - memories_size - self.max_tokens - self.answer_format_prompt_size - 10) * 0.99

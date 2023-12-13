@@ -4,36 +4,43 @@ from smartpy.utility.log_util import getLogger
 from tinyllm.function import Function
 from tinyllm.function_stream import FunctionStream
 from tinyllm.functions.agent.agent import Agent
+from tinyllm.functions.agent.base import AgentBase
 
 from tinyllm.functions.agent.toolkit import Toolkit
+from tinyllm.functions.examples.example_manager import ExampleManager
+from tinyllm.functions.memory.memory import Memory
 from tinyllm.functions.util.helpers import get_openai_message
 from tinyllm.validator import Validator
 
 logger = getLogger(__name__)
 
+class AgentStream(AgentBase, FunctionStream):
 
-class TinyEnvironmentInitValidator(Validator):
-    manager_llm: Function
-    planner_function: Function
-    toolkit: Toolkit
-
-
-class TinyEnvironmentOutputValidator(Validator):
-    type: str
-    response: dict
-
-
-class AgentStream(Agent, FunctionStream):
+    def __init__(self,
+                 manager_llm: Function,
+                 toolkit: Toolkit,
+                 memory=Memory(name='agent_memory', is_traced=False),
+                 example_manager=ExampleManager(),
+                 **kwargs):
+        super().__init__(**kwargs)
+        self.toolkit = toolkit
+        self.manager_llm = manager_llm
+        self.memory = memory
+        self.example_manager = example_manager
 
     async def run(self,
                   user_input):
 
         input_openai_msg = get_openai_message(role='user',
                                               content=user_input)
-        while True:
+        await self.memorize(message=input_openai_msg)
 
-            async for msg in self.manager_llm(message=input_openai_msg,
-                                              tools=self.toolkit.as_dicts()):
+        while True:
+            messages = await self.prepare_messages(
+                message=input_openai_msg
+            )
+            async for msg in self.manager_llm(messages=messages,
+                                              tools=self.toolkit.as_dict_list()):
                 yield msg
 
             # Agent decides to call a tool
@@ -44,16 +51,16 @@ class AgentStream(Agent, FunctionStream):
                     api_tool_call = msg_output['delta']['tool_calls'][0]
                     msg_output['delta'].pop('function_call')
 
-                    # Create tool call message memory
+                    # Memorize tool call with arguments
                     json_tool_call = {
                         'name': msg_output['completion']['name'],
                         'arguments': msg_output['completion']['arguments']
                     }
                     api_tool_call['function'] = json_tool_call
                     msg_output['delta']['content'] = ''
-                    res = await self.manager_llm.memorize(message=msg_output['delta'])
+                    res = await self.memorize(message=msg_output['delta'])
 
-                    # Create tool result message memory
+                    # Memorize tool result
                     tool_results = await self.toolkit(
                         tool_calls=[{
                             'name': api_tool_call['function']['name'],

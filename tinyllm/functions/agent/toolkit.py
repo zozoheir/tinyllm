@@ -51,5 +51,5 @@ class Toolkit(Function):
                                  **kwargs)
         return tool_result
 
-    def as_dicts(self):
+    def as_dict_list(self):
         return [tool.as_dict() for tool in self.tools]

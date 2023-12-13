@@ -18,16 +18,13 @@ class LiteLLMStream(LiteLLM, FunctionStream):
         retry=retry_if_exception_type((OpenAIError))
     )
     async def run(self, **kwargs):
-        messages = await self.prepare_messages(message=kwargs['message'])
-        kwargs['messages'] = messages
         async for msg in self.get_completion(**kwargs):
             yield msg
 
         # Memorize interaction
-        await self.memorize(message=kwargs['message'])
-        if msg['type'] == 'completion':
-            openai_msg = get_openai_message(role='assistant', content=msg['completion'])
-            await self.memorize(message=openai_msg)
+        #if msg['type'] == 'completion':
+        #    openai_msg = get_openai_message(role='assistant', content=msg['completion'])
+        #    await self.memorize(message=openai_msg)
         # Tool calls are memorized in the Agent function
 
     async def get_completion(self,

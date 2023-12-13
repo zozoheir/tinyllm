@@ -46,8 +46,10 @@ class DefaultInputValidator(Validator):
 class DefaultOutputValidator(Validator):
     response: Any
 
+
 class DefaultProcessedOutputValidator(Validator):
     response: Any
+
 
 class Function:
 
@@ -98,7 +100,7 @@ class Function:
         self.trace = None
         self.debug = debug
         self.is_traced = is_traced
-        self.trace= None
+        self.trace = None
         self.generation = None
         if is_traced is True:
             self.trace = langfuse_client.trace(CreateTrace(
@@ -126,6 +128,7 @@ class Function:
         # If the attribute is a Function instance, set its trace attribute
         if isinstance(value, Function):
             value.trace = self.trace
+
 
     @fallback_decorator
     async def __call__(self, **kwargs):
@@ -159,8 +162,8 @@ class Function:
             if self.evaluators:
                 self.transition(States.EVALUATING)
                 await self.evaluate(generation=self.generation,
-                                    output=final_output,
-                                    **kwargs)
+                                    output=final_output)
+
 
             # Complete
             self.transition(States.COMPLETE)
@@ -197,7 +200,6 @@ class Function:
             )
 
         self.state = new_state
-
 
     async def evaluate(self,
                        **kwargs):
