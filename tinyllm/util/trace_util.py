@@ -3,6 +3,7 @@ import datetime as dt
 from langfuse.model import UpdateGeneration, Usage, CreateGeneration, CreateSpan, UpdateSpan
 
 from tinyllm.functions.util.helpers import count_tokens
+from tinyllm.state import States
 
 
 def langfuse_generation(func):
@@ -22,10 +23,12 @@ def langfuse_generation(func):
 
         result = await func(*args, **kwargs)
         kwargs['self'] = self
-
-        for evaluator in self.evaluators:
-            kwargs['self'] = self
-            await evaluator(output=result, function=self, observation=generation)
+        # Evaluate
+        if self.evaluators:
+            self.transition(States.EVALUATING)
+            for evaluator in self.evaluators:
+                kwargs['self'] = self
+                await evaluator(output=result, function=self, observation=generation)
 
         response_message = result['choices'][0]['message']
         generation.update(UpdateGeneration(
@@ -75,9 +78,11 @@ def langfuse_generation_stream(func):
 
             yield value
 
-        for evaluator in self.evaluators:
-            kwargs['self'] = self
-            await evaluator(output=value, function=self, observation=generation)
+        if self.evaluators:
+            self.transition(States.EVALUATING)
+            for evaluator in self.evaluators:
+                kwargs['self'] = self
+                await evaluator(output=value, function=self, observation=generation)
 
         # Update generation info after generator is done
         generation.update(UpdateGeneration(
@@ -125,10 +130,12 @@ def langfuse_span(name=None, input_key=None, output_key=None, evaluators=[]):
                     output=output_value
                 )
             )
-
-            for evaluator in self.evaluators:
-                kwargs['self'] = self
-                await evaluator(output=output_value, function=self, observation=span)
+            # Evaluate
+            if self.evaluators:
+                self.transition(States.EVALUATING)
+                for evaluator in self.evaluators:
+                    kwargs['self'] = self
+                    await evaluator(output=output_value, function=self, observation=span)
 
             return result
 

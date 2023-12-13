@@ -9,6 +9,7 @@ from tinyllm.functions.llms.llm_store import LLMStore, LLMs
 
 from tinyllm.functions.agent.tool import Tool
 from tinyllm.functions.eval.evaluator import Evaluator
+from tinyllm.functions.memory.memory import Memory
 
 
 class AnswerCorrectnessEvaluator(Evaluator):
@@ -54,11 +55,13 @@ tools = [
             },
             "required": ["asked_property"],
         },
+        is_traced=False,
     )
 ]
 toolkit = Toolkit(
     name='Toolkit',
-    tools=tools
+    tools=tools,
+    is_traced=False,
 )
 
 llm_store = LLMStore()
@@ -72,14 +75,16 @@ class TestStreamingAgent(AsyncioTestCase):
             llm_library=LLMs.LITE_LLM,
             system_role="You are a helpful agent that can answer questions about the user's profile using available tools.",
             name='Tinyllm manager',
+            is_traced=False,
             debug=False
         )
         tiny_agent = Agent(name='Test: agent stream',
                            manager_llm=manager_llm,
                            toolkit=toolkit,
+                           memory=Memory(name='Agent memory', is_traced=False),
                            evaluators=[
                                AnswerCorrectnessEvaluator(
-                                   name="Answer Correctness Evaluator",
+                                   name="Eval: correct user info",
                                    is_traced=False,
                                ),
                            ],
