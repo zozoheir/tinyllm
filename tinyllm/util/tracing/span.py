@@ -4,6 +4,7 @@ from langfuse.model import CreateSpan, UpdateSpan
 
 from tinyllm.state import States
 
+
 def langfuse_span(name=None, input_key=None, output_key=None):
     def decorator(func):
         async def wrapper(*args, **kwargs):
@@ -54,8 +55,6 @@ def langfuse_span(name=None, input_key=None, output_key=None):
     return decorator
 
 
-
-
 def langfuse_span_generator(name=None, input_key=None, output_key=None):
     def decorator(func):
         async def wrapper(*args, **kwargs):
@@ -85,19 +84,12 @@ def langfuse_span_generator(name=None, input_key=None, output_key=None):
             async for result in async_gen:
                 # Extract output using output_key
                 output_value = result if output_key is None else result.get(output_key, None)
-
-                # Update the span with output (but not the endTime yet)
-                span.update(
-                    UpdateSpan(
-                        output=output_value
-                    )
-                )
-                # Yield the result back to the caller
                 yield result
 
             # After the generator is exhausted, update the span with endTime
             span.update(
                 UpdateSpan(
+                    output=output_value,
                     endTime=dt.datetime.utcnow()
                 )
             )

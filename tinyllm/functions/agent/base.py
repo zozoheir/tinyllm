@@ -36,5 +36,9 @@ class AgentBase:
                    + memories + \
                    examples + \
                    [message]
+
+        await self.memorize(message=message,
+                            parent_observation=self.parent_observation)
+
         return messages
 

@@ -73,13 +73,6 @@ class FunctionStream(Function):
 
             yield final_output
 
-            # Evaluate
-            if self.evaluators:
-                self.transition(States.EVALUATING)
-                await self.evaluate(generation=self.generation,
-                                    output=final_output,
-                                    **kwargs)
-
             # Complete
             self.transition(States.COMPLETE)
             langfuse_client.flush()

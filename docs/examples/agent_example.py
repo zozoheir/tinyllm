@@ -1,9 +1,6 @@
 import asyncio
-import unittest
 
-from tests.base import AsyncioTestCase
 from tinyllm.functions.agent.agent import Agent
-from tinyllm.functions.agent.agent_stream import AgentStream
 from tinyllm.functions.agent.toolkit import Toolkit
 from tinyllm.functions.llms.llm_store import LLMStore, LLMs
 
@@ -11,6 +8,8 @@ from tinyllm.functions.agent.tool import Tool
 from tinyllm.functions.eval.evaluator import Evaluator
 from tinyllm.functions.memory.memory import Memory
 
+
+loop = asyncio.get_event_loop()
 
 class AnswerCorrectnessEvaluator(Evaluator):
 
@@ -62,36 +61,31 @@ llm_store = LLMStore()
 
 
 # Define the test class
-class TestStreamingAgent(AsyncioTestCase):
 
-    def test_agent(self):
-        manager_llm = llm_store.get_llm_function(
-            llm_library=LLMs.LITE_LLM,
-            system_role="You are a helpful agent that can answer questions about the user's profile using available tools.",
-            name='Tinyllm manager',
-            is_traced=False,
-            debug=False
-        )
-        tiny_agent = Agent(name='Test: agent',
-                           manager_llm=manager_llm,
-                           toolkit=toolkit,
-                           memory=Memory(name='Agent memory', is_traced=False),
-                           evaluators=[
-                               AnswerCorrectnessEvaluator(
-                                   name="Eval: correct user info",
-                                   is_traced=False,
-                               ),
-                           ],
-                           debug=True)
-
-        # Run the asynchronous test
-        result = self.loop.run_until_complete(tiny_agent(user_input="What is the user's birthday?"))
-        first_choice_message = result['output']['response']['choices'][0]['message']
-        # Verify the last message in the list
-        self.assertEqual(result['status'], 'success')
-        self.assertTrue('january 1st' in first_choice_message['content'].lower())
+async def run_agent():
+    manager_llm = llm_store.get_llm_function(
+        llm_library=LLMs.LITE_LLM,
+        system_role="You are a helpful agent that can answer questions about the user's profile using available tools.",
+        name='Tinyllm manager',
+        is_traced=False,
+        debug=False
+    )
+    tiny_agent = Agent(name='Test: agent',
+                       manager_llm=manager_llm,
+                       toolkit=toolkit,
+                       memory=Memory(name='Agent memory', is_traced=False),
+                       evaluators=[
+                           AnswerCorrectnessEvaluator(
+                               name="Eval: correct user info",
+                               is_traced=False,
+                           ),
+                       ],
+                       debug=True)
 
 
-# This allows the test to be run standalone
-if __name__ == '__main__':
-    unittest.main()
+    # Run
+    result = await tiny_agent(user_input="What is the user's birthday?")
+    print(result)
+
+# Run
+result = loop.run_until_complete(run_agent())

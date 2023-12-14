@@ -10,25 +10,16 @@ from tinyllm.functions.llms.llm_store import LLMStore, LLMs
 from tinyllm.functions.agent.tool import Tool
 from tinyllm.functions.eval.evaluator import Evaluator
 
-
 class AnswerCorrectnessEvaluator(Evaluator):
-
     async def run(self, **kwargs):
+        completion = kwargs['output']['output']['completion']
+
         evals = {
             "evals": {
+                "correct_answer": 1 if 'january 1st' in completion.lower() else 0
             },
             "metadata": {}
         }
-
-        completion = kwargs['output']['completion']
-        if kwargs['processed_output']['type'] == 'tool':
-            evals = {
-                "evals": {
-                    "functional_call": 1 if completion['name'] == 'get_user_property' else 0,
-                },
-                "metadata": {}
-            }
-
         return evals
 
 

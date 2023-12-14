@@ -47,13 +47,11 @@ class Agent(AgentBase, Function):
 
         input_openai_msg = get_openai_message(role='user',
                                               content=user_input)
-        await self.memorize(message=input_openai_msg,
-                            parent_observation=self.parent_observation)
 
         while True:
 
             messages = await self.prepare_messages(
-                message=input_openai_msg
+                message=input_openai_msg,
             )
             msg = await self.manager_llm(messages=messages,
                                          tools=self.toolkit.as_dict_list(),
@@ -67,11 +65,11 @@ class Agent(AgentBase, Function):
                     # TODO When ready, implement parallel function calls
 
                     # Memorize tool call
-                    first_choice_message = msg['output']['response']['choices'][0]['message']
-                    first_choice_message['content'] = ''
-                    tool_calls = first_choice_message['tool_calls']
+                    tool_call_msg = msg['output']['response']['choices'][0]['message']
+                    tool_call_msg['content'] = ''
+                    tool_calls = tool_call_msg['tool_calls']
 
-                    await self.memorize(message=first_choice_message,
+                    await self.memorize(message=tool_call_msg,
                                         parent_observation=self.parent_observation)
 
                     # Memorize tool result
