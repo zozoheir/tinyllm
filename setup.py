@@ -15,13 +15,13 @@ setup(name='tinyllm',
           'pgvector',
           'psutil',
           'psycopg2-binary',
-          'pydantic==1.10.7',  # Compatible with langchain + langfuse
+          'pydantic==1.10.7',
           'pytest',
           'pyyaml',
           'sentence_transformers',
           'sqlalchemy',
           'tiktoken',
-          'typing-extensions==4.5.0',  # This fixes the pydantic/subclass typing bug
+          'typing-extensions==4.5.0',
           'uuid',
           'fuzzywuzzy'
       ],
