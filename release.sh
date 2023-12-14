@@ -3,17 +3,49 @@
 # Run the commit.sh script
 ./commit.sh
 
-# Check if commit.sh was successful
 if [ $? -eq 0 ]; then
-    # Only proceed if commit.sh was successful
-
-    source "/Users/othmanezoheir/venv/rumorz-jobs-2/bin/activate"
-    # Run unittest discovery in the tinyllm/tests directory
-    bump2version patch  # for a patch version increment
-    python setup.py sdist bdist_wheel
-    twine upload dist/*
-    echo "New version released!"
+    echo "Commit successful, proceeding to activate virtual environment."
 else
-    # If commit.sh failed, do not proceed
     echo "Commit failed, release process aborted."
+    exit 1
+fi
+
+# Activate virtual environment
+source "/Users/othmanezoheir/venv/rumorz-jobs-2/bin/activate"
+
+if [ $? -eq 0 ]; then
+    echo "Virtual environment activated successfully."
+else
+    echo "Failed to activate virtual environment, release process aborted."
+    exit 1
+fi
+
+# Increment version number
+bump2version patch
+
+if [ $? -eq 0 ]; then
+    echo "Version number incremented successfully."
+else
+    echo "Failed to increment version number, release process aborted."
+    exit 1
+fi
+
+# Build the package
+python setup.py sdist bdist_wheel
+
+if [ $? -eq 0 ]; then
+    echo "Package built successfully."
+else
+    echo "Failed to build package, release process aborted."
+    exit 1
+fi
+
+# Upload to PyPI
+twine upload dist/*
+
+if [ $? -eq 0 ]; then
+    echo "Package uploaded successfully. New version released!"
+else
+    echo "Failed to upload package, release process aborted."
+    exit 1
 fi
