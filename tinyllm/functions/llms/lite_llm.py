@@ -5,7 +5,7 @@ from litellm import OpenAIError, acompletion
 from tinyllm.function import Function
 from tinyllm.functions.examples.example_manager import ExampleManager
 from tinyllm.functions.util.helpers import *
-from tinyllm.util.tracing.generation import langfuse_generation
+from tinyllm.tracing.generation import langfuse_generation
 from tinyllm.validator import Validator
 from tenacity import retry, stop_after_attempt, wait_random_exponential, retry_if_exception_type
 

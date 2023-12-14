@@ -1,14 +1,9 @@
 from setuptools import setup, find_packages
 
 setup(name='tinyllm',
-      version='0.1',
+      version='1.0.1',
       description='Development and management infrastructure for LLM applications',
       packages=find_packages(),
-      entry_points={
-          'console_scripts': [
-              'tinyllm = tinyllm.cli:main',
-          ],
-      },
       install_requires=[
           'click',
           'tenacity',

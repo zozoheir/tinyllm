@@ -10,7 +10,7 @@ from tinyllm.functions.agent.toolkit import Toolkit
 from tinyllm.functions.examples.example_manager import ExampleManager
 from tinyllm.functions.memory.memory import Memory
 from tinyllm.functions.util.helpers import get_openai_message
-from tinyllm.util.tracing.span import langfuse_span
+from tinyllm.tracing.span import langfuse_span
 from tinyllm.validator import Validator
 
 logger = getLogger(__name__)
@@ -40,7 +40,7 @@ class Agent(AgentBase, Function):
         self.memory = memory
         self.example_manager = example_manager
 
-    @langfuse_span(name='User interaction', input_key='user_input')
+    @langfuse_span(name='User interaction', input_key='user_input', visual_output_lambda=lambda x:x['response']['choices'][0]['message'])
     async def run(self,
                   user_input,
                   **kwargs):

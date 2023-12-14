@@ -34,6 +34,7 @@ def langfuse_generation(func):
         generation.update(UpdateGeneration(
             endTime=dt.datetime.utcnow(),
             completion=response_message,
+            metadata=result,
             usage=Usage(promptTokens=count_tokens(kwargs['messages']), completionTokens=count_tokens(response_message)),
         ))
         return result
