@@ -24,9 +24,9 @@ class ContextBuilder(Function):
                  end_string: str,
                  available_token_size: int,
                  **kwargs):
-        val = ContextBuilderInitValidator(start_string=start_string,
-                                          end_string=end_string,
-                                          available_token_size=available_token_size)
+        ContextBuilderInitValidator(start_string=start_string,
+                                    end_string=end_string,
+                                    available_token_size=available_token_size)
 
         super().__init__(
             input_validator=ContextBuilderInputValidator,
@@ -42,7 +42,7 @@ class ContextBuilder(Function):
         final_context = self.start_string + "\n" + context + "\n" + self.end_string
         return final_context
 
-    def run(self, context: str) -> str:
+    def run(self, context: str) -> dict:
         final_context = \
             self.start_string + "\n" + \
             context + "\n" + \

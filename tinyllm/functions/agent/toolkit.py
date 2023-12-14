@@ -3,7 +3,7 @@ from typing import List, Dict
 
 from tinyllm.function import Function
 from tinyllm.functions.agent.tool import Tool
-from tinyllm.util.trace_util import langfuse_span
+from tinyllm.util.tracing.span import langfuse_span
 from tinyllm.validator import Validator
 
 

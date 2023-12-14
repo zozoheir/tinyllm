@@ -1,4 +1,5 @@
 import traceback
+from abc import abstractmethod
 from typing import Any
 
 from tinyllm.function import Function
@@ -20,6 +21,11 @@ class FunctionStream(Function):
                  **kwargs):
         super().__init__(output_validator=DefaultFunctionStreamOutputValidator,
                          **kwargs)
+
+    @abstractmethod
+    async def run(self,
+                  **kwargs):
+        yield None
 
     # @fallback_decorator
     async def __call__(self, **kwargs):
@@ -80,7 +86,7 @@ class FunctionStream(Function):
 
         except Exception as e:
             self.error_message = str(e)
-            self.transition(States.FAILED, msg=traceback.format_exception(e))
+            self.transition(States.FAILED, msg='/n'.join(traceback.format_exception(e)))
             langfuse_client.flush()
             if type(e) in self.fallback_strategies:
                 raise e

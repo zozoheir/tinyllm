@@ -1,10 +1,8 @@
 import re
-from textwrap import dedent
 
 from tinyllm.functions.eval.evaluator import Evaluator
-from tinyllm.functions.llms.openai.openai_chat import OpenAIChat
-from tinyllm.functions.llms.openai.openai_prompt_template import OpenAIPromptTemplate
-from tinyllm.functions.llms.util import get_user_message, get_assistant_message
+from tinyllm.functions.llms.lite_llm import LiteLLM
+from tinyllm.functions.util.helpers import get_openai_message
 
 EXAMPLE_INPUT = """
 Context:
@@ -33,22 +31,17 @@ understates the actual amount by nearly $3 billion.
 """
 
 examples = [
-    get_user_message(EXAMPLE_INPUT),
-    get_assistant_message(EXAMPLE_OUTPUT)
+    get_openai_message(role='user',content=EXAMPLE_INPUT),
+    get_openai_message(role='assistant',content=EXAMPLE_OUTPUT)
 ]
 
-accuracy_prompt_template = OpenAIPromptTemplate(
-    name="Answer Accuracy Evaluation Template",
-    system_role=dedent(f"""
+system_role = """
 ROLE:
 You are an evaluator. Given a question, a correct answer, and a generated answer, you are to evaluate the correctness of the 
 predicted answer on a scale of 0 to 10 with respect to the question asked and correct answer.
 You will think and reason about the correctness of the generated answer then provide a Correctness score.
 If the the generated answer is "Not enough information", the score should be 0.
-"""),
-    messages=examples,
-    is_traced=False
-)
+"""
 
 
 class AnswerCorrectnessEvaluator(Evaluator):
@@ -56,13 +49,10 @@ class AnswerCorrectnessEvaluator(Evaluator):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self.openai_chat = OpenAIChat(
+        self.litellm_chat = LiteLLM(
             name="Answer Accuracy Evaluator",
-            model='gpt-3.5-turbo',
-            max_tokens=400,
-            prompt_template=accuracy_prompt_template,
-            is_traced=True,
-            trace=self.trace,
+            system_role=system_role,
+            is_traced=False,
         )
 
     async def run(self, **kwargs):
@@ -83,7 +73,7 @@ Correct answer:
 Generated answer:
 {generated_answer}
         """
-        openai_response = await self.openai_chat(
+        openai_response = await self.litellm_chat(
             message=formatted_message,
             generation_name="Answer Correctness Evaluator")
         chat_response = openai_response['output']["response"]

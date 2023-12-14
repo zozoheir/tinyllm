@@ -6,7 +6,7 @@ from tinyllm.validator import Validator
 from tinyllm.util.ai_util import get_top_n_similar_vectors_index
 
 
-class InitValidator(Validator):
+class ExampleSelectorInitValidator(Validator):
     collection_name: str
 
 class InputValidator(Validator):
@@ -19,7 +19,7 @@ class OutputValidator(Validator):
 class ProcessedOutputValidator(Validator):
     best_examples: List[Dict]
 
-class InitValidator(Validator):
+class ExampleSelectorInitValidator(Validator):
     examples: List[dict]
     embedding_function: Callable
 
@@ -29,7 +29,7 @@ class ExampleSelector(Function):
                  examples=[],
                  embedding_function=default_embedding_model,
                  **kwargs):
-        val = InitValidator(examples=examples, embedding_function=embedding_function)
+        ExampleSelectorInitValidator(examples=examples, embedding_function=embedding_function)
         super().__init__(
             input_validator=InputValidator,
             output_validator=OutputValidator,

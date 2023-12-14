@@ -4,10 +4,9 @@ from textwrap import dedent
 from typing import List
 
 from tinyllm.function import Function
-from tinyllm.functions.llms.util import get_user_message, get_assistant_message
+from tinyllm.functions.llms.lite_llm import LiteLLM
+from tinyllm.functions.util.helpers import get_openai_message
 from tinyllm.validator import Validator
-from tinyllm.functions.llms.openai.openai_chat import OpenAIChat
-from tinyllm.functions.llms.openai.openai_prompt_template import OpenAIPromptTemplate
 
 INPUT_EXAMPLE = """
 Relevant context for question/answer generation:
@@ -25,19 +24,14 @@ Truthful answer: Arm raised $4.87 billion for its owner, SoftBank Group, during 
 """
 
 example_msgs = [
-    get_user_message(INPUT_EXAMPLE),
-    get_assistant_message(OUTPUT_EXAMPLE)
+    get_openai_message(role='user', content=INPUT_EXAMPLE),
+    get_openai_message(role='assistant', content=OUTPUT_EXAMPLE)
 ]
-qa_prompt_template = OpenAIPromptTemplate(
-    name="QA Data Point Generator Template",
-    system_role=dedent(f"""
+system_role=dedent(f"""
 ROLE:
 You are a knowledgeable expert. Given a context, your role is to generate a relevant question about the context and 
 provide a truthful answer based on the information in the context.
-"""),
-    messages=example_msgs,
-    is_traced=False
-)
+""")
 
 class InputQASetGenerator(Validator):
     documents: list
@@ -50,19 +44,15 @@ class OutputQASetGenerator(Validator):
 class QASetGenerator(Function):
 
     def __init__(self,
-                 prompt_template=qa_prompt_template,
                  **kwargs):
         super().__init__(input_validator=InputQASetGenerator,
                          output_validator=OutputQASetGenerator,
                          **kwargs)
 
-        self.openai_chat = OpenAIChat(
+        self.openai_chat = LiteLLM(
             name="QA Data Point Generator",
-            model='gpt-3.5-turbo',
-            max_tokens=600,
-            prompt_template=prompt_template,
-            is_traced=True,
-            trace=self.trace,
+            system_role=system_role,
+            is_traced=False,
         )
 
     async def run(self, **kwargs):

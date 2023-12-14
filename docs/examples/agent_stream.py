@@ -1,7 +1,7 @@
 import asyncio
 
 from tinyllm import default_embedding_model, langfuse_client
-from tinyllm.functions.agent.agent_stream import Agent
+from tinyllm.functions.agent.agent_stream import AgentStream
 from tinyllm.functions.agent.toolkit import Toolkit
 
 from tinyllm.functions.agent.tool import Tool
@@ -80,7 +80,7 @@ toolkit = Toolkit(
 
 llm_store = LLMStore()
 manager_llm = llm_store.get_llm_function(
-    llm_library=LLMs.LITE_LLM,
+    llm_library=LLMs.LITE_LLM_STREAM,
     system_role="You are a helpful agent that can answer questions about the user's profile using available tools.",
     name='Tinyllm manager',
     example_manager=example_manager,
@@ -94,17 +94,20 @@ manager_llm = llm_store.get_llm_function(
 
 )
 
-tiny_agent = Agent(name='TinyLLM Agent',
-                   manager_llm=manager_llm,
-                   toolkit=toolkit,
-                   debug=True,
+tiny_agent = AgentStream(name='Example stream agent',
+                         manager_llm=manager_llm,
+                         toolkit=toolkit,
+                         debug=True)
 
-                   )
 
 async def run_agent():
-    result = await tiny_agent(user_input="What is the user's birthday?")
-    return result
+    msgs = []
+    async for msg in tiny_agent(user_input="What is the user's birthday?"):
+        msgs.append(msg)
+        print(msg)
+    return msgs
 
 
-# Run the asynchronous test
+# Run
 result = asyncio.run(run_agent())
+print(result)

@@ -1,8 +1,6 @@
-import datetime as dt
 import json
 from typing import Union, Optional
 
-from langfuse.model import CreateSpan
 
 from smartpy.utility.log_util import getLogger
 from tinyllm.function import Function
@@ -12,7 +10,7 @@ from tinyllm.functions.agent.toolkit import Toolkit
 from tinyllm.functions.examples.example_manager import ExampleManager
 from tinyllm.functions.memory.memory import Memory
 from tinyllm.functions.util.helpers import get_openai_message
-from tinyllm.util.trace_util import langfuse_span
+from tinyllm.util.tracing.span import langfuse_span
 from tinyllm.validator import Validator
 
 logger = getLogger(__name__)
@@ -73,8 +71,8 @@ class Agent(AgentBase, Function):
                     first_choice_message['content'] = ''
                     tool_calls = first_choice_message['tool_calls']
 
-                    res = await self.memorize(message=first_choice_message,
-                                              parent_observation=self.parent_observation)
+                    await self.memorize(message=first_choice_message,
+                                        parent_observation=self.parent_observation)
 
                     # Memorize tool result
                     tool_call = tool_calls[0]
