@@ -74,11 +74,11 @@ class TestStreamingAgent(AsyncioTestCase):
         manager_llm = llm_store.get_llm_function(
             llm_library=LLMs.LITE_LLM,
             system_role="You are a helpful agent that can answer questions about the user's profile using available tools.",
-            name='Tinyllm manager',
+            name='Manager',
             is_traced=False,
             debug=False
         )
-        tiny_agent = Agent(name='Test: agent stream',
+        tiny_agent = Agent(name='Test: agent',
                            manager_llm=manager_llm,
                            toolkit=toolkit,
                            memory=Memory(name='Agent memory', is_traced=False),

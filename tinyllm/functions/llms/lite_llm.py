@@ -9,7 +9,7 @@ from tinyllm.functions.examples.example_manager import ExampleManager
 from tinyllm.functions.memory.memory import Memory
 from tinyllm.functions.examples.example_selector import ExampleSelector
 from tinyllm.functions.util.helpers import *
-from tinyllm.util.trace_util import langfuse_generation
+from tinyllm.util.tracing.generation import langfuse_generation
 from tinyllm.validator import Validator
 from tenacity import retry, stop_after_attempt, wait_random_exponential, retry_if_exception_type
 
@@ -84,7 +84,7 @@ class LiteLLM(Function):
         wait=wait_random_exponential(min=1, max=10),
         retry=retry_if_exception_type((OpenAIError))
     )
-    @langfuse_generation
+    @langfuse_generation()
     async def get_completion(self,
                              model,
                              temperature,

@@ -1,11 +1,9 @@
 import datetime as dt
 from typing import Dict, Callable
 
-from langfuse.model import CreateSpan, UpdateSpan
-
 from tinyllm.function import Function
 from tinyllm.functions.util.helpers import get_openai_message
-from tinyllm.util.trace_util import langfuse_span
+from tinyllm.util.tracing.span import langfuse_span
 from tinyllm.validator import Validator
 
 
