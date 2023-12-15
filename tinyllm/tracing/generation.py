@@ -1,8 +1,8 @@
 import datetime as dt
 
-from langfuse.model import UpdateGeneration, Usage, CreateGeneration, CreateSpan, UpdateSpan
+from langfuse.model import UpdateGeneration, Usage, CreateGeneration
 
-from tinyllm.functions.util.helpers import count_tokens
+from tinyllm.util.helpers import count_tokens
 from tinyllm.state import States
 
 

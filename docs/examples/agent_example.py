@@ -1,12 +1,12 @@
 import asyncio
 
-from tinyllm.functions.agent.agent import Agent
-from tinyllm.functions.agent.toolkit import Toolkit
-from tinyllm.functions.llms.llm_store import LLMStore, LLMs
+from tinyllm.agent import Agent
+from tinyllm.agent import Toolkit
+from tinyllm.llms import LLMStore, LLMs
 
-from tinyllm.functions.agent.tool import Tool
-from tinyllm.functions.eval.evaluator import Evaluator
-from tinyllm.functions.memory.memory import Memory
+from tinyllm.agent import Tool
+from tinyllm.eval import Evaluator
+from tinyllm.memory.memory import Memory
 
 
 loop = asyncio.get_event_loop()
@@ -63,7 +63,7 @@ llm_store = LLMStore()
 # Define the test class
 
 async def run_agent():
-    manager_llm = llm_store.get_llm_function(
+    llm = llm_store.get_llm(
         llm_library=LLMs.LITE_LLM,
         system_role="You are a helpful agent that can answer questions about the user's profile using available tools.",
         name='Tinyllm manager',
@@ -71,9 +71,9 @@ async def run_agent():
         debug=False
     )
     tiny_agent = Agent(name='Test: agent',
-                       manager_llm=manager_llm,
+                       llm=llm,
                        toolkit=toolkit,
-                       memory=Memory(name='Agent memory', is_traced=False),
+                       memory=BufferMemory(name='Agent memory', is_traced=False),
                        evaluators=[
                            AnswerCorrectnessEvaluator(
                                name="Eval: correct user info",

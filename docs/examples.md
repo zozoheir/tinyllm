@@ -4,8 +4,8 @@
 
 import asyncio
 
-from tinyllm.functions.llms.openai.openai_chat import OpenAIChat
-from tinyllm.functions.llms.openai.openai_prompt_template import OpenAIPromptTemplate
+from tinyllm.llms import OpenAIChat
+from tinyllm.llms import OpenAIPromptTemplate
 
 prompt_template = OpenAIPromptTemplate(
     name="TinyLLM Agent Prompt Template",
@@ -27,7 +27,7 @@ print(response)
 ```python
 import asyncio
 
-from tinyllm.functions.llms.openai.openai_chat_agent import OpenAIChatAgent
+from tinyllm.llms import OpenAIChatAgent
 
 test_openai_functions = [
     {
@@ -80,11 +80,11 @@ string_list = [
     {"content": "Fake content 3", "summary": "Fake summary 3", "title": "Fake title 3"}
 ]
 
-context_builder = SingleSourceDocsContextBuilder(start_string="KNOWLEDGE GRAPH",
-                                        end_string="KNOWLEDGE GRAPH",
-                                        available_token_size=1000)
-final_context = context_builder.get_context(
-    docs=string_list,
+context_builder = SingleSourceDocumentsFolderFitter(start_string="KNOWLEDGE GRAPH",
+                                                    end_string="KNOWLEDGE GRAPH",
+                                                    available_token_size=1000)
+final_context = context_builder.format(
+    search_results=string_list,
     header="[post]",
     ignore_keys=["summary", "title"]
 )
@@ -146,10 +146,10 @@ import asyncio
 
 from tinyllm.functions.chain import Chain
 from tinyllm.functions.decision import Decision
-from tinyllm.functions.llms.openai.openai_chat import OpenAIChat
+from tinyllm.llms import OpenAIChat
 from tinyllm.functions.concurrent import Concurrent
 from tinyllm.function import Function
-from tinyllm.functions.llms.openai.openai_prompt_template import OpenAIPromptTemplate
+from tinyllm.llms import OpenAIPromptTemplate
 
 good_loan_application_example = """
 The loan application showcases a commendable financial profile with an excellent credit history. The applicant's credit score

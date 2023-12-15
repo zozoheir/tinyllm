@@ -70,7 +70,7 @@ tinyllm is integrated with Langfuse for tracing chains, functions and agents.
 ![Screenshot 2023-08-11 at 12 45 07 PM](https://github.com/zozoheir/tinyllm/assets/42655961/4d7c6ae9-e9a3-4795-9496-ad7905bc361e)
 
 ### Managing configs and credentials
-Configs are managed through a tinyllm.yaml file. It gets picked up at runtime in tinyllm.__init__ and can be placed in any of /Documents, the root folder, or the current working directory. Here is a sample yaml config file:
+Configs are managed through a tinyllm.yaml file. It gets picked up at runtime in tinyllm.__init__ and can be placed in any of /DocumentStore, the root folder, or the current working directory. Here is a sample yaml config file:
 ```yaml
 LLM_PROVIDERS:
   OPENAI_API_KEY: ""

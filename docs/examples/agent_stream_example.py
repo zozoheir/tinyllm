@@ -1,11 +1,11 @@
 import asyncio
 
-from tinyllm.functions.agent.agent_stream import AgentStream
-from tinyllm.functions.agent.toolkit import Toolkit
-from tinyllm.functions.llms.llm_store import LLMStore, LLMs
+from tinyllm.agent import AgentStream
+from tinyllm.agent import Toolkit
+from tinyllm.llms import LLMStore, LLMs
 
-from tinyllm.functions.agent.tool import Tool
-from tinyllm.functions.eval.evaluator import Evaluator
+from tinyllm.agent import Tool
+from tinyllm.eval import Evaluator
 
 loop = asyncio.get_event_loop()
 
@@ -55,7 +55,7 @@ toolkit = Toolkit(
 llm_store = LLMStore()
 
 async def run_agent_stream():
-    manager_llm_stream = llm_store.get_llm_function(
+    llm_stream = llm_store.get_llm(
         llm_library=LLMs.LITE_LLM_STREAM,
         system_role="You are a helpful agent that can answer questions about the user's profile using available tools.",
         name='Tinyllm manager',
@@ -63,7 +63,7 @@ async def run_agent_stream():
     )
 
     tiny_agent = AgentStream(name='Test: agent stream',
-                             manager_llm=manager_llm_stream,
+                             llm=llm_stream,
                              toolkit=toolkit,
                              evaluators=[
                                  AnswerCorrectnessEvaluator(

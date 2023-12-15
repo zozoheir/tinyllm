@@ -128,6 +128,7 @@ class Function:
         # If the attribute is a Function instance, set its trace attribute
         if isinstance(value, Function):
             value.trace = self.trace
+            self.is_traced = False
 
     @fallback_decorator
     async def __call__(self, **kwargs):
