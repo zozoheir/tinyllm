@@ -30,6 +30,11 @@ else
     exit 1
 fi
 
+# Clearing the dist/ directory
+echo "Cleaning up the dist/ directory..."
+rm -rf dist/*
+
+
 # Build the package
 python setup.py sdist bdist_wheel
 
