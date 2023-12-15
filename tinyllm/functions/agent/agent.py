@@ -1,5 +1,5 @@
 import json
-from typing import Union, Optional, Type
+from typing import Union, Optional, Type, TypeVar
 
 from smartpy.utility.log_util import getLogger
 from tinyllm.function import Function
@@ -18,8 +18,11 @@ logger = getLogger(__name__)
 class AgentInitValidator(Validator):
     manager_llm: Function
     toolkit: Toolkit
-    memory: Union[Type[Memory], None]
+    memory: Memory
     example_manager: Optional[ExampleManager]
+
+class AgentInputValidator(Validator):
+    user_input: str
 
 
 class Agent(AgentBase, Function):
@@ -33,7 +36,9 @@ class Agent(AgentBase, Function):
         AgentInitValidator(manager_llm=manager_llm,
                            toolkit=toolkit,
                            memory=memory)
-        super().__init__(**kwargs)
+        super().__init__(
+            input_validator=AgentInputValidator,
+            **kwargs)
         self.toolkit = toolkit
         self.manager_llm = manager_llm
         self.memory = memory
@@ -41,11 +46,10 @@ class Agent(AgentBase, Function):
 
     @langfuse_span(name='User interaction', input_key='user_input', visual_output_lambda=lambda x:x['response']['choices'][0]['message'])
     async def run(self,
-                  user_input,
                   **kwargs):
 
         input_openai_msg = get_openai_message(role='user',
-                                              content=user_input)
+                                              content=kwargs['user_input'])
 
         while True:
 
