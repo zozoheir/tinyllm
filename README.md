@@ -3,24 +3,18 @@
 </p>
 
 
-# What is tinyllm?
+# 🚀 What is tinyllm?
 tinyllm is a lightweight framework for developing, debugging and monitoring LLM powered applications at scale. It sits as a layer between your Web application and your LLM libraries.
-`Function` and its streaming equivalent `FunctionStream` are designed to standardize LLM function calls for production use. 
-It provides a structured approach to handle various aspects of function execution, including input/output validation, output processing, error handling, evaluation, all while maintaining high standards of code clarity and efficiency.
+`Function` and its streaming equivalent `FunctionStream` are designed to standardize and control LLM function calls for scalable production use. 
+It provides a structured approach to handle various aspects of function execution, including input/output validation, output processing, error handling, evaluation, all while keeping code readable. You can create a chain with its own prompt, LLM model and evaluators all in a single file. No need to jump through many class definitions, no spaghetti code. With that said, any other library agent/chain (langchain/llama-index...) can seamlessly be imported as a tinyllm Function.
 
-Over time, Software 2.0 will be about LLMs as multimodal functions/APIs. Given the non-deterministic nature of LLMs, validation, IO standardization and evaluation become a core problem to solve for any app in production. tinyllm comes to solve this problem.
-Any other model or agent from any library (langchain/llama-index...) can seamlessly be integrated as a tinyllm Function.
-
-## Install
+## 🚀 Install
 ```
 pip install tinyllm
 ```
-## Features
-- **litellm integration:** 20+ model providers available (OpenAI, Huggingface etc ...)
-- **Prompt engineering:** utility modules for prompt engineering, optimization and string formatting
-- **Layered validation:** 3 validations happen during the Function lifecycle: input, output and output processing.
-- **IO Standardization:** Maintains consistent response patterns and failure handling across different function implementations.
-- **Observability:** Integrates with Langfuse for monitoring and tracing of function execution at scale.
+## 🚀 Features
+#### Build LLM apps with:
+- **20+ model providers** available (OpenAI, Huggingface etc ...)
 - **Agents:** An agent is an LLM with Memory, a Toolkit and an ExampleManager
 - **Tools and Toolkits**: let your Agent run python functions using Tools
 - **Example manager**: constant examples + variable examples using and example selector with similarity search
@@ -28,8 +22,20 @@ pip install tinyllm
 - **Retrieval Augmented Generation**: RAG tools to search and generate answers
 - **Evaluation:** Evaluators can be defined to evaluate and log the quality of the function's output in real-time
 - **PGVector store:** PostgreSQL DB with the pgvector extension for vector storage.
+- **Prompt engineering tools:** utility modules for prompt engineering, optimization and string formatting
+
+#### Deploy to production with:
+- **Layered validation:** 3 validations happen during the Function lifecycle: input, output and output processing.
+- **IO Standardization:** Maintains consistent response patterns and failure handling across different function implementations.
+- **Observability:** Integrates with Langfuse for monitoring and tracing of function execution at scale.
 - **Logging:** Records detailed logs for debugging and auditing purposes.
 - **Finite State Machine design:** Manages the function's lifecycle through defined states, ensuring controlled and predictable execution.
+
+
+ 
+## Getting started
+* ####  [Start from these examples of using an Agent with a Toolkit](https://github.com/zozoheir/tinyllm/blob/main/docs/examples/)
+
 
 
 ## Background and goals
@@ -89,13 +95,4 @@ INFO | tinyllm.function | 2023-12-07 16:45:44,040 : [Test: LiteLLMChat|0a6c5186-
 INFO | tinyllm.function | 2023-12-07 16:45:44,041 : [Test: LiteLLMChat|0a6c5186-8361-4245-b555-625a0595d744] transition to: States.PROCESSED_OUTPUT_VALIDATION 
 INFO | tinyllm.function | 2023-12-07 16:45:44,041 : [Test: LiteLLMChat|0a6c5186-8361-4245-b555-625a0595d744] transition to: States.COMPLETE 
 ```
-
-
-
- 
-## How to and examples
-* ####  [Check all examples here](https://github.com/zozoheir/tinyllm/blob/main/docs/examples.md)
-## Function and FunctionStream API model
-* ####  [Function and FunctionStream model](https://github.com/zozoheir/tinyllm/blob/main/docs/api_model.md)
-
 
