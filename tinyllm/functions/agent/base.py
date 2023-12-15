@@ -30,7 +30,7 @@ class AgentBase:
                 examples.append(usr_msg)
                 examples.append(assistant_msg)
 
-        memories = [] if self.memory is None else self.memory.get_memories()
+        memories = [] if self.memory is None else await self.memory.get_memories()
 
         messages = [system_role] \
                    + memories + \

@@ -6,7 +6,7 @@ from tinyllm.functions.agent.base import AgentBase
 
 from tinyllm.functions.agent.toolkit import Toolkit
 from tinyllm.functions.examples.example_manager import ExampleManager
-from tinyllm.functions.memory.memory import Memory
+from tinyllm.functions.memory.memory import BufferMemory
 from tinyllm.functions.util.helpers import get_openai_message
 from tinyllm.tracing.span import langfuse_span_generator
 
@@ -17,7 +17,7 @@ class AgentStream(AgentBase, FunctionStream):
     def __init__(self,
                  manager_llm: FunctionStream,
                  toolkit: Toolkit,
-                 memory=Memory(name='agent_memory', is_traced=False),
+                 memory=BufferMemory(name='Agent memory', is_traced=False),
                  example_manager=ExampleManager(),
                  **kwargs):
         super().__init__(**kwargs)

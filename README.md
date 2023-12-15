@@ -13,7 +13,7 @@ Any other model or agent from any library (langchain/llama-index...) can seamles
 
 ## Install
 ```
-pip install git+https://github.com/zozoheir/tinyllm.git
+pip install tinyllm
 ```
 ## Features
 - **litellm integration:** 20+ model providers available (OpenAI, Huggingface etc ...)

@@ -1,3 +1,5 @@
+from abc import abstractmethod
+
 from tinyllm.function import Function
 from tinyllm.functions.util.helpers import count_tokens
 from tinyllm.validator import Validator
@@ -16,7 +18,7 @@ class Memory(Function):
             output_validator=MemoryOutputValidator,
             **kwargs
         )
-        self.memories = []
+        self.memories = None
 
     async def run(self, **kwargs):
         self.memories.append(kwargs['message'])
@@ -28,7 +30,27 @@ class Memory(Function):
                             header='',
                             ignore_keys=[])
 
-    def get_memories(self,
-                     method='list'):
-        if method == 'list':
-            return self.memories
+    @abstractmethod
+    async def load_memories(self):
+        pass
+
+    @abstractmethod
+    async def get_memories(self):
+        pass
+
+
+class BufferMemoryInitValidator(Validator):
+    buffer_size: int
+
+class BufferMemory(Memory):
+
+    def __init__(self,
+                 buffer_size=5,
+                 **kwargs):
+        BufferMemoryInitValidator(buffer_size=buffer_size)
+        super().__init__(**kwargs)
+        self.buffer_size = buffer_size
+        self.memories = []
+
+    async def get_memories(self):
+        return self.memories[-self.buffer_size:]

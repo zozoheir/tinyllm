@@ -9,7 +9,7 @@ from tinyllm.functions.llms.llm_store import LLMStore, LLMs
 
 from tinyllm.functions.agent.tool import Tool
 from tinyllm.functions.eval.evaluator import Evaluator
-from tinyllm.functions.memory.memory import Memory
+from tinyllm.functions.memory.memory import Memory, BufferMemory
 
 
 class AnswerCorrectnessEvaluator(Evaluator):
@@ -75,7 +75,7 @@ class TestStreamingAgent(AsyncioTestCase):
         tiny_agent = Agent(name='Test: agent',
                            manager_llm=manager_llm,
                            toolkit=toolkit,
-                           memory=Memory(name='Agent memory', is_traced=False),
+                           memory=BufferMemory(name='Agent memory', is_traced=False),
                            evaluators=[
                                AnswerCorrectnessEvaluator(
                                    name="Eval: correct user info",

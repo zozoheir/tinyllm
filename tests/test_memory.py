@@ -1,14 +1,14 @@
 import unittest
 
-from tinyllm.functions.memory.memory import Memory
+from tinyllm.functions.memory.memory import Memory, BufferMemory
 from tinyllm.state import States
 from tests.base import AsyncioTestCase
 
 
-class TestOpenAIMemory(AsyncioTestCase):
+class TestMemory(AsyncioTestCase):
 
-    def test_openai_memory(self):
-        memory = Memory(name="Memory test")
+    def test_memory(self):
+        memory = BufferMemory(name="Memory test")
 
         # User message
         msg = {

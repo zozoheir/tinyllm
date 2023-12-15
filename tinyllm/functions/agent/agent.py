@@ -1,6 +1,5 @@
 import json
-from typing import Union, Optional
-
+from typing import Union, Optional, Type
 
 from smartpy.utility.log_util import getLogger
 from tinyllm.function import Function
@@ -8,7 +7,7 @@ from tinyllm.functions.agent.base import AgentBase
 
 from tinyllm.functions.agent.toolkit import Toolkit
 from tinyllm.functions.examples.example_manager import ExampleManager
-from tinyllm.functions.memory.memory import Memory
+from tinyllm.functions.memory.memory import BufferMemory, Memory
 from tinyllm.functions.util.helpers import get_openai_message
 from tinyllm.tracing.span import langfuse_span
 from tinyllm.validator import Validator
@@ -19,7 +18,7 @@ logger = getLogger(__name__)
 class AgentInitValidator(Validator):
     manager_llm: Function
     toolkit: Toolkit
-    memory: Union[Memory, None]
+    memory: Union[Type[Memory], None]
     example_manager: Optional[ExampleManager]
 
 
@@ -28,7 +27,7 @@ class Agent(AgentBase, Function):
     def __init__(self,
                  manager_llm: Function,
                  toolkit: Toolkit,
-                 memory=Memory(name='agent_memory', is_traced=False),
+                 memory=BufferMemory(name='agent_memory', is_traced=False),
                  example_manager=ExampleManager(),
                  **kwargs):
         AgentInitValidator(manager_llm=manager_llm,
