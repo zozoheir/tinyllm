@@ -8,6 +8,9 @@ tinyllm is a lightweight framework for developing, debugging and monitoring LLM 
 `Function` and its streaming equivalent `FunctionStream` are designed to standardize and control LLM function calls for scalable production use. 
 It provides a structured approach to handle various aspects of function execution, including input/output validation, output processing, error handling, evaluation, all while keeping code readable. You can create a chain with its own prompt, LLM model and evaluators all in a single file. No need to jump through many class definitions, no spaghetti code. With that said, any other library agent/chain (langchain/llama-index...) can seamlessly be imported as a tinyllm Function.
 
+<iframe width="768" height="432" src="https://miro.com/app/live-embed/uXjVNCWhdeo=/?moveToViewport=-373,-937,2835,1385&embedId=854818890885" frameborder="0" scrolling="no" allow="fullscreen; clipboard-read; clipboard-write" allowfullscreen></iframe>
+
+
 ## 🚀 Install
 ```
 pip install tinyllm
