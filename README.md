@@ -37,6 +37,10 @@ pip install tinyllm
 * ####  [Start from these examples of using an Agent with a Toolkit](https://github.com/zozoheir/tinyllm/blob/main/docs/examples/)
 
 
+<p align="center">
+    <img src="https://github.com/zozoheir/tinyllm/assets/42655961/0284f94d-7c5d-4abb-900d-3fc3381d61dc" width="70%" height="70%" alt="tinyllm logo">
+</p>
+
 
 ## Background and goals
 Many of the LLM libraries today (langchain, llama-index, deep pavlov...) have made serious software design commitments which I believe were too early to make given the infancy of the industry.
