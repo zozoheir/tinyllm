@@ -4,8 +4,8 @@
 
 
 # 🚀 What is tinyllm?
-tinyllm is a lightweight framework for developing, debugging and monitoring LLM powered applications at scale. It sits as a layer between your Web application and your LLM libraries.
-`Function` and its streaming equivalent `FunctionStream` are designed to standardize and control LLM function calls for scalable production use. 
+tinyllm is a lightweight framework for developing, debugging and monitoring LLM and Agent powered applications at scale. The main goal of the library is to keep code as simple and readable as possible while allowing user to create complex agents or LLM workflows in production.
+`Function` and its streaming equivalent `FunctionStream` are the core classes in tinyllm. They are designed to standardize and control LLM function calls for scalable production use in stream mode and otherwise.
 It provides a structured approach to handle various aspects of function execution, including input/output validation, output processing, error handling, evaluation, all while keeping code readable. You can create a chain with its own prompt, LLM model and evaluators all in a single file. No need to jump through many class definitions, no spaghetti code. With that said, any other library agent/chain (langchain/llama-index...) can seamlessly be imported as a tinyllm Function.
 
 
