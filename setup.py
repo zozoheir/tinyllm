@@ -7,7 +7,7 @@ setup(name='tinyllm',
       install_requires=[
           'click',
           'tenacity',
-          'langfuse',
+          'langfuse==1.14.0',
           'litellm',
           'openai',
           'pathspec',
