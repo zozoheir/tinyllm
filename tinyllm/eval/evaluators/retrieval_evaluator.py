@@ -1,7 +1,7 @@
 from smartpy.utility.ai_util import get_cosine_similarity
+from tinyllm.embeddings.models import default_embedding_function
 from tinyllm.eval.evaluator import Evaluator
 
-from tinyllm import default_embedding_model
 
 class RetrievalEvaluator(Evaluator):
 
@@ -15,12 +15,12 @@ class RetrievalEvaluator(Evaluator):
         chunk_texts = [chunk["text"] for chunk in retrieved_chunks]
         chunk_similarities = []
 
-        question_vector = default_embedding_model(question)
+        question_vector = default_embedding_function(question)
         for chunk_text in chunk_texts:
-            chunk_vector = default_embedding_model(chunk_text)
+            chunk_vector = default_embedding_function(chunk_text)
             chunk_similarities.append(get_cosine_similarity(chunk_vector, question_vector))
 
-        truth_vector = default_embedding_model(truth_context)
+        truth_vector = default_embedding_function(truth_context)
         truth_similarity = get_cosine_similarity(truth_vector, question_vector)
         retrieved_similarity = sum(chunk_similarities) / len(chunk_similarities)
 

@@ -1,6 +1,6 @@
 from typing import List, Dict, Optional, Callable
 
-from tinyllm import default_embedding_model
+from tinyllm.embeddings.models import default_embedding_function
 from tinyllm.function import Function
 from tinyllm.validator import Validator
 from tinyllm.util.ai_util import get_top_n_similar_vectors_index
@@ -26,8 +26,8 @@ class ExampleSelectorInitValidator(Validator):
 
 class ExampleSelector(Function):
     def __init__(self,
+                 embedding_function=default_embedding_function,
                  examples=[],
-                 embedding_function=default_embedding_model,
                  **kwargs):
         ExampleSelectorInitValidator(examples=examples, embedding_function=embedding_function)
         super().__init__(
