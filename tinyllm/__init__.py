@@ -3,7 +3,6 @@ import os
 
 from pathlib import Path, PosixPath
 
-from sentence_transformers import SentenceTransformer
 
 from smartpy.utility.log_util import getLogger
 from langfuse import Langfuse
@@ -55,6 +54,3 @@ langfuse_client = Langfuse(
     flush_interval=0.1,
 )
 
-
-embedding_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
-default_embedding_model = lambda x: embedding_model.encode(x)
