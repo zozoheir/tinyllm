@@ -1,5 +1,6 @@
 import unittest
 
+from tinyllm.tests.base import AsyncioTestCase
 from tinyllm.agent.agent_stream import AgentStream
 from tinyllm.agent.tool import Tool
 from tinyllm.agent.toolkit import Toolkit
@@ -7,7 +8,6 @@ from tinyllm.eval.evaluator import Evaluator
 from tinyllm.examples.example_manager import ExampleManager
 from tinyllm.llms.llm_store import LLMStore, LLMs
 from tinyllm.memory.memory import BufferMemory
-from tinyllm.tests.base import AsyncioTestCase
 
 
 class AnswerCorrectnessEvaluator(Evaluator):
@@ -72,14 +72,14 @@ class TestStreamingAgent(AsyncioTestCase):
             llm=llm,
             example_manager=ExampleManager(),
             toolkit=toolkit,
-            memory=BufferMemory(name='Agent memory'),
+            memory=BufferMemory(name='Agent memory', is_traced=False),
             evaluators=[
                 AnswerCorrectnessEvaluator(
                     name="Eval: correct user info",
+                    is_traced=False,
                 ),
             ],
             debug=True,
-            is_traced=True
         )
 
         async def async_test():

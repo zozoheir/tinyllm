@@ -7,7 +7,9 @@ from tinyllm.agent.base import AgentBase
 
 from tinyllm.agent.toolkit import Toolkit
 from tinyllm.examples.example_manager import ExampleManager
-from tinyllm.memory.memory import Memory
+from tinyllm.llms.llm_store import LLMStore, LLMs
+from tinyllm.memory.memory import Memory, BufferMemory
+from tinyllm.prompt_manager import PromptManager
 from tinyllm.util.helpers import get_openai_message
 from tinyllm.tracing.span import langfuse_span
 from tinyllm.validator import Validator
@@ -18,8 +20,8 @@ logger = getLogger(__name__)
 class AgentInitValidator(Validator):
     system_role: str
     llm: Function
-    toolkit: Toolkit
     memory: Memory
+    toolkit: Optional[Toolkit]
     example_manager: Optional[ExampleManager]
 
 
@@ -27,22 +29,39 @@ class AgentInputValidator(Validator):
     user_input: str
 
 
-class Agent(AgentBase, Function):
+llm_store = LLMStore()
+
+
+class Agent(Function):
 
     def __init__(self,
+                 system_role: str,
+                 llm: Function = llm_store.get_llm(
+                     name='LiteLLM',
+                     llm_library=LLMs.LITE_LLM,
+                     is_traced=False,
+                 ),
+                 memory: Memory = BufferMemory(name='Agent memory', is_traced=False),
+                 toolkit: Optional[Toolkit] = None,
+                 example_manager: Optional[ExampleManager] = ExampleManager(),
                  **kwargs):
-        AgentInitValidator(llm=kwargs['llm'],
-                           toolkit=kwargs['toolkit'],
-                           memory=kwargs['memory'],
-                           system_role=kwargs['system_role'],
-                           example_manager=kwargs['example_manager'])
-        function_attributes = [key for key in kwargs.keys() if key in list(Function(name='util').__dict__.keys())]
-        Function.__init__(
-            self,
+        AgentInitValidator(system_role=system_role,
+                           llm=llm,
+                           toolkit=toolkit,
+                           memory=memory,
+                           example_manager=example_manager)
+        super().__init__(
             input_validator=AgentInputValidator,
-            **{key: kwargs[key] for key in function_attributes})
-        AgentBase.__init__(self, **kwargs)
-
+            **kwargs)
+        self.system_role = system_role
+        self.llm = llm
+        self.memory = memory
+        self.toolkit = toolkit
+        self.prompt_manager = PromptManager(
+            system_role=system_role,
+            example_manager=example_manager,
+            memory=memory,
+        )
 
     @langfuse_span(name='User interaction', input_key='user_input',
                    visual_output_lambda=lambda x: x['response']['choices'][0]['message'])
@@ -56,7 +75,7 @@ class Agent(AgentBase, Function):
 
             prompt_messages = await self.prompt_manager.format(message=input_msg)
             response_msg = await self.llm(messages=prompt_messages,
-                                          tools=self.toolkit.as_dict_list(),
+                                          tools=self.toolkit.as_dict_list() if self.toolkit else None,
                                           parent_observation=self.parent_observation)
             await self.prompt_manager.memory(message=input_msg)
 
@@ -98,4 +117,3 @@ class Agent(AgentBase, Function):
                     return {'response': response_msg['output']['response']}
             else:
                 raise (Exception(response_msg))
-

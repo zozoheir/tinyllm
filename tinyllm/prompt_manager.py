@@ -17,11 +17,7 @@ class PromptManager:
 
     async def format(self,
                      message):
-        # system prompt
-        # memories
-        # constant examples
-        # selected examples
-        # input message
+
         system_role = get_openai_message(role='system',
                                          content=self.system_role)
         memories = [] if self.memory is None else await self.memory.get_memories()
@@ -37,14 +33,16 @@ class PromptManager:
                 examples.append(usr_msg)
                 examples.append(assistant_msg)
 
+        answer_format_msg = [get_openai_message(role='user', content=self.answer_formatting_prompt)] if self.answer_formatting_prompt is not None else []
 
-        messages = [system_role] \
-                   + memories + \
-                   examples + \
-                   [message]
-
-        if self.answer_formatting_prompt is not None:
-            messages += [get_openai_message(role='user', content=self.answer_formatting_prompt)]
+        # -- Messages order --
+        # system prompt
+        # memories
+        # constant examples
+        # selected (variable) examples
+        # Answer formatting prompt
+        # input message
+        messages = [system_role] + memories + examples + answer_format_msg + [message]
 
         return messages
 

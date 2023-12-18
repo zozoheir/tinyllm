@@ -1,34 +1,47 @@
 import json
+from typing import Optional
 
 from smartpy.utility.log_util import getLogger
 from tinyllm.agent.agent import AgentInitValidator, AgentInputValidator
-from tinyllm.function_stream import FunctionStream
-from tinyllm.agent.base import AgentBase
+from tinyllm.function import Function
 
 from tinyllm.agent.toolkit import Toolkit
 from tinyllm.examples.example_manager import ExampleManager
-from tinyllm.memory.memory import BufferMemory
+from tinyllm.function_stream import FunctionStream
+from tinyllm.memory.memory import BufferMemory, Memory
+from tinyllm.prompt_manager import PromptManager
 from tinyllm.util.helpers import get_openai_message
 from tinyllm.tracing.span import langfuse_span_generator
 
 logger = getLogger(__name__)
 
-
-class AgentStream(AgentBase, FunctionStream):
+class AgentStream(FunctionStream):
 
     def __init__(self,
+                 system_role: str,
+                 llm: Function,
+                 memory: Memory = BufferMemory(name='Agent memory', is_traced=False),
+                 toolkit: Optional[Toolkit] = None,
+                 example_manager: Optional[ExampleManager] = None,
                  **kwargs):
-        AgentInitValidator(llm=kwargs['llm'],
-                           toolkit=kwargs['toolkit'],
-                           memory=kwargs['memory'],
-                           system_role=kwargs['system_role'],
-                           example_manager=kwargs['example_manager'])
-        function_attributes = [key for key in kwargs.keys() if key in list(FunctionStream(name='util').__dict__.keys())]
-        FunctionStream.__init__(
-            self,
+        AgentInitValidator(system_role=system_role,
+                           llm=llm,
+                           toolkit=toolkit,
+                           memory=memory,
+                           example_manager=example_manager)
+        super().__init__(
             input_validator=AgentInputValidator,
-            **{key: kwargs[key] for key in function_attributes})
-        AgentBase.__init__(self, **kwargs)
+            **kwargs)
+        self.system_role = system_role
+        self.llm = llm
+        self.memory = memory
+        self.toolkit = toolkit
+        self.example_manager = example_manager
+        self.prompt_manager = PromptManager(
+            system_role=system_role,
+            example_manager=example_manager,
+            memory=memory,
+        )
 
     @langfuse_span_generator(name='User interaction', input_key='user_input',
                              visual_output_lambda=lambda x: x['output']['completion'])

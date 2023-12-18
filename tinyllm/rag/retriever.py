@@ -10,7 +10,7 @@ class RetrieverInitValidator(Validator):
 
 
 class RetrieverInputValidator(Validator):
-    search_query: str
+    input: str
 
 
 class RetrieverOutputValidator(Validator):
@@ -34,8 +34,6 @@ class Retriever(Function):
 
     async def run(self, **kwargs):
         retrieved_docs = await self.search(**kwargs)
-        retrieved_docs = await self.rerank(retrieved_docs=retrieved_docs,
-                                           **kwargs)
         context = await self.build_context(retrieved_docs=retrieved_docs,
                                            **kwargs)
         return {"context": context}

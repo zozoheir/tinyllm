@@ -34,7 +34,7 @@ class LiteLLM(Function):
                          **kwargs)
 
     async def run(self, **kwargs):
-        with_tools = 'tools' in kwargs
+        with_tools = kwargs.get('tools', None) is not None
         tools_args = {}
         if with_tools: tools_args = {'tools': kwargs['tools'],
                                      'tool_choice': kwargs.get('tool_choice', 'auto')}
@@ -66,12 +66,15 @@ class LiteLLM(Function):
                              messages,
                              parent_observation=None,
                              **kwargs):
+        completion_args = {
+            'model': kwargs.get('model', model),
+            'temperature': kwargs.get('temperature', temperature),
+            'n': kwargs.get('n', n),
+            'max_tokens': kwargs.get('max_tokens', max_tokens),
+        }
         api_result = await acompletion(
-            model=model,
-            temperature=temperature,
-            n=n,
-            max_tokens=max_tokens,
             messages=messages,
+            **completion_args,
             **kwargs
         )
         return api_result.model_dump()
