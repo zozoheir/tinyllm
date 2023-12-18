@@ -1,7 +1,7 @@
 from smartpy.utility.ai_util import get_cosine_similarity
-from tinyllm import default_embedding_model
 from tinyllm.eval.evaluator import Evaluator
 
+from tinyllm import default_embedding_model
 
 class RetrievalEvaluator(Evaluator):
 
