@@ -1,7 +1,7 @@
 from typing import Union, List, Dict
 
 import tiktoken
-from langchain.callbacks.openai_info import standardize_model_name, MODEL_COST_PER_1K_TOKENS, \
+from langchain_community.callbacks.openai_info import standardize_model_name, MODEL_COST_PER_1K_TOKENS, \
     get_openai_token_cost_for_model
 
 from tinyllm.util.prompt_util import stringify_dict

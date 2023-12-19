@@ -12,6 +12,7 @@ class EvaluatorInputValidator(Validator):
     output: Any
     function: Any
 
+
 class EvaluatorOutputValidator(Validator):
     evals: dict
     metadata: Optional[dict] = {}
@@ -20,13 +21,14 @@ class EvaluatorOutputValidator(Validator):
 class Evaluator(Function):
 
     def __init__(self,
+                 is_traced: bool = False,
                  **kwargs):
         super().__init__(output_validator=EvaluatorOutputValidator,
                          input_validator=EvaluatorInputValidator,
-                         **kwargs)
+                         is_traced=is_traced,
+                                   ** kwargs)
 
     async def process_output(self, **kwargs):
-
         for name, score in kwargs['evals'].items():
             self.input['observation'].score(
                 CreateScore(

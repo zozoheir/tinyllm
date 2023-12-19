@@ -7,6 +7,7 @@ from tenacity import stop_after_attempt, wait_random_exponential, retry_if_excep
 
 from tinyllm.llms.lite_llm import LiteLLM
 from tinyllm.function_stream import FunctionStream
+from tinyllm.tracing.generation import langfuse_generation_stream
 from tinyllm.util.helpers import count_tokens
 
 
@@ -17,43 +18,22 @@ class LiteLLMStream(LiteLLM, FunctionStream):
         wait=wait_random_exponential(min=1, max=10),
         retry=retry_if_exception_type((OpenAIError))
     )
+    @langfuse_generation_stream
     async def run(self, **kwargs):
-        async for msg in self.get_completion(**kwargs):
-            yield msg
-
-        # Memorize interaction
-        #if msg['type'] == 'completion':
-        #    openai_msg = get_openai_message(role='assistant', content=msg['completion'])
-        #    await self.memorize(message=openai_msg)
-        # Tool calls are memorized in the Agent function
-
-    async def get_completion(self,
-                             model,
-                             temperature,
-                             n,
-                             max_tokens,
-                             messages,
-                             **kwargs):
-        self.generation = self.trace.generation(CreateGeneration(
-            name=self.name,
-            startTime=dt.datetime.utcnow(),
-            prompt=messages,
-        ))
-        with_tools = 'tools' in kwargs
-        tools_kwargs = {}
-        if with_tools: tools_kwargs = {'tools': kwargs['tools'],
-                                       'tool_choice': kwargs.get('tool_choice', 'auto')}
+        tools_args = {}
+        if kwargs.get('tools', None) is not None:
+            tools_args = {'tools': kwargs.get('tools', None),
+                          'tool_choice': kwargs.get('tool_choice', 'auto')}
 
         response = await acompletion(
-            model=model,
-            temperature=temperature,
-            n=n,
-            max_tokens=max_tokens,
-            messages=messages,
+            model=kwargs.get('model', 'gpt-3.5-turbo'),
+            temperature=kwargs.get('temperature', 0),
+            n=kwargs.get('n', 1),
+            max_tokens=kwargs.get('max_tokens', 400),
+            messages=kwargs['messages'],
             stream=True,
-            **tools_kwargs
+            **tools_args
         )
-
 
         # We need to track 2 things: the response delta and the function_call
         delta_to_return = None
@@ -92,12 +72,6 @@ class LiteLLMStream(LiteLLM, FunctionStream):
                 "delta": delta_to_return or '',
                 "completion": completion
             }
-
-        self.generation.update(UpdateGeneration(
-            completion=completion,
-            endTime=dt.datetime.utcnow(),
-            usage=Usage(promptTokens=count_tokens(messages), completionTokens=count_tokens(completion)),
-        ))
 
     def get_chunk_type(self,
                        chunk):

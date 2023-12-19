@@ -20,11 +20,11 @@ Base = declarative_base()
 
 def get_database_uri():
     postgres_config = tinyllm.tinyllm_config['POSTGRES']
-    user = postgres_config['TINYLLM_POSTGRES_USERNAME']
-    password = postgres_config['TINYLLM_POSTGRES_PASSWORD']
-    host = postgres_config['TINYLLM_POSTGRES_HOST']
-    port = postgres_config['TINYLLM_POSTGRES_PORT']
-    name = postgres_config['TINYLLM_POSTGRES_NAME']
+    user = postgres_config['USERNAME']
+    password = postgres_config['PASSWORD']
+    host = postgres_config['HOST']
+    port = postgres_config['PORT']
+    name = postgres_config['NAME']
     return f"postgresql+asyncpg://{user}:{password}@{host}:{port}/{name}"
 
 

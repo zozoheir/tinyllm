@@ -15,6 +15,7 @@ from tinyllm.tracing.span import langfuse_span_generator
 
 logger = getLogger(__name__)
 
+
 class AgentStream(FunctionStream):
 
     def __init__(self,
@@ -43,10 +44,11 @@ class AgentStream(FunctionStream):
             memory=memory,
         )
 
-    @langfuse_span_generator(name='User interaction', input_key='user_input',
+    @langfuse_span_generator(name='Agent call', input_key='user_input',
                              visual_output_lambda=lambda x: x['output']['completion'])
     async def run(self,
-                  user_input):
+                  user_input,
+                  **kwargs):
 
         input_msg = get_openai_message(role='user',
                                        content=user_input)
@@ -56,7 +58,9 @@ class AgentStream(FunctionStream):
             await self.prompt_manager.memory(message=input_msg)
 
             async for msg in self.llm(messages=prompt_messages,
-                                              tools=self.toolkit.as_dict_list()):
+                                      tools=self.toolkit.as_dict_list() if self.toolkit else None,
+                                      parent_observation=kwargs.pop('parent_observation', self.parent_observation),
+                                      **kwargs):
                 yield msg
 
             # Agent decides to call a tool

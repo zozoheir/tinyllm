@@ -1,4 +1,5 @@
 import datetime as dt
+import traceback
 
 from langfuse.model import UpdateGeneration, Usage, CreateGeneration
 
@@ -20,9 +21,19 @@ def langfuse_generation(func):
             prompt=kwargs['messages'],
             startTime=dt.datetime.utcnow(),
         ))
+        # Call the original function
+        exception_msg = None
+        try:
+            result = await func(*args, **kwargs)
+        except Exception as e:
+            exception_msg = traceback.format_exception(e)
 
-        result = await func(*args, **kwargs)
+        # Extract output using output_key
+        if exception_msg :
+            result = exception_msg
+
         kwargs['self'] = self
+        self.generation = generation
         # Evaluate
         if self.evaluators:
             self.transition(States.EVALUATING)
@@ -30,7 +41,7 @@ def langfuse_generation(func):
                 kwargs['self'] = self
                 await evaluator(output=result, function=self, observation=generation)
 
-        response_message = result['choices'][0]['message']
+        response_message = result['response']['choices'][0]['message']
         generation.update(UpdateGeneration(
             endTime=dt.datetime.utcnow(),
             completion=response_message,
@@ -62,22 +73,7 @@ def langfuse_generation_stream(func):
         # Call the original async generator function
         async_gen = func(*args, **kwargs)
 
-        # Track completion and function call information
-        completion = ""
-        function_call = {
-            "name": None,
-            "arguments": ""
-        }
-
         async for value in async_gen:
-            # Process each value yielded by the generator
-            if value['type'] == "completion":
-                completion += value['completion']
-            elif value['type'] == "tool":
-                if function_call['name'] is None:
-                    function_call['name'] = value['completion']['name']
-                function_call['arguments'] += value['completion']['arguments']
-
             yield value
 
         if self.evaluators:
@@ -90,7 +86,7 @@ def langfuse_generation_stream(func):
         generation.update(UpdateGeneration(
             completion=value,
             endTime=dt.datetime.utcnow(),
-            usage=Usage(promptTokens=count_tokens(kwargs['messages']), completionTokens=count_tokens(completion)),
+            usage=Usage(promptTokens=count_tokens(kwargs['messages']), completionTokens=count_tokens(value['completion'])),
         ))
 
     return wrapper

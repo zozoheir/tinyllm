@@ -38,11 +38,11 @@ class FunctionStream(Function):
 
             # Run
             self.transition(States.RUNNING)
-            async for message in self.run(**validated_input):
+            async for message in self.run(**validated_input ):
 
                 # Output validation
                 if 'status' in message.keys():
-                    if message['status'] =='success':
+                    if message['status'] == 'success':
                         message = message['output']
                     else:
                         raise Exception(message['message'])
@@ -61,7 +61,7 @@ class FunctionStream(Function):
 
             # Process output
             self.transition(States.PROCESSING_OUTPUT)
-            self.processed_output = await self.process_output(**self.output)
+            self.processed_output = await self.process_output(**self.output )
 
             # Validate processed output
             if self.processed_output_validator:

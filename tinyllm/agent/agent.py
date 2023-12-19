@@ -1,6 +1,8 @@
 import json
 from typing import Optional
 
+from langsmith import traceable
+
 from smartpy.utility.log_util import getLogger
 from tinyllm.function import Function
 from tinyllm.agent.base import AgentBase
@@ -63,11 +65,10 @@ class Agent(Function):
             memory=memory,
         )
 
-    @langfuse_span(name='User interaction', input_key='user_input',
+    @langfuse_span(name='Agent call', input_key='user_input',
                    visual_output_lambda=lambda x: x['response']['choices'][0]['message'])
     async def run(self,
                   **kwargs):
-
         input_msg = get_openai_message(role='user',
                                        content=kwargs['user_input'])
 
@@ -76,7 +77,8 @@ class Agent(Function):
             prompt_messages = await self.prompt_manager.format(message=input_msg)
             response_msg = await self.llm(messages=prompt_messages,
                                           tools=self.toolkit.as_dict_list() if self.toolkit else None,
-                                          parent_observation=self.parent_observation)
+                                          parent_observation=kwargs.pop('parent_observation', self.parent_observation),
+                                          **kwargs)
             await self.prompt_manager.memory(message=input_msg)
 
             if response_msg['status'] == 'success':
