@@ -86,7 +86,7 @@ class AgentStream(FunctionStream):
                             'name': api_tool_call['function']['name'],
                             'arguments': json.loads(api_tool_call['function']['arguments'])
                         }],
-                        trace=self.trace)
+                        trace=self.parent_observation)
                     tool_result = tool_results['output']['tool_results'][0]
                     tool_call_result_msg = get_openai_message(
                         name=tool_result['name'],

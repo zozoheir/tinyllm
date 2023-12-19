@@ -77,7 +77,6 @@ class Agent(Function):
             prompt_messages = await self.prompt_manager.format(message=input_msg)
             response_msg = await self.llm(messages=prompt_messages,
                                           tools=self.toolkit.as_dict_list() if self.toolkit else None,
-                                          parent_observation=kwargs.pop('parent_observation', self.parent_observation),
                                           **kwargs)
             await self.prompt_manager.memory(message=input_msg)
 
@@ -101,8 +100,7 @@ class Agent(Function):
                         tool_calls=[{
                             'name': tool_call['function']['name'],
                             'arguments': json.loads(tool_call['function']['arguments'])
-                        }],
-                        parent_observation=self.parent_observation)
+                        }])
                     tool_result = tool_results['output']['tool_results'][0]
                     function_call_msg = get_openai_message(
                         name=tool_result['name'],

@@ -11,7 +11,7 @@ from langfuse.model import CreateTrace
 from smartpy.utility.log_util import getLogger
 from smartpy.utility.py_util import get_exception_info
 from tinyllm.exceptions import InvalidStateTransition
-from tinyllm import langfuse_client
+from tinyllm import langfuse_client, tinyllm_config
 from tinyllm.state import States, ALLOWED_TRANSITIONS
 from tinyllm.validator import Validator
 from tinyllm.util.fallback_strategy import fallback_decorator
@@ -32,7 +32,6 @@ class FunctionInitValidator(Validator):
     output_validator: Optional[Type[Validator]]
     processed_output_validator: Optional[Type[Validator]] = None
     is_traced: bool
-    debug: bool
     evaluators: Optional[list]
     dataset_name: Optional[str]
     stream: Optional[bool]
@@ -51,6 +50,40 @@ class DefaultProcessedOutputValidator(Validator):
     response: Any
 
 
+def is_function_or_stream(obj):
+    """Check if the object is a Function or FunctionStream."""
+    Function = globals().get('Function')
+    FunctionStream = globals().get('FunctionStream')
+
+    # Only include valid types (non-None) in the tuple for isinstance check
+    valid_types = tuple(t for t in [Function, FunctionStream] if t is not None)
+
+    # If no valid types are found, return False
+    if not valid_types:
+        return False
+
+    return isinstance(obj, valid_types)
+
+
+def set_parent_observation_recursively(obj, parent_observation):
+    """Recursively set parent_observation on Function or FunctionStream attributes."""
+    if not is_function_or_stream(obj) or obj is None:
+        return
+
+    obj.parent_observation = parent_observation
+    for attr_name in dir(obj):
+        if attr_name.startswith("_") or callable(getattr(obj, attr_name)):
+            continue  # Skip private attributes and methods
+
+        attr = getattr(obj, attr_name)
+        if isinstance(attr, list):
+            for item in attr:
+                set_parent_observation_recursively(item, parent_observation)
+        else:
+            set_parent_observation_recursively(attr, parent_observation)
+
+
+
 class Function:
 
     def __init__(
@@ -63,7 +96,6 @@ class Function:
             evaluators=[],
             dataset_name=None,
             is_traced=True,
-            debug=True,
             required=True,
             stream=False,
             fallback_strategies={},
@@ -75,9 +107,10 @@ class Function:
             output_validator=output_validator,
             processed_output_validator=processed_output_validator,
             is_traced=is_traced,
-            debug=debug,
             stream=stream,
         )
+        self.parent_observation = None
+
         self.user = user_id
         self.init_timestamp = dt.datetime.now(pytz.UTC).isoformat()
         self.function_id = str(uuid.uuid4())
@@ -97,13 +130,9 @@ class Function:
         self.output = None
         self.processed_output = None
         self.scores = []
-        self.trace = None
-        self.debug = debug
         self.is_traced = is_traced
-        self.trace = None
-        self.parent_observation = None
         if is_traced is True:
-            self.trace = langfuse_client.trace(CreateTrace(
+            self.parent_observation = langfuse_client.trace(CreateTrace(
                 name=self.name,
                 userId="test")
             )
@@ -125,10 +154,16 @@ class Function:
     def __setattr__(self, key, value):
         super().__setattr__(key, value)
 
-        # If the attribute is a Function instance, set its trace attribute
-        if isinstance(value, Function):
-            value.trace = self.trace
-            self.is_traced = False
+        if value is None or not is_function_or_stream(self):
+            return
+
+        if isinstance(value, list):
+            for item in value:
+                if is_function_or_stream(item):
+                    set_parent_observation_recursively(item, self.parent_observation)
+        elif is_function_or_stream(value):
+            set_parent_observation_recursively(value, self.parent_observation)
+
 
     @fallback_decorator
     async def __call__(self, **kwargs):
@@ -158,7 +193,6 @@ class Function:
             final_output = {"status": "success",
                             "output": self.processed_output}
 
-
             # Complete
             self.transition(States.COMPLETE)
             langfuse_client.flush()
@@ -170,6 +204,8 @@ class Function:
             detailed_error_msg = get_exception_info(e)
             self.log(detailed_error_msg, level="error")
             langfuse_client.flush()
+            if tinyllm_config['OPS']['DEBUG']:
+                raise e
             if type(e) in self.fallback_strategies:
                 raise e
             else:
@@ -228,8 +264,8 @@ class Function:
                 self.log(evaluator_response['message'], level="error")
 
     def log(self, message, level="info"):
-        # Only log if debug
-        if getattr(self, 'debug', None):
+
+        if tinyllm_config['OPS']['LOGGING']:
             log_message = f"[{self.name}] {message}"
             if getattr(self, 'trace', None):
                 # Add generation id to log message if trace is enabled
@@ -256,4 +292,3 @@ class Function:
 
     async def process_output(self, **kwargs):
         return kwargs
-

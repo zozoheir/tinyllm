@@ -50,7 +50,6 @@ def set_config(file_path: str):
         public_key=tinyllm_config['LANGFUSE']['PUBLIC_KEY'],
         secret_key=tinyllm_config['LANGFUSE']['SECRET_KEY'],
         host=tinyllm_config['LANGFUSE']['HOST'],
-        debug=False,
         flush_interval=0.1,
     )
 

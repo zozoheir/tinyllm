@@ -59,7 +59,6 @@ async def run_agent_stream():
         llm_library=LLMs.LITE_LLM_STREAM,
         system_role="You are a helpful agent that can answer questions about the user's profile using available tools.",
         name='Tinyllm manager',
-        debug=False,
     )
 
     tiny_agent = AgentStream(name='Test: agent stream',
@@ -70,8 +69,7 @@ async def run_agent_stream():
                                      name="Functional call corrector",
                                      is_traced=False,
                                  ),
-                             ],
-                             debug=True)
+                             ])
 
     msgs = []
     async for message in tiny_agent(user_input="What is the user's birthday?"):
