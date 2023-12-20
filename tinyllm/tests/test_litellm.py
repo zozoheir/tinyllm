@@ -45,7 +45,7 @@ class TestlitellmChat(AsyncioTestCase):
                 }
 
         litellm_chat = LiteLLM(name='Test: LiteLLMChat evaluation',
-                               evaluators=[
+                               run_evaluators=[
                                    SuccessFullRunEvaluator(
                                        name="Successful run evaluator",
                                        is_traced=False,

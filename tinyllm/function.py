@@ -31,7 +31,8 @@ class FunctionInitValidator(Validator):
     output_validator: Optional[Type[Validator]]
     processed_output_validator: Optional[Type[Validator]] = None
     is_traced: bool
-    evaluators: Optional[list]
+    run_evaluators: Optional[list]
+    processed_output_evaluators: Optional[list]
     dataset_name: Optional[str]
     stream: Optional[bool]
 
@@ -58,7 +59,8 @@ class Function:
             input_validator=Validator,
             output_validator=DefaultOutputValidator,
             processed_output_validator=None,
-            evaluators=[],
+            run_evaluators=[],
+            processed_output_evaluators=[],
             dataset_name=None,
             is_traced=True,
             required=True,
@@ -72,6 +74,8 @@ class Function:
             output_validator=output_validator,
             processed_output_validator=processed_output_validator,
             is_traced=is_traced,
+            run_evaluators=run_evaluators,
+            processed_output_evaluators=processed_output_evaluators,
             stream=stream,
         )
         self.parent_observation = None
@@ -94,10 +98,10 @@ class Function:
         self.input = None
         self.output = None
         self.processed_output = None
-        self.scores = []
+        self.run_evaluators = run_evaluators
+        self.processed_output_evaluators = processed_output_evaluators
 
         self.cache = {}
-        self.evaluators = evaluators
         self.dataset_name = dataset_name
         self.dataset = None
         if self.dataset_name is not None:

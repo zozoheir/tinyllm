@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 
 from tinyllm import langfuse_client
 
+
 class LangfuseContext:
     _current_trace = None
     _current_observation = None
@@ -32,7 +33,8 @@ class LangfuseContext:
     def set_current_observation(cls, observation):
         cls._current_observation = observation
 
-def observation(type, name=None, input_mapping=None, output_mapping=None):
+
+def observation(type, name=None, input_mapping=None, output_mapping=None, evaluators=None):
     def decorator(func):
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
@@ -67,6 +69,25 @@ def observation(type, name=None, input_mapping=None, output_mapping=None):
                         obs.end(**function_output)
                     else:
                         obs.update(**function_output)
+
+                    # Evaluate
+                    function_output.update({'observation': obs})
+
+                    if hasattr(func, '__qualname__'):
+                        self = args[0]
+                        if func.__qualname__.split('.')[-1] == 'run':
+                            if getattr(self, 'run_evaluators', None):
+                                for evaluator in self.run_evaluators:
+                                    await evaluator(**function_output)
+                        elif func.__qualname__.split('.')[-1] == 'process_output':
+                            if getattr(self, 'process_output_evaluators', None):
+                                for evaluator in self.process_output_evaluators:
+                                    await evaluator(**function_output, )
+
+                    if evaluators:
+                        for evaluator in evaluators:
+                            await evaluator(**function_output)
+
                     return result
                 except Exception as e:
                     obs.level = 'ERROR'
@@ -76,4 +97,5 @@ def observation(type, name=None, input_mapping=None, output_mapping=None):
                     LangfuseContext.set_current_observation(None)
 
         return wrapper
+
     return decorator
