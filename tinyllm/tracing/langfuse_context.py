@@ -1,21 +1,3 @@
-"""
-
-Goal:
-- Create a context manager to create and manage tracing of nested observations across my tinyllm Function class method calls
-
-Intended use:
-- The goal is to log a Parent Function.method calls as a trace, and any nested Function.method calls as nested observations
-- I need to be able to manage context for many Parent Functions (traces). Use the Function.id attribute to identify each trace
-
-Expected behaviour:
-- @observation and @streaming_observation are used to decorate Function class methods
-- If a generation/span decorator is called from within another decorator, the child generation/span should be created using use the parent decorator’s observation
-- If the parent decorator has no parent decorator, that means that call should be a trace. We need to create a new trace to send the nested obserations to Langfuse.
-- Each Function has a unique .id attribute to identify it
-- For each decorated method call, I need to make sure I maintain the observation context
-
-"""
-
 import functools
 import inspect
 import traceback

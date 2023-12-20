@@ -79,7 +79,7 @@ class Function:
             stream=stream,
         )
         self.parent_observation = None
-        self.id = str(uuid.uuid4())
+
         self.user = user_id
         self.init_timestamp = dt.datetime.now(pytz.UTC).isoformat()
         self.function_id = str(uuid.uuid4())
@@ -112,6 +112,7 @@ class Function:
 
         self.fallback_strategies = fallback_strategies
         self.stream = stream
+
 
 
     @fallback_decorator
