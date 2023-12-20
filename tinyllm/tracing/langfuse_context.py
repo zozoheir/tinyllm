@@ -1,4 +1,5 @@
 import functools
+import inspect
 import traceback
 from contextlib import asynccontextmanager
 
@@ -48,17 +49,27 @@ def handle_exception(obs, e):
 
 def prepare_observation_input(input_mapping, kwargs):
     if not input_mapping:
+        # stringify all non string or dict values
+        for key, value in kwargs.items():
+            if not isinstance(value, (str, dict)):
+                kwargs[key] = str(value)
         return {'input': kwargs}
     return {langfuse_kwarg: kwargs[function_kwarg] for langfuse_kwarg, function_kwarg in input_mapping.items()}
 
 
 def update_observation(obs, function_input, function_output, output_mapping, type):
     mapped_output = {}
+    for key, value in function_output.items():
+        if not isinstance(value, (str, dict)):
+            function_output[key] = str(value)
+
     if not output_mapping:
         mapped_output = {'output': function_output}
     else:
         for langfuse_kwarg, function_kwarg in output_mapping.items():
             mapped_output[langfuse_kwarg] = function_output[function_kwarg]
+
+
     if type == 'generation':
         prompt_tokens = count_tokens(function_input)
         completion_tokens = count_tokens(function_output)
@@ -77,7 +88,7 @@ def update_observation(obs, function_input, function_output, output_mapping, typ
 
 async def perform_evaluations(observation, result, func, args, evaluators):
     result.update({'observation': observation})
-    if hasattr(func, '__qualname__'):
+    if inspect.ismethod(func):
         self = args[0]
         if func.__qualname__.split('.')[-1] == 'run':
             if getattr(self, 'run_evaluators', None):
