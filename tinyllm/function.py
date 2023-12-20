@@ -6,7 +6,6 @@ import pydantic
 import pytz
 from langfuse.api import CreateDatasetRequest, CreateDatasetItemRequest
 from langfuse.client import DatasetItemClient
-from langfuse.model import CreateTrace
 
 from smartpy.utility.log_util import getLogger
 from smartpy.utility.py_util import get_exception_info
@@ -96,11 +95,6 @@ class Function:
         self.output = None
         self.processed_output = None
         self.scores = []
-        if is_traced is True:
-            self.parent_observation = langfuse_client.trace(CreateTrace(
-                name=self.name,
-                userId="test")
-            )
 
         self.cache = {}
         self.evaluators = evaluators

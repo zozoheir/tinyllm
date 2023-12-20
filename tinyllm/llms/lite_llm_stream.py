@@ -1,13 +1,11 @@
 import datetime as dt
 
-from langfuse.model import CreateGeneration, UpdateGeneration, Usage
 from litellm import acompletion
 from openai import OpenAIError
 from tenacity import stop_after_attempt, wait_random_exponential, retry_if_exception_type, retry
 
 from tinyllm.llms.lite_llm import LiteLLM
 from tinyllm.function_stream import FunctionStream
-from tinyllm.tracing.generation import langfuse_generation_stream
 from tinyllm.util.helpers import count_tokens
 
 
@@ -18,7 +16,6 @@ class LiteLLMStream(LiteLLM, FunctionStream):
         wait=wait_random_exponential(min=1, max=10),
         retry=retry_if_exception_type((OpenAIError))
     )
-    @langfuse_generation_stream
     async def run(self, **kwargs):
         tools_args = {}
         if kwargs.get('tools', None) is not None:

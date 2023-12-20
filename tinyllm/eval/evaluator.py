@@ -1,7 +1,6 @@
 from typing import Optional, Any, Type, Union
 
 from langfuse.client import StatefulClient, StatefulSpanClient, StatefulGenerationClient
-from langfuse.model import CreateScore
 
 from tinyllm.function import Function
 from tinyllm.validator import Validator
@@ -26,14 +25,12 @@ class Evaluator(Function):
         super().__init__(output_validator=EvaluatorOutputValidator,
                          input_validator=EvaluatorInputValidator,
                          is_traced=is_traced,
-                                   ** kwargs)
+                         **kwargs)
 
     async def process_output(self, **kwargs):
         for name, score in kwargs['evals'].items():
             self.input['observation'].score(
-                CreateScore(
-                    name=name,
-                    value=score,
-                    comment=str(kwargs['metadata']),
-                )
+                name=name,
+                value=score,
+                comment=str(kwargs['metadata']),
             )

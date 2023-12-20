@@ -1,94 +1,79 @@
 import functools
-import uuid
-from contextlib import contextmanager
+from contextlib import asynccontextmanager
 
 from tinyllm import langfuse_client
 
-class LangfuseIntegration:
+class LangfuseContext:
     _current_trace = None
     _current_observation = None
 
     @classmethod
-    @contextmanager
-    def trace_context(cls, name):
+    @asynccontextmanager
+    async def trace_context(cls, name):
         if cls._current_trace is None:
-            # Only create a new trace if there isn't an existing one
-            old_trace = None
+            # Create a new trace if there isn't an existing one
             cls._current_trace = langfuse_client.trace(name=name, userId="test")
+            new_trace_created = True
         else:
             # Use the existing trace
-            old_trace = cls._current_trace
+            new_trace_created = False
 
         try:
             yield cls._current_trace
         finally:
-            if old_trace is None:
+            if new_trace_created:
                 cls._current_trace = None
 
     @classmethod
     def get_current_observation(cls):
         return cls._current_observation or cls._current_trace
 
-def get_observation_input_output(kwargs, result, input_key=None, output_keys=None):
-    input_data = kwargs if input_key is None else kwargs.get(input_key, {})
-    output_data = result if output_keys is None else {key: result.get(key) for key in output_keys}
-    return input_data, output_data
+    @classmethod
+    def set_current_observation(cls, observation):
+        cls._current_observation = observation
 
-def langfuse_span(input=None, output=None):
+def observation(type, name=None, input_mapping=None, output_mapping=None):
     def decorator(func):
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
-            name = getattr(args[0], 'name', func.__name__)
-            observation = LangfuseIntegration.get_current_observation()
-            span = observation.span(name=name)
+            nonlocal name
+            if not name:
+                name = func.__qualname__ if hasattr(func, '__qualname__') else func.__name__
 
-            try:
-                result = await func(*args, **kwargs)
-                input_data, output_data = get_observation_input_output(kwargs, result, input_key=input, output_keys=output)
-                span.end(output=output_data)
-                return result
-            except Exception as e:
-                span.update(level='ERROR', status_message=str(e))
-                raise
+            function_input = {}
+            if not input_mapping:
+                function_input = {'input': kwargs}
+            else:
+                for langfuse_kwarg, function_kwarg in input_mapping.items():
+                    function_input[langfuse_kwarg] = kwargs[function_kwarg]
+
+            async with LangfuseContext.trace_context(name):
+                current_observation = LangfuseContext.get_current_observation()
+                observation_method = getattr(current_observation, type)
+                obs = observation_method(name=name, **function_input)
+                LangfuseContext.set_current_observation(obs)
+
+                try:
+                    result = await func(*args, **kwargs)
+
+                    function_output = {}
+                    if not output_mapping:
+                        function_output = {'output': result}
+                    else:
+                        for langfuse_kwarg, function_kwarg in output_mapping.items():
+                            function_output[langfuse_kwarg] = result[function_kwarg]
+
+                    if type in ['span', 'generation']:
+                        obs.end(**function_output)
+                    else:
+                        obs.update(**function_output)
+                    return result
+                except Exception as e:
+                    obs.level = 'ERROR'
+                    obs.status_message = str(e)
+                    raise
+                finally:
+                    LangfuseContext.set_current_observation(None)
+
         return wrapper
     return decorator
-
-def langfuse_generation(input=None, output=None, metadata=None):
-    def decorator(func):
-        @functools.wraps(func)
-        async def wrapper(*args, **kwargs):
-            name = getattr(args[0], 'name', func.__name__)
-            observation = LangfuseIntegration.get_current_observation()
-            generation = observation.generation(name=name, metadata=kwargs.get(metadata) if metadata else {})
-
-            try:
-                result = await func(*args, **kwargs)
-                input_data, output_data = get_observation_input_output(kwargs, result, input_key=input, output_keys=output)
-                generation.end(output=output_data)
-                return result
-            except Exception as e:
-                generation.update(level='ERROR', status_message=str(e))
-                raise
-        return wrapper
-    return decorator
-
-def langfuse_event(input=None, output=None, metadata=None):
-    def decorator(func):
-        @functools.wraps(func)
-        async def wrapper(*args, **kwargs):
-            name = getattr(args[0], 'name', func.__name__)
-            observation = LangfuseIntegration.get_current_observation()
-            event = observation.event(name=name, metadata=kwargs.get(metadata) if metadata else {})
-
-            try:
-                result = await func(*args, **kwargs)
-                input_data, output_data = get_observation_input_output(kwargs, result, input_key=input, output_keys=output)
-                event.output = output_data
-                return result
-            except Exception as e:
-                event.level = 'ERROR'
-                event.status_message = str(e)
-                raise
-        return wrapper
-    return decorator
-

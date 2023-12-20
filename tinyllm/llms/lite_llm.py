@@ -3,8 +3,8 @@ from typing import Optional, Any
 from litellm import OpenAIError, acompletion
 
 from tinyllm.function import Function
+from tinyllm.tracing.langfuse_context import observation
 from tinyllm.util.helpers import *
-from tinyllm.tracing.generation import langfuse_generation
 from tinyllm.validator import Validator
 from tenacity import retry, stop_after_attempt, wait_random_exponential, retry_if_exception_type
 
@@ -38,7 +38,7 @@ class LiteLLM(Function):
         wait=wait_random_exponential(min=1, max=10),
         retry=retry_if_exception_type((OpenAIError))
     )
-    @langfuse_generation
+    @observation(type='generation',input_mapping={'input':'messages'},output_mapping={'output':'response'})
     async def run(self, **kwargs):
         tools_args = {}
         if kwargs.get('tools', None) is not None:
