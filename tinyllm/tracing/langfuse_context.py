@@ -6,35 +6,45 @@ from contextlib import asynccontextmanager
 from tinyllm import langfuse_client
 from tinyllm.util.helpers import count_tokens
 
+import contextvars
+from contextlib import asynccontextmanager
+
+
 
 class LangfuseContext:
-    _current_trace = None
-    _current_observation = None
+    _current_trace = contextvars.ContextVar('current_trace', default=None)
+    _current_observation = contextvars.ContextVar('current_observation', default=None)
 
     @classmethod
     @asynccontextmanager
     async def trace_context(cls, name):
-        if cls._current_trace is None:
-            # Create a new trace if there isn't an existing one
-            cls._current_trace = langfuse_client.trace(name=name, userId="test")
+        existing_trace = cls._current_trace.get()
+        new_trace_created = False
+
+        if existing_trace is None:
+            # Create a new trace and set it in the context
+            new_trace = langfuse_client.trace(name=name, userId="test")
+            token = cls._current_trace.set(new_trace)
             new_trace_created = True
         else:
-            # Use the existing trace
-            new_trace_created = False
+            # Reuse the existing trace and don't change the context
+            token = None
 
         try:
-            yield cls._current_trace
+            yield cls._current_trace.get()
         finally:
             if new_trace_created:
-                cls._current_trace = None
+                # Reset the trace only if a new one was created
+                cls._current_trace.reset(token)
 
     @classmethod
     def get_current_observation(cls):
-        return cls._current_observation or cls._current_trace
+        return cls._current_observation.get() or cls._current_trace.get()
 
     @classmethod
     def set_current_observation(cls, observation):
-        cls._current_observation = observation
+        cls._current_observation.set(observation)
+
 
 
 def handle_exception(obs, e):
