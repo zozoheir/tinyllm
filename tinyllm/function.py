@@ -50,40 +50,6 @@ class DefaultProcessedOutputValidator(Validator):
     response: Any
 
 
-def is_function_or_stream(obj):
-    """Check if the object is a Function or FunctionStream."""
-    Function = globals().get('Function')
-    FunctionStream = globals().get('FunctionStream')
-
-    # Only include valid types (non-None) in the tuple for isinstance check
-    valid_types = tuple(t for t in [Function, FunctionStream] if t is not None)
-
-    # If no valid types are found, return False
-    if not valid_types:
-        return False
-
-    return isinstance(obj, valid_types)
-
-
-def set_parent_observation_recursively(obj, parent_observation):
-    """Recursively set parent_observation on Function or FunctionStream attributes."""
-    if not is_function_or_stream(obj) or obj is None:
-        return
-
-    obj.parent_observation = parent_observation
-    for attr_name in dir(obj):
-        if attr_name.startswith("_") or callable(getattr(obj, attr_name)):
-            continue  # Skip private attributes and methods
-
-        attr = getattr(obj, attr_name)
-        if isinstance(attr, list):
-            for item in attr:
-                set_parent_observation_recursively(item, parent_observation)
-        else:
-            set_parent_observation_recursively(attr, parent_observation)
-
-
-
 class Function:
 
     def __init__(
@@ -130,7 +96,6 @@ class Function:
         self.output = None
         self.processed_output = None
         self.scores = []
-        self.is_traced = is_traced
         if is_traced is True:
             self.parent_observation = langfuse_client.trace(CreateTrace(
                 name=self.name,
@@ -149,20 +114,7 @@ class Function:
 
         self.fallback_strategies = fallback_strategies
         self.stream = stream
-        self.generation = None
 
-    def __setattr__(self, key, value):
-        super().__setattr__(key, value)
-
-        if value is None or not is_function_or_stream(self):
-            return
-
-        if isinstance(value, list):
-            for item in value:
-                if is_function_or_stream(item):
-                    set_parent_observation_recursively(item, self.parent_observation)
-        elif is_function_or_stream(value):
-            set_parent_observation_recursively(value, self.parent_observation)
 
 
     @fallback_decorator
