@@ -6,7 +6,8 @@ from tenacity import stop_after_attempt, wait_random_exponential, retry_if_excep
 
 from tinyllm.llms.lite_llm import LiteLLM
 from tinyllm.function_stream import FunctionStream
-from tinyllm.util.helpers import count_tokens
+from tinyllm.tracing.langfuse_context import streaming_observation
+from tinyllm.util.helpers import get_openai_message
 
 
 class LiteLLMStream(LiteLLM, FunctionStream):
@@ -16,6 +17,7 @@ class LiteLLMStream(LiteLLM, FunctionStream):
         wait=wait_random_exponential(min=1, max=10),
         retry=retry_if_exception_type((OpenAIError))
     )
+    @streaming_observation(type='generation')
     async def run(self, **kwargs):
         tools_args = {}
         if kwargs.get('tools', None) is not None:
@@ -46,15 +48,15 @@ class LiteLLMStream(LiteLLM, FunctionStream):
         async for chunk in response:
             chunk_dict = chunk.model_dump()
             status = self.get_stream_status(chunk_dict)
-            chunk_type = self.get_chunk_type(chunk_dict)
+            chunk_role = self.get_chunk_type(chunk_dict)
             delta = chunk_dict['choices'][0]['delta']
 
             # If streaming , we need to store chunks of the completion/function call
             if status == "streaming":
-                if chunk_type == "completion":
+                if chunk_role == "assistant":
                     completion += delta['content']
 
-                elif chunk_type == "tool":
+                elif chunk_role == "tool":
                     if function_call['name'] is None:
                         function_call['name'] = delta['tool_calls'][0]['function']['name']
                     if delta_to_return is None:
@@ -65,9 +67,11 @@ class LiteLLMStream(LiteLLM, FunctionStream):
 
             yield {
                 "streaming_status": status,
-                "type": chunk_type,
+                "type": chunk_role,
                 "delta": delta_to_return or '',
-                "completion": completion
+                "completion": completion,
+                "message": get_openai_message(role=chunk_role,
+                                              content=completion)
             }
 
     def get_chunk_type(self,
@@ -77,7 +81,7 @@ class LiteLLMStream(LiteLLM, FunctionStream):
         if delta.get('tool_calls', None) is not None or chunk['choices'][0]['finish_reason'] == 'tool_calls':
             return "tool"
 
-        return "completion"
+        return "assistant"
 
     def get_stream_status(self,
                           chunk):
