@@ -3,7 +3,8 @@ from typing import List, Dict
 
 from tinyllm.function import Function
 from tinyllm.agent.tool import Tool
-from tinyllm.tracing.span import langfuse_span
+
+from tinyllm.tracing.langfuse_context import observation
 from tinyllm.validator import Validator
 
 
@@ -25,9 +26,8 @@ class Toolkit(Function):
             **kwargs)
         self.tools = tools
 
-        # We set the tools as attributes to pass the langfuse trace to the tools
 
-    @langfuse_span(name='Tookit', input_key='tool_calls')
+    @observation(type='span',name='Tookit', input_mapping={'input': 'tool_calls'})
     async def run(self,
                   **kwargs):
         tasks = []
