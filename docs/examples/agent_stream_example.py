@@ -64,7 +64,7 @@ async def run_agent_stream():
     tiny_agent = AgentStream(name='Test: agent stream',
                              llm=llm_stream,
                              toolkit=toolkit,
-                             evaluators=[
+                             run_evaluators=[
                                  AnswerCorrectnessEvaluator(
                                      name="Functional call corrector",
                                      is_traced=False,

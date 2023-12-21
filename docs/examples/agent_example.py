@@ -73,7 +73,7 @@ async def run_agent():
                        llm=llm,
                        toolkit=toolkit,
                        memory=BufferMemory(name='Agent memory', is_traced=False),
-                       evaluators=[
+                       run_evaluators=[
                            AnswerCorrectnessEvaluator(
                                name="Eval: correct user info",
                                is_traced=False,

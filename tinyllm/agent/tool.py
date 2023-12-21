@@ -44,7 +44,7 @@ class Tool(Function):
             }
         }
 
-    @observation(type='span', input_mapping={'input': 'arguments'})
+    @observation(observation_type='span', input_mapping={'input': 'arguments'})
     async def run(self, **kwargs):
         tool_response = self.python_lambda(**kwargs['arguments'])
         return {'response': get_openai_message(role='tool', content=tool_response, name=self.name)}

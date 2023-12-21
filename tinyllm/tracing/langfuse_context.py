@@ -1,3 +1,4 @@
+import datetime as dt
 import functools
 import inspect
 import traceback
@@ -10,7 +11,6 @@ from tinyllm.util.helpers import count_tokens
 
 import contextvars
 from contextlib import asynccontextmanager
-
 
 
 class LangfuseContext:
@@ -55,7 +55,6 @@ class LangfuseContext:
         cls._current_trace.set(observation)
 
 
-
 def get_context_obs(type, name, function_input):
     current_observation = LangfuseContext.get_obs()
     if isinstance(current_observation, langfuse.client.StatefulTraceClient):
@@ -88,11 +87,24 @@ def prepare_observation_input(input_mapping, kwargs):
     return {langfuse_kwarg: kwargs[function_kwarg] for langfuse_kwarg, function_kwarg in input_mapping.items()}
 
 
+def convert_dict_to_string(d):
+    for key, value in d.items():
+        if isinstance(value, dict):
+            convert_dict_to_string(value)
+        elif not isinstance(value, (str, dict, list, tuple)):
+            d[key] = str(value)
+
+
 def end_observation(obs, function_input, function_output, output_mapping, observation_type):
-    mapped_output = {}
-    for key, value in function_output.items():
-        if not isinstance(value, (str, dict)):
-            function_output[key] = str(value)
+    mapped_output = {
+        # 'end_time':dt.datetime.utcnow(),
+    }
+    if type(function_output) == list:
+        for i, item in enumerate(function_output):
+            if type(item) == dict:
+                convert_dict_to_string(item)
+    elif type(function_output) == dict:
+        convert_dict_to_string(function_output)
 
     if not output_mapping:
         mapped_output = {'output': function_output}
@@ -100,31 +112,31 @@ def end_observation(obs, function_input, function_output, output_mapping, observ
         for langfuse_kwarg, function_kwarg in output_mapping.items():
             mapped_output[langfuse_kwarg] = function_output[function_kwarg]
 
-
     if observation_type == 'generation':
         prompt_tokens = count_tokens(function_input)
         completion_tokens = count_tokens(function_output)
         total_tokens = prompt_tokens + completion_tokens
-        obs.end(usage={
-            'promptTokens': prompt_tokens,
-            'completionTokens': completion_tokens,
-            'totalTokens': total_tokens,
-        },
+
+        obs.end(
+            end_time=dt.datetime.now(),
+            usage={
+                'promptTokens': prompt_tokens,
+                'completionTokens': completion_tokens,
+                'totalTokens': total_tokens,
+            },
             **mapped_output)
-    else:
-        #if 'end' in dir(obs):
-        #    obs.end(**mapped_output)
-        if 'update' in dir(obs):
-            import datetime as dt
-            mapped_output['end_time'] = dt.datetime.now()
-            obs.update(**mapped_output)
+    elif observation_type == 'span':
+        obs.end(**mapped_output)
+    elif observation_type == 'trace':
+        obs.end(**mapped_output)
 
 
 async def perform_evaluations(observation, result, func, args, evaluators):
-    result.update({'observation': observation})
-
     if inspect.ismethod(func):
+        result.update({'observation': observation})
         self = args[0]
+
+        # Function.run and Function.process_output evaluators
         if func.__qualname__.split('.')[-1] == 'run':
             if getattr(self, 'run_evaluators', None):
                 for evaluator in self.run_evaluators:
@@ -134,9 +146,10 @@ async def perform_evaluations(observation, result, func, args, evaluators):
                 for evaluator in self.process_output_evaluators:
                     await evaluator(**result, )
 
-    if evaluators:
-        for evaluator in evaluators:
-            await evaluator(**result)
+        if evaluators:
+            for evaluator in evaluators:
+                await evaluator(**result)
+
 
 def conditional_args(observation_type, input_mapping=None, output_mapping=None):
     if observation_type == 'generation':
@@ -159,7 +172,7 @@ def observation(observation_type, name=None, input_mapping=None, output_mapping=
             if not name:
                 name = func.__qualname__ if hasattr(func, '__qualname__') else func.__name__
             function_input = prepare_observation_input(input_mapping, kwargs)
-
+            function_input['start_time'] = dt.datetime.utcnow()
             async with LangfuseContext.trace_context(name):
                 obs = get_context_obs(observation_type, name, function_input)
                 try:

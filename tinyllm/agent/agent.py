@@ -65,7 +65,7 @@ class Agent(Function):
             memory=memory,
         )
 
-    @observation(type='span', name='Agent call')
+    @observation(observation_type='span', name='Agent call')
     async def run(self,
                   **kwargs):
         input_msg = get_openai_message(role='user',

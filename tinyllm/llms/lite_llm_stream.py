@@ -1,5 +1,3 @@
-import datetime as dt
-
 from litellm import acompletion
 from openai import OpenAIError
 from tenacity import stop_after_attempt, wait_random_exponential, retry_if_exception_type, retry
@@ -17,7 +15,7 @@ class LiteLLMStream(LiteLLM, FunctionStream):
         wait=wait_random_exponential(min=1, max=10),
         retry=retry_if_exception_type((OpenAIError))
     )
-    @streaming_observation(type='generation')
+    @streaming_observation(observation_type='generation')
     async def run(self, **kwargs):
         tools_args = {}
         if kwargs.get('tools', None) is not None:

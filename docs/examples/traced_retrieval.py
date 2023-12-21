@@ -7,7 +7,6 @@ from tinyllm.util.helpers import get_openai_message
 
 @observation(observation_type='span', name="search", input_mapping={'input': 'search_query'}, output_mapping={'output': 'docs', 'metadata': 'docs_metadata'})
 async def search(**kwargs):
-    result = await generate(messages=[])
     return {
         'docs': [],
         'docs_metadata': {}
@@ -36,6 +35,7 @@ async def run_sports_retriever(**kwargs):
 
 async def main():
     tasks = [
+        asyncio.create_task(run_sports_retriever(search_query='Moroccan sports')),
         asyncio.create_task(run_sports_retriever(search_query='Moroccan sports')),
     ]
     await asyncio.gather(*tasks)

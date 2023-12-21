@@ -10,8 +10,8 @@ from tinyllm.examples.example_manager import ExampleManager
 from tinyllm.function_stream import FunctionStream
 from tinyllm.memory.memory import BufferMemory, Memory
 from tinyllm.prompt_manager import PromptManager
+from tinyllm.tracing.langfuse_context import observation, streaming_observation
 from tinyllm.util.helpers import get_openai_message
-from tinyllm.tracing.span import langfuse_span_generator
 
 logger = getLogger(__name__)
 
@@ -20,7 +20,7 @@ class AgentStream(FunctionStream):
 
     def __init__(self,
                  system_role: str,
-                 llm: Function,
+                 llm: FunctionStream,
                  memory: Memory = BufferMemory(name='Agent memory', is_traced=False),
                  toolkit: Optional[Toolkit] = None,
                  example_manager: Optional[ExampleManager] = None,
@@ -44,8 +44,7 @@ class AgentStream(FunctionStream):
             memory=memory,
         )
 
-    @langfuse_span_generator(name='Agent call', input_key='user_input',
-                             visual_output_lambda=lambda x: x['output']['completion'])
+    @streaming_observation(observation_type='span')
     async def run(self,
                   user_input,
                   **kwargs):
@@ -59,7 +58,6 @@ class AgentStream(FunctionStream):
 
             async for msg in self.llm(messages=prompt_messages,
                                       tools=self.toolkit.as_dict_list() if self.toolkit else None,
-                                      parent_observation=kwargs.pop('parent_observation', self.parent_observation),
                                       **kwargs):
                 yield msg
 
@@ -96,7 +94,7 @@ class AgentStream(FunctionStream):
                     )
                     input_msg = tool_call_result_msg
 
-                elif msg_output['type'] == 'completion':
+                elif msg_output['type'] == 'assistant':
                     break
             else:
                 raise (Exception(msg))

@@ -38,7 +38,7 @@ class LiteLLM(Function):
         wait=wait_random_exponential(min=1, max=10),
         retry=retry_if_exception_type((OpenAIError))
     )
-    @observation(type='generation',input_mapping={'input':'messages'},output_mapping={'output':'response'})
+    @observation(observation_type='generation',input_mapping={'input':'messages'},output_mapping={'output':'response'})
     async def run(self, **kwargs):
         tools_args = {}
         if kwargs.get('tools', None) is not None:

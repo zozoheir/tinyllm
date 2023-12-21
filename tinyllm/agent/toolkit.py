@@ -27,7 +27,7 @@ class Toolkit(Function):
         self.tools = tools
 
 
-    @observation(type='span',name='Tookit', input_mapping={'input': 'tool_calls'})
+    @observation(observation_type='span',name='Tookit', input_mapping={'input': 'tool_calls'})
     async def run(self,
                   **kwargs):
         tasks = []
@@ -38,6 +38,7 @@ class Toolkit(Function):
             tool = [tool for tool in self.tools if tool.name == name][0]
             tasks.append(tool(arguments=arguments,
                               **kwargs))
+
         results = await asyncio.gather(*tasks)
         tool_results = [result['output']['response'] for result in results]
         return {'tool_results': tool_results}
