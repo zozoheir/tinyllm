@@ -76,5 +76,7 @@ if langfuse_client is None and tinyllm_config is None:
         set_config(env_variable_path)
     else:
         found_config_path = find_yaml_config('tinyllm.yaml', directories)
+        if found_config_path is None:
+            raise FileNotFoundError(f"Please provide a config file for tinyllm")
         set_config(found_config_path)
 

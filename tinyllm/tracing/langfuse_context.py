@@ -3,6 +3,8 @@ import inspect
 import traceback
 from contextlib import asynccontextmanager
 
+import langfuse
+
 from tinyllm import langfuse_client
 from tinyllm.util.helpers import count_tokens
 
@@ -22,34 +24,53 @@ class LangfuseContext:
         new_trace_created = False
 
         if existing_trace is None:
-            # Create a new trace and set it in the context
             new_trace = langfuse_client.trace(name=name, userId="test")
             token = cls._current_trace.set(new_trace)
             new_trace_created = True
         else:
-            # Reuse the existing trace and don't change the context
             token = None
+            new_trace = existing_trace
 
         try:
-            yield cls._current_trace.get()
+            yield new_trace
         finally:
             if new_trace_created:
-                # Reset the trace only if a new one was created
                 cls._current_trace.reset(token)
+            langfuse_client.flush()
 
     @classmethod
-    def get_current_observation(cls):
-        return cls._current_observation.get() or cls._current_trace.get()
+    def get_trace(cls):
+        return cls._current_trace.get()
 
     @classmethod
-    def set_current_observation(cls, observation):
+    def get_obs(cls):
+        return cls._current_observation.get() or cls.get_trace()
+
+    @classmethod
+    def set_obs(cls, observation):
         cls._current_observation.set(observation)
 
+    @classmethod
+    def set_parent_obs(cls, observation):
+        cls._current_trace.set(observation)
+
+
+
+def get_context_obs(type, name, function_input):
+    current_observation = LangfuseContext.get_obs()
+    if isinstance(current_observation, langfuse.client.StatefulTraceClient):
+        observation_method = getattr(current_observation, type)
+        current_observation = observation_method(name=name, **function_input)
+        LangfuseContext.set_parent_obs(current_observation)
+        return current_observation
+    else:
+        observation_method = getattr(current_observation, type)
+        obs = observation_method(name=name, **function_input)
+        LangfuseContext.set_obs(obs)
+        return obs
 
 
 def handle_exception(obs, e):
-    obs.level = 'ERROR'
-    obs.status_message = str(e)
     if 'end' in dir(obs):
         obs.end(level='ERROR', status_message=str(traceback.format_exception(e)))
     elif 'update' in dir(obs):
@@ -67,7 +88,7 @@ def prepare_observation_input(input_mapping, kwargs):
     return {langfuse_kwarg: kwargs[function_kwarg] for langfuse_kwarg, function_kwarg in input_mapping.items()}
 
 
-def update_observation(obs, function_input, function_output, output_mapping, type):
+def end_observation(obs, function_input, function_output, output_mapping, observation_type):
     mapped_output = {}
     for key, value in function_output.items():
         if not isinstance(value, (str, dict)):
@@ -80,7 +101,7 @@ def update_observation(obs, function_input, function_output, output_mapping, typ
             mapped_output[langfuse_kwarg] = function_output[function_kwarg]
 
 
-    if type == 'generation':
+    if observation_type == 'generation':
         prompt_tokens = count_tokens(function_input)
         completion_tokens = count_tokens(function_output)
         total_tokens = prompt_tokens + completion_tokens
@@ -90,14 +111,18 @@ def update_observation(obs, function_input, function_output, output_mapping, typ
             'totalTokens': total_tokens,
         },
             **mapped_output)
-    elif type == 'span':
-        obs.end(**mapped_output)
     else:
-        obs.update(**mapped_output)
+        #if 'end' in dir(obs):
+        #    obs.end(**mapped_output)
+        if 'update' in dir(obs):
+            import datetime as dt
+            mapped_output['end_time'] = dt.datetime.now()
+            obs.update(**mapped_output)
 
 
 async def perform_evaluations(observation, result, func, args, evaluators):
     result.update({'observation': observation})
+
     if inspect.ismethod(func):
         self = args[0]
         if func.__qualname__.split('.')[-1] == 'run':
@@ -113,17 +138,8 @@ async def perform_evaluations(observation, result, func, args, evaluators):
         for evaluator in evaluators:
             await evaluator(**result)
 
-
-def get_context_obs(type, name, function_input):
-    current_observation = LangfuseContext.get_current_observation()
-    observation_method = getattr(current_observation, type)
-    obs = observation_method(name=name, **function_input)
-    LangfuseContext.set_current_observation(obs)
-    return obs
-
-
-def conditional_args(type, input_mapping=None, output_mapping=None):
-    if type == 'generation':
+def conditional_args(observation_type, input_mapping=None, output_mapping=None):
+    if observation_type == 'generation':
         if input_mapping is None:
             input_mapping = {'input': 'messages'}
         if output_mapping is None:
@@ -133,8 +149,8 @@ def conditional_args(type, input_mapping=None, output_mapping=None):
 
 ####### DECORATORS #######
 
-def observation(type, name=None, input_mapping=None, output_mapping=None, evaluators=None):
-    input_mapping, output_mapping = conditional_args(type, input_mapping, output_mapping)
+def observation(observation_type, name=None, input_mapping=None, output_mapping=None, evaluators=None):
+    input_mapping, output_mapping = conditional_args(observation_type, input_mapping, output_mapping)
 
     def decorator(func):
         @functools.wraps(func)
@@ -145,26 +161,25 @@ def observation(type, name=None, input_mapping=None, output_mapping=None, evalua
             function_input = prepare_observation_input(input_mapping, kwargs)
 
             async with LangfuseContext.trace_context(name):
-                obs = get_context_obs(type, name, function_input)
+                obs = get_context_obs(observation_type, name, function_input)
                 try:
                     result = await func(*args, **kwargs)
-                    update_observation(obs, function_input, result, output_mapping, type)
-                    # Evaluate
+                    end_observation(obs, function_input, result, output_mapping, observation_type)
                     await perform_evaluations(obs, result, func, args, evaluators)
                     return result
                 except Exception as e:
                     handle_exception(obs, e)
-                    raise e
                 finally:
-                    LangfuseContext.set_current_observation(None)
+                    if LangfuseContext.get_obs() == obs:
+                        LangfuseContext.set_obs(None)
 
         return wrapper
 
     return decorator
 
 
-def streaming_observation(type, name=None, input_mapping=None, output_mapping=None, evaluators=None):
-    input_mapping, output_mapping = conditional_args(type, input_mapping, output_mapping)
+def streaming_observation(observation_type, name=None, input_mapping=None, output_mapping=None, evaluators=None):
+    input_mapping, output_mapping = conditional_args(observation_type, input_mapping, output_mapping)
 
     def decorator(func):
         @functools.wraps(func)
@@ -182,17 +197,17 @@ def streaming_observation(type, name=None, input_mapping=None, output_mapping=No
                     function_input[langfuse_kwarg] = kwargs[function_kwarg]
 
             async with LangfuseContext.trace_context(name):
-                obs = get_context_obs(type, name, function_input)
+                obs = get_context_obs(observation_type, name, function_input)
                 try:
                     async for message in func(*args, **kwargs):
                         yield message
-                    update_observation(obs, function_input, message, output_mapping, type)
+                    end_observation(obs, function_input, message, output_mapping, observation_type)
                     await perform_evaluations(obs, message, func, args, evaluators)
                 except Exception as e:
                     handle_exception(obs, e)
                     raise e
                 finally:
-                    LangfuseContext.set_current_observation(None)
+                    LangfuseContext.set_obs(None)
 
         return wrapper
 
