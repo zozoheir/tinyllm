@@ -63,7 +63,6 @@ class TestStreamingAgent(AsyncioTestCase):
         llm = llm_store.get_llm(
             llm_library=LLMs.LITE_LLM_STREAM,
             name='Tinyllm manager',
-            debug=False,
         )
 
         tiny_agent = AgentStream(
@@ -73,13 +72,12 @@ class TestStreamingAgent(AsyncioTestCase):
             example_manager=ExampleManager(),
             toolkit=toolkit,
             memory=BufferMemory(name='Agent memory', is_traced=False),
-            evaluators=[
+            run_evaluators=[
                 AnswerCorrectnessEvaluator(
                     name="Eval: correct user info",
                     is_traced=False,
                 ),
             ],
-            debug=True,
         )
 
         async def async_test():

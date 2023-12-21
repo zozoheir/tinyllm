@@ -3,9 +3,8 @@ from typing import Optional, Any
 from litellm import OpenAIError, acompletion
 
 from tinyllm.function import Function
-from tinyllm.examples.example_manager import ExampleManager
+from tinyllm.tracing.langfuse_context import observation
 from tinyllm.util.helpers import *
-from tinyllm.tracing.generation import langfuse_generation
 from tinyllm.validator import Validator
 from tenacity import retry, stop_after_attempt, wait_random_exponential, retry_if_exception_type
 
@@ -22,6 +21,7 @@ class LiteLLMChatInputValidator(Validator):
     max_tokens: Optional[int] = 400
     n: Optional[int] = 1
     stream: Optional[bool] = True
+    context_window_fallback_dict: Optional[Dict] = {"gpt-3.5-turbo": "gpt-3.5-turbo-16k"}
 
 
 class LiteLLMChatOutputValidator(Validator):
@@ -33,48 +33,27 @@ class LiteLLM(Function):
         super().__init__(input_validator=LiteLLMChatInputValidator,
                          **kwargs)
 
-    async def run(self, **kwargs):
-        with_tools = kwargs.get('tools', None) is not None
-        tools_args = {}
-        if with_tools: tools_args = {'tools': kwargs['tools'],
-                                     'tool_choice': kwargs.get('tool_choice', 'auto')}
-        api_result = await self.get_completion(
-            messages=kwargs['messages'],
-            model=kwargs['model'],
-            temperature=kwargs['temperature'],
-            max_tokens=kwargs['max_tokens'],
-            n=kwargs['n'],
-            parent_observation=kwargs.get('parent_observation', None),
-            **tools_args
-        )
-
-        return {
-            "response": api_result,
-        }
-
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_random_exponential(min=1, max=10),
         retry=retry_if_exception_type((OpenAIError))
     )
-    @langfuse_generation
-    async def get_completion(self,
-                             model,
-                             temperature,
-                             n,
-                             max_tokens,
-                             messages,
-                             parent_observation=None,
-                             **kwargs):
-        completion_args = {
-            'model': kwargs.get('model', model),
-            'temperature': kwargs.get('temperature', temperature),
-            'n': kwargs.get('n', n),
-            'max_tokens': kwargs.get('max_tokens', max_tokens),
-        }
+    @observation(observation_type='generation',input_mapping={'input':'messages'},output_mapping={'output':'response'})
+    async def run(self, **kwargs):
+        tools_args = {}
+        if kwargs.get('tools', None) is not None:
+            tools_args = {'tools': kwargs.get('tools', None),
+                          'tool_choice': kwargs.get('tool_choice', 'auto')}
         api_result = await acompletion(
-            messages=messages,
-            **completion_args,
-            **kwargs
+            messages=kwargs['messages'],
+            model=kwargs.get('model', 'gpt-3.5-turbo'),
+            temperature=kwargs.get('temperature', 0),
+            n=kwargs.get('n', 1),
+            max_tokens=kwargs.get('max_tokens', 400),
+            context_window_fallback_dict=kwargs.get('context_window_fallback_dict',
+                                                    {"gpt-3.5-turbo": "gpt-3.5-turbo-16k"}),
+            **tools_args
         )
-        return api_result.model_dump()
+        return {
+            "response": api_result.model_dump(),
+        }

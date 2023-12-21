@@ -68,19 +68,17 @@ async def run_agent():
         system_role="You are a helpful agent that can answer questions about the user's profile using available tools.",
         name='Tinyllm manager',
         is_traced=False,
-        debug=False
     )
     tiny_agent = Agent(name='Test: agent',
                        llm=llm,
                        toolkit=toolkit,
                        memory=BufferMemory(name='Agent memory', is_traced=False),
-                       evaluators=[
+                       run_evaluators=[
                            AnswerCorrectnessEvaluator(
                                name="Eval: correct user info",
                                is_traced=False,
                            ),
-                       ],
-                       debug=True)
+                       ])
 
 
     # Run

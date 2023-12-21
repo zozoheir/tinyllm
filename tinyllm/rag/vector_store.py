@@ -1,4 +1,3 @@
-import datetime as dt
 
 import tinyllm
 
@@ -8,23 +7,23 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects.postgresql import insert
 from pgvector.sqlalchemy import Vector
 from sqlalchemy.dialects import postgresql
-from langfuse.model import CreateSpan, UpdateSpan
 
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 
 from tinyllm.function import Function
+from tinyllm.tracing.langfuse_context import observation
 
 Base = declarative_base()
 
 
 def get_database_uri():
     postgres_config = tinyllm.tinyllm_config['POSTGRES']
-    user = postgres_config['TINYLLM_POSTGRES_USERNAME']
-    password = postgres_config['TINYLLM_POSTGRES_PASSWORD']
-    host = postgres_config['TINYLLM_POSTGRES_HOST']
-    port = postgres_config['TINYLLM_POSTGRES_PORT']
-    name = postgres_config['TINYLLM_POSTGRES_NAME']
+    user = postgres_config['USERNAME']
+    password = postgres_config['PASSWORD']
+    host = postgres_config['HOST']
+    port = postgres_config['PORT']
+    name = postgres_config['NAME']
     return f"postgresql+asyncpg://{user}:{password}@{host}:{port}/{name}"
 
 
@@ -38,30 +37,6 @@ class Embeddings(Base):
     text = Column(String)
     emetadata = Column(postgresql.JSON)
 
-
-def span_call(func):
-    """Decorator to print before and after a method call."""
-    async def wrapper(*args, **kwargs):
-        if getattr(func, 'trace', None) is None:
-            return await func(*args, **kwargs)
-        method_name = func.__name__
-        if func.trace:
-            span = func.trace.span(
-                CreateSpan(
-                    name="Vector store: " + method_name,
-                    input=args+tuple(kwargs.values()),
-                    startTime=dt.datetime.utcnow()
-                )
-            )
-        result = await func(*args, **kwargs)
-        if func.trace:
-            span.update(
-                UpdateSpan(
-                    output=result,
-                    endTime=dt.datetime.now())
-            )
-        return result
-    return wrapper
 
 
 class VectorStore(Function):
@@ -116,7 +91,7 @@ class VectorStore(Function):
                     await session.execute(stmt)
                 await session.commit()
 
-    @span_call
+    @observation(observation_type='span')
     async def similarity_search(self, query, k, collection_filters, metadata_filters=None):
         query_embedding = self.embedding_function(query)
 

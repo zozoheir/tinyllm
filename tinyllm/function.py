@@ -6,12 +6,11 @@ import pydantic
 import pytz
 from langfuse.api import CreateDatasetRequest, CreateDatasetItemRequest
 from langfuse.client import DatasetItemClient
-from langfuse.model import CreateTrace
 
 from smartpy.utility.log_util import getLogger
 from smartpy.utility.py_util import get_exception_info
 from tinyllm.exceptions import InvalidStateTransition
-from tinyllm import langfuse_client
+from tinyllm import langfuse_client, tinyllm_config
 from tinyllm.state import States, ALLOWED_TRANSITIONS
 from tinyllm.validator import Validator
 from tinyllm.util.fallback_strategy import fallback_decorator
@@ -32,8 +31,8 @@ class FunctionInitValidator(Validator):
     output_validator: Optional[Type[Validator]]
     processed_output_validator: Optional[Type[Validator]] = None
     is_traced: bool
-    debug: bool
-    evaluators: Optional[list]
+    run_evaluators: Optional[list]
+    processed_output_evaluators: Optional[list]
     dataset_name: Optional[str]
     stream: Optional[bool]
 
@@ -60,10 +59,10 @@ class Function:
             input_validator=Validator,
             output_validator=DefaultOutputValidator,
             processed_output_validator=None,
-            evaluators=[],
+            run_evaluators=[],
+            processed_output_evaluators=[],
             dataset_name=None,
             is_traced=True,
-            debug=True,
             required=True,
             stream=False,
             fallback_strategies={},
@@ -75,9 +74,12 @@ class Function:
             output_validator=output_validator,
             processed_output_validator=processed_output_validator,
             is_traced=is_traced,
-            debug=debug,
+            run_evaluators=run_evaluators,
+            processed_output_evaluators=processed_output_evaluators,
             stream=stream,
         )
+        self.parent_observation = None
+
         self.user = user_id
         self.init_timestamp = dt.datetime.now(pytz.UTC).isoformat()
         self.function_id = str(uuid.uuid4())
@@ -96,20 +98,10 @@ class Function:
         self.input = None
         self.output = None
         self.processed_output = None
-        self.scores = []
-        self.trace = None
-        self.debug = debug
-        self.is_traced = is_traced
-        self.trace = None
-        self.parent_observation = None
-        if is_traced is True:
-            self.trace = langfuse_client.trace(CreateTrace(
-                name=self.name,
-                userId="test")
-            )
+        self.run_evaluators = run_evaluators
+        self.processed_output_evaluators = processed_output_evaluators
 
         self.cache = {}
-        self.evaluators = evaluators
         self.dataset_name = dataset_name
         self.dataset = None
         if self.dataset_name is not None:
@@ -120,15 +112,8 @@ class Function:
 
         self.fallback_strategies = fallback_strategies
         self.stream = stream
-        self.generation = None
 
-    def __setattr__(self, key, value):
-        super().__setattr__(key, value)
 
-        # If the attribute is a Function instance, set its trace attribute
-        if isinstance(value, Function):
-            value.trace = self.trace
-            self.is_traced = False
 
     @fallback_decorator
     async def __call__(self, **kwargs):
@@ -158,7 +143,6 @@ class Function:
             final_output = {"status": "success",
                             "output": self.processed_output}
 
-
             # Complete
             self.transition(States.COMPLETE)
             langfuse_client.flush()
@@ -170,6 +154,8 @@ class Function:
             detailed_error_msg = get_exception_info(e)
             self.log(detailed_error_msg, level="error")
             langfuse_client.flush()
+            if tinyllm_config['OPS']['DEBUG']:
+                raise e
             if type(e) in self.fallback_strategies:
                 raise e
             else:
@@ -228,8 +214,8 @@ class Function:
                 self.log(evaluator_response['message'], level="error")
 
     def log(self, message, level="info"):
-        # Only log if debug
-        if getattr(self, 'debug', None):
+
+        if tinyllm_config['OPS']['LOGGING']:
             log_message = f"[{self.name}] {message}"
             if getattr(self, 'trace', None):
                 # Add generation id to log message if trace is enabled
@@ -256,4 +242,3 @@ class Function:
 
     async def process_output(self, **kwargs):
         return kwargs
-

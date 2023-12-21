@@ -3,7 +3,7 @@ from abc import abstractmethod
 from typing import Any
 
 from tinyllm.function import Function
-from tinyllm import langfuse_client
+from tinyllm import langfuse_client, tinyllm_config
 from tinyllm.state import States
 from tinyllm.validator import Validator
 
@@ -38,11 +38,11 @@ class FunctionStream(Function):
 
             # Run
             self.transition(States.RUNNING)
-            async for message in self.run(**validated_input):
+            async for message in self.run(**validated_input ):
 
                 # Output validation
                 if 'status' in message.keys():
-                    if message['status'] =='success':
+                    if message['status'] == 'success':
                         message = message['output']
                     else:
                         raise Exception(message['message'])
@@ -61,7 +61,7 @@ class FunctionStream(Function):
 
             # Process output
             self.transition(States.PROCESSING_OUTPUT)
-            self.processed_output = await self.process_output(**self.output)
+            self.processed_output = await self.process_output(**self.output )
 
             # Validate processed output
             if self.processed_output_validator:
@@ -81,8 +81,12 @@ class FunctionStream(Function):
             self.error_message = str(e)
             self.transition(States.FAILED, msg='/n'.join(traceback.format_exception(e)))
             langfuse_client.flush()
-            if type(e) in self.fallback_strategies:
+
+            if tinyllm_config['OPS']['DEBUG']:
                 raise e
             else:
-                yield {"status": "error",
-                       "message": traceback.format_exception(e)}
+                if type(e) in self.fallback_strategies:
+                    raise e
+                else:
+                    yield {"status": "error",
+                           "message": traceback.format_exception(e)}
