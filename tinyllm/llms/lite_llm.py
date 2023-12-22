@@ -25,6 +25,8 @@ class LiteLLMChatInputValidator(Validator):
 
 
 class LiteLLMChatOutputValidator(Validator):
+    type: str
+    message: dict
     response: Any
 
 
@@ -32,7 +34,6 @@ class LiteLLM(Function):
     def __init__(self, **kwargs):
         super().__init__(input_validator=LiteLLMChatInputValidator,
                          **kwargs)
-
 
     @observation(observation_type='generation',input_mapping={'input':'messages'},output_mapping={'output':'response'})
     async def run(self, **kwargs):
@@ -50,6 +51,12 @@ class LiteLLM(Function):
                                                     {"gpt-3.5-turbo": "gpt-3.5-turbo-16k"}),
             **tools_args
         )
+        model_dump = api_result.model_dump()
+        msg_type = 'tool' if model_dump['choices'][0]['finish_reason'] == 'tool_calls' else 'completion'
+        message = model_dump['choices'][0]['message']
         return {
-            "response": api_result.model_dump(),
+            "type": msg_type,
+            "message": message,
+            "response": model_dump,
+            "completion": message['content'],
         }

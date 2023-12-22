@@ -64,7 +64,8 @@ class LiteLLMStream(LiteLLM, FunctionStream):
                 "delta": delta_to_return or '',
                 "completion": completion,
                 "message": get_openai_message(role=chunk_role,
-                                              content=completion)
+                                              content=completion),
+                "last_chunk": chunk_dict,
             }
 
     def get_chunk_type(self,

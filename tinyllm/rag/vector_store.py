@@ -44,6 +44,7 @@ class VectorStore(Function):
 
     def __init__(self,
                  embedding_function):
+        self.name = 'PGVectorStore'
         self._engine = create_async_engine(get_database_uri())
         self._Session = sessionmaker(
             bind=self._engine,

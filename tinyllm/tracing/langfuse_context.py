@@ -13,6 +13,23 @@ from tinyllm.util.helpers import count_tokens
 import contextvars
 from contextlib import asynccontextmanager
 
+model_parameters = [
+    "model",
+    "frequency_penalty",
+    "logit_bias",
+    "logprobs",
+    "top_logprobs",
+    "max_tokens",
+    "n",
+    "presence_penalty",
+    "response_format",
+    "seed",
+    "stop",
+    "stream",
+    "temperature",
+    "top_p"
+]
+
 
 class LangfuseContext:
     _current_trace = contextvars.ContextVar('current_trace', default=None)
@@ -92,12 +109,12 @@ def convert_dict_to_string(d):
             continue
         elif isinstance(value, dict):
             convert_dict_to_string(value)
-        elif not isinstance(value, (str, dict, list, tuple, float, int, bool, np.array)):
+        elif not type(value) in (str, dict, list, tuple, float, int, bool, np.array):
             d[key] = str(value)
     return d
 
 
-def end_observation(obs, observation_input, function_output, output_mapping, observation_type):
+def end_observation(func, obs, observation_input, function_output, output_mapping, observation_type, function_kwargs):
     mapped_obs_output = {}
     if type(function_output) == list:
         for i, item in enumerate(function_output):
@@ -113,18 +130,32 @@ def end_observation(obs, observation_input, function_output, output_mapping, obs
             mapped_obs_output[langfuse_kwarg] = function_output[function_kwarg]
 
     if observation_type == 'generation':
-        prompt_tokens = count_tokens(observation_input)
-        completion_tokens = count_tokens(function_output)
+        prompt_tokens = count_tokens(observation_input['input'])
+        completion_tokens = count_tokens(function_output['message'])
+        if inspect.isasyncgenfunction(func):
+            response = function_output['last_chunk']
+        else:
+            response = function_output['response']
+
         total_tokens = prompt_tokens + completion_tokens
 
         obs.end(
             end_time=dt.datetime.now(),
+            metadata={
+                'response': response,
+                'run_arguments': function_kwargs
+            },
+            model_parameters={k: v for k, v in function_kwargs.items() if
+                              k in model_parameters},
             usage={
                 'promptTokens': prompt_tokens,
                 'completionTokens': completion_tokens,
-                'totalTokens': total_tokens,
+                'totalTokens': total_tokens
             },
-            **mapped_obs_output)
+            **mapped_obs_output
+        )
+
+
     elif observation_type == 'span':
         obs.end(**mapped_obs_output)
     elif observation_type == 'trace':
@@ -147,6 +178,7 @@ def conditional_args(observation_type, input_mapping=None, output_mapping=None):
             output_mapping = {'output': 'message'}
     return input_mapping, output_mapping
 
+
 def get_obs_name(*args, func):
     name = None
     if len(args) > 0:
@@ -154,15 +186,13 @@ def get_obs_name(*args, func):
     else:
         if hasattr(func, '__qualname__'):
             if func.__qualname__.split('.')[-2] != '<locals>':
-                name =  '.'.join(func.__qualname__.split('.')[-2::])
+                name = '.'.join(func.__qualname__.split('.')[-2::])
             else:
-                name =  func.__name__
+                name = func.__name__
     return name
 
 
-
 ####### DECORATORS #######
-
 
 
 def observation(observation_type, name=None, input_mapping=None, output_mapping=None, evaluators=None):
@@ -185,7 +215,8 @@ def observation(observation_type, name=None, input_mapping=None, output_mapping=
                     result = await func(*args, **function_kwargs)
                     if type(result) != dict:
                         raise Exception('Functions with @observation  must return a dict')
-                    end_observation(obs, observation_input, result, output_mapping, observation_type)
+                    end_observation(func, obs, observation_input, result, output_mapping, observation_type,
+                                    function_kwargs)
 
                     # Specific decorator's evaluators
                     await perform_evaluations(obs, result, evaluators)
@@ -202,14 +233,12 @@ def observation(observation_type, name=None, input_mapping=None, output_mapping=
     return decorator
 
 
-
-
 def streaming_observation(observation_type, name=None, input_mapping=None, output_mapping=None, evaluators=None):
     input_mapping, output_mapping = conditional_args(observation_type, input_mapping, output_mapping)
 
     def decorator(func):
         @functools.wraps(func)
-        async def wrapper(*args, **kwargs):
+        async def wrapper(*args, **function_kwargs):
 
             nonlocal name
             if not name:
@@ -217,18 +246,19 @@ def streaming_observation(observation_type, name=None, input_mapping=None, outpu
 
             observation_input = {}
             if not input_mapping:
-                observation_input = {'input': kwargs}
+                observation_input = {'input': function_kwargs}
             else:
                 for langfuse_kwarg, function_kwarg in input_mapping.items():
-                    observation_input[langfuse_kwarg] = kwargs[function_kwarg]
+                    observation_input[langfuse_kwarg] = function_kwargs[function_kwarg]
 
             async with LangfuseContext.trace_context(name):
                 obs = get_context_observation(observation_type, name, observation_input)
                 try:
-                    async for message in func(*args, **kwargs):
+                    async for message in func(*args, **function_kwargs):
                         yield message
-                    end_observation(obs, observation_input, message, output_mapping, observation_type)
-                    await perform_evaluations(obs, message, func, args, evaluators)
+                    end_observation(func, obs, observation_input, message, output_mapping, observation_type,
+                                    function_kwargs)
+                    await perform_evaluations(obs, message, evaluators)
                 except Exception as e:
                     handle_exception(obs, e)
                     raise e
