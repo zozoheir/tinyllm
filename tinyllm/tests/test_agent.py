@@ -47,13 +47,11 @@ tools = [
             },
             "required": ["asked_property"],
         },
-        is_traced=False,
     )
 ]
 toolkit = Toolkit(
     name='Toolkit',
     tools=tools,
-    is_traced=False,
 )
 
 llm_store = LLMStore()
@@ -66,7 +64,6 @@ class TestStreamingAgent(AsyncioTestCase):
         llm = llm_store.get_llm(
             name='Tinyllm manager',
             llm_library=LLMs.LITE_LLM,
-            is_traced=False,
         )
         tiny_agent = Agent(
             system_role="You are a helpful assistant",
@@ -74,14 +71,12 @@ class TestStreamingAgent(AsyncioTestCase):
             llm=llm,
             example_manager=ExampleManager(),
             toolkit=toolkit,
-            memory=BufferMemory(name='Agent memory', is_traced=False),
+            memory=BufferMemory(name='Agent memory'),
             #run_evaluators=[
             #    AnswerCorrectnessEvaluator(
             #        name="Eval: correct user info",
-            #        is_traced=False,
             #    ),
             #],
-            is_traced=True
         )
 
         # Run the asynchronous test

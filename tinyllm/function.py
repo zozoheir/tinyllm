@@ -1,6 +1,6 @@
 import datetime as dt
 import uuid
-from typing import Any, Optional, Type
+from typing import Any, Optional, Type, Dict
 
 import pydantic
 import pytz
@@ -26,11 +26,9 @@ def pretty_print(value):
 
 
 class FunctionInitValidator(Validator):
-    name: str
     input_validator: Optional[Type[Validator]]
     output_validator: Optional[Type[Validator]]
     processed_output_validator: Optional[Type[Validator]] = None
-    is_traced: bool
     run_evaluators: Optional[list]
     processed_output_evaluators: Optional[list]
     dataset_name: Optional[str]
@@ -38,13 +36,10 @@ class FunctionInitValidator(Validator):
 
 
 class DefaultInputValidator(Validator):
-    role: Any
-    content: Any
-
+    message: Dict[str, str]
 
 class DefaultOutputValidator(Validator):
     response: Any
-
 
 class DefaultProcessedOutputValidator(Validator):
     response: Any
@@ -54,7 +49,7 @@ class Function:
 
     def __init__(
             self,
-            name,
+            name=None,
             user_id=None,
             input_validator=Validator,
             output_validator=DefaultOutputValidator,
@@ -62,18 +57,15 @@ class Function:
             run_evaluators=[],
             processed_output_evaluators=[],
             dataset_name=None,
-            is_traced=True,
             required=True,
             stream=False,
             fallback_strategies={},
 
     ):
         FunctionInitValidator(
-            name=name,
             input_validator=input_validator,
             output_validator=output_validator,
             processed_output_validator=processed_output_validator,
-            is_traced=is_traced,
             run_evaluators=run_evaluators,
             processed_output_evaluators=processed_output_evaluators,
             stream=stream,
@@ -84,12 +76,14 @@ class Function:
         self.init_timestamp = dt.datetime.now(pytz.UTC).isoformat()
         self.function_id = str(uuid.uuid4())
         self.logger = getLogger(__name__)
-        self.name = name
+        if name is None:
+            self.name = self.__class__.__name__
+        else:
+            self.name = name
 
         self.input_validator = input_validator
         self.output_validator = output_validator
         self.processed_output_validator = processed_output_validator
-        self.is_traced = is_traced
         self.required = required
         self.logs = ""
         self.state = None
@@ -98,8 +92,11 @@ class Function:
         self.input = None
         self.output = None
         self.processed_output = None
+        self.current_observation = None
         self.run_evaluators = run_evaluators
         self.processed_output_evaluators = processed_output_evaluators
+        for evaluator in self.processed_output_evaluators:
+            evaluator.name = 'proc:' + evaluator.name
 
         self.cache = {}
         self.dataset_name = dataset_name
@@ -112,7 +109,6 @@ class Function:
 
         self.fallback_strategies = fallback_strategies
         self.stream = stream
-
 
 
     @fallback_decorator
@@ -129,7 +125,11 @@ class Function:
 
             # Validate output
             self.transition(States.OUTPUT_VALIDATION)
-            self.output = self.validate_output(**self.output)
+            self.validate_output(**self.output)
+
+            # Evaluate output
+            for evaluator in self.run_evaluators:
+                await evaluator(**self.output, observation=self.current_observation)
 
             # Process output
             self.transition(States.PROCESSING_OUTPUT)
@@ -137,8 +137,13 @@ class Function:
 
             # Validate processed output
             self.transition(States.PROCESSED_OUTPUT_VALIDATION)
+
             if self.processed_output_validator:
-                self.processed_output = self.validate_processed_output(**self.processed_output)
+                self.validate_processed_output(**self.processed_output)
+
+            # Evaluate processed output
+            for evaluator in self.processed_output_evaluators:
+                await evaluator(**self.processed_output, observation=self.current_observation)
 
             final_output = {"status": "success",
                             "output": self.processed_output}

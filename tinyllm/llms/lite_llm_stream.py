@@ -10,11 +10,6 @@ from tinyllm.util.helpers import get_openai_message
 
 class LiteLLMStream(LiteLLM, FunctionStream):
 
-    @retry(
-        stop=stop_after_attempt(3),
-        wait=wait_random_exponential(min=1, max=10),
-        retry=retry_if_exception_type((OpenAIError))
-    )
     @streaming_observation(observation_type='generation')
     async def run(self, **kwargs):
         tools_args = {}
@@ -69,7 +64,8 @@ class LiteLLMStream(LiteLLM, FunctionStream):
                 "delta": delta_to_return or '',
                 "completion": completion,
                 "message": get_openai_message(role=chunk_role,
-                                              content=completion)
+                                              content=completion),
+                "last_chunk": chunk_dict,
             }
 
     def get_chunk_type(self,

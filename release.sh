@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Run the commit.sh script
-./commit.sh
+#./commit.sh
 
 if [ $? -eq 0 ]; then
     echo "Commit successful, proceeding to activate virtual environment."

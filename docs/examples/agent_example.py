@@ -1,20 +1,18 @@
 import asyncio
 
-from tinyllm.agent import Agent
-from tinyllm.agent import Toolkit
-from tinyllm.llms import LLMStore, LLMs
-
-from tinyllm.agent import Tool
-from tinyllm.eval import Evaluator
-from tinyllm.memory.memory import Memory
-
+from tinyllm.agent.agent import Agent
+from tinyllm.agent.tool import Tool
+from tinyllm.agent.toolkit import Toolkit
+from tinyllm.eval.evaluator import Evaluator
+from tinyllm.llms.llm_store import LLMStore, LLMs
+from tinyllm.memory.memory import BufferMemory
 
 loop = asyncio.get_event_loop()
 
 class AnswerCorrectnessEvaluator(Evaluator):
 
     async def run(self, **kwargs):
-        completion = kwargs['output']['response']['choices'][0]['message']['content']
+        completion = kwargs['response']['choices'][0]['message']['content']
         evals = {
             "evals": {
                 "correct_answer": 1 if 'january 1st' in completion.lower() else 0
@@ -48,13 +46,11 @@ tools = [
             },
             "required": ["asked_property"],
         },
-        is_traced=False,
     )
 ]
 toolkit = Toolkit(
     name='Toolkit',
     tools=tools,
-    is_traced=False,
 )
 
 llm_store = LLMStore()
@@ -65,25 +61,20 @@ llm_store = LLMStore()
 async def run_agent():
     llm = llm_store.get_llm(
         llm_library=LLMs.LITE_LLM,
-        system_role="You are a helpful agent that can answer questions about the user's profile using available tools.",
         name='Tinyllm manager',
-        is_traced=False,
     )
     tiny_agent = Agent(name='Test: agent',
+                       system_role="You are a helpful agent that can answer questions about the user's profile using available tools.",
                        llm=llm,
                        toolkit=toolkit,
-                       memory=BufferMemory(name='Agent memory', is_traced=False),
+                       memory=BufferMemory(name='Agent memory'),
                        run_evaluators=[
                            AnswerCorrectnessEvaluator(
                                name="Eval: correct user info",
-                               is_traced=False,
                            ),
                        ])
 
-
-    # Run
     result = await tiny_agent(user_input="What is the user's birthday?")
     print(result)
 
-# Run
 result = loop.run_until_complete(run_agent())
