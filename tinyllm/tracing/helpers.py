@@ -123,7 +123,7 @@ def get_obs_name(*args, func):
     # Decorated function
     else:
         if hasattr(func, '__qualname__'):
-            if len(func.__qualname__.split('.')) > 1:
+            if len(func.__qualname__.split('.')) > 1 and '<locals>' not in func.__qualname__.split('.'):
                 name = '.'.join(func.__qualname__.split('.')[-2::])
             else:
                 name = func.__name__

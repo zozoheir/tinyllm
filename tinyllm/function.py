@@ -5,7 +5,6 @@ from typing import Any, Optional, Type, Dict
 import pydantic
 import pytz
 from langfuse.api import CreateDatasetRequest, CreateDatasetItemRequest
-from langfuse.client import DatasetItemClient
 
 from smartpy.utility.log_util import getLogger
 from smartpy.utility.py_util import get_exception_info
@@ -35,16 +34,6 @@ class FunctionInitValidator(Validator):
     stream: Optional[bool]
 
 
-class DefaultInputValidator(Validator):
-    message: Dict[str, str]
-
-class DefaultOutputValidator(Validator):
-    response: Any
-
-class DefaultProcessedOutputValidator(Validator):
-    response: Any
-
-
 class Function:
 
     def __init__(
@@ -52,8 +41,8 @@ class Function:
             name=None,
             user_id=None,
             input_validator=Validator,
-            output_validator=DefaultOutputValidator,
-            processed_output_validator=None,
+            output_validator=Validator,
+            processed_output_validator=Validator,
             run_evaluators=[],
             processed_output_evaluators=[],
             dataset_name=None,
@@ -209,7 +198,7 @@ class Function:
         return self.processed_output_validator(**kwargs).dict()
 
     async def run(self, **kwargs) -> Any:
-        pass
+        return kwargs
 
     async def process_output(self, **kwargs):
         return kwargs
