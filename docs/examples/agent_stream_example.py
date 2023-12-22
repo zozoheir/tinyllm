@@ -1,18 +1,16 @@
 import asyncio
 
-from tinyllm.agent import AgentStream
-from tinyllm.agent import Toolkit
-from tinyllm.llms import LLMStore, LLMs
-
-from tinyllm.agent import Tool
-from tinyllm.eval import Evaluator
+from tinyllm.agent.agent_stream import AgentStream
+from tinyllm.agent.tool import Tool
+from tinyllm.agent.toolkit import Toolkit
+from tinyllm.eval.evaluator import Evaluator
+from tinyllm.llms.llm_store import LLMStore, LLMs
 
 loop = asyncio.get_event_loop()
 
 class AnswerCorrectnessEvaluator(Evaluator):
     async def run(self, **kwargs):
-        completion = kwargs['output']['output']['completion']
-
+        completion = kwargs['output']['completion']
         evals = {
             "evals": {
                 "correct_answer": 1 if 'january 1st' in completion.lower() else 0
@@ -55,19 +53,19 @@ toolkit = Toolkit(
 llm_store = LLMStore()
 
 async def run_agent_stream():
+
     llm_stream = llm_store.get_llm(
         llm_library=LLMs.LITE_LLM_STREAM,
-        system_role="You are a helpful agent that can answer questions about the user's profile using available tools.",
         name='Tinyllm manager',
     )
 
     tiny_agent = AgentStream(name='Test: agent stream',
+                             system_role="You are a helpful agent that can answer questions about the user's profile using available tools.",
                              llm=llm_stream,
                              toolkit=toolkit,
                              run_evaluators=[
                                  AnswerCorrectnessEvaluator(
                                      name="Functional call corrector",
-                                     is_traced=False,
                                  ),
                              ])
 

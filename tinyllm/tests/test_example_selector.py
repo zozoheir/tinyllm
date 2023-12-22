@@ -31,7 +31,6 @@ class TestExampleSelector(AsyncioTestCase):
             name="Test local example selector",
             examples=self.example_texts,
             embedding_function=embedding_function,
-            is_traced=False
         )
 
     def test_selector(self):

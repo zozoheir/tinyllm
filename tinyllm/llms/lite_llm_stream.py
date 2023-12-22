@@ -10,11 +10,6 @@ from tinyllm.util.helpers import get_openai_message
 
 class LiteLLMStream(LiteLLM, FunctionStream):
 
-    @retry(
-        stop=stop_after_attempt(3),
-        wait=wait_random_exponential(min=1, max=10),
-        retry=retry_if_exception_type((OpenAIError))
-    )
     @streaming_observation(observation_type='generation')
     async def run(self, **kwargs):
         tools_args = {}

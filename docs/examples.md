@@ -13,7 +13,6 @@ prompt_template = OpenAIPromptTemplate(
 openai_chat = OpenAIChat(name='OpenAI Chat model',
                          model='gpt-3.5-turbo',
                          temperature=0,
-                         is_traced=True,
                          max_tokens=100,
                          prompt_template=prompt_template)
 
@@ -91,28 +90,28 @@ final_context = context_builder.format(
 print(final_context)
 ```
 
-
 #### Evaluation pipeline
-
 
 ```python
 
 import asyncio
+
 loop = asyncio.get_event_loop()
 
 kg_qa_chain = Retriever(
     name="KG QA Chain",
-    is_traced=True,
 )
+
 
 async def rag_lambda(input):
     chain_response = await kg_qa_chain(input=input)
     return chain_response['response']
 
+
 # Generate test set
 docs = [
-    {"text":"Fake content 1"},
-    {"text":"Fake context 2"}
+    {"text": "Fake content 1"},
+    {"text": "Fake context 2"}
 ]
 qa_set_generator = QASetGenerator(
     name="QA Data Point Generator",
@@ -137,7 +136,6 @@ evals_df = pd.DataFrame(evals)
 
 
 ```
-
 
 #### Credit analysis chain
 
@@ -184,7 +182,6 @@ loan_classifier = Decision(
     name="Decision: Loan classifier",
     choices=['good', 'bad'],
     run_function=classify_loan_application,
-    is_traced=True
 )
 
 
@@ -222,8 +219,8 @@ async def main():
                        children=[
                            email_notification,
                            bg_check])
-        ],
-        is_traced=True)
+        ]
+    )
 
     result = await credit_analysis_chain(loan_application=good_loan_application_example)
 

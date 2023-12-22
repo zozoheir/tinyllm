@@ -71,11 +71,10 @@ class TestStreamingAgent(AsyncioTestCase):
             llm=llm,
             example_manager=ExampleManager(),
             toolkit=toolkit,
-            memory=BufferMemory(name='Agent memory', is_traced=False),
+            memory=BufferMemory(name='Agent memory'),
             run_evaluators=[
                 AnswerCorrectnessEvaluator(
                     name="Eval: correct user info",
-                    is_traced=False,
                 ),
             ],
         )

@@ -1,6 +1,6 @@
 import datetime as dt
 import uuid
-from typing import Any, Optional, Type
+from typing import Any, Optional, Type, Dict
 
 import pydantic
 import pytz
@@ -30,7 +30,6 @@ class FunctionInitValidator(Validator):
     input_validator: Optional[Type[Validator]]
     output_validator: Optional[Type[Validator]]
     processed_output_validator: Optional[Type[Validator]] = None
-    is_traced: bool
     run_evaluators: Optional[list]
     processed_output_evaluators: Optional[list]
     dataset_name: Optional[str]
@@ -38,13 +37,10 @@ class FunctionInitValidator(Validator):
 
 
 class DefaultInputValidator(Validator):
-    role: Any
-    content: Any
-
+    message: Dict[str, str]
 
 class DefaultOutputValidator(Validator):
     response: Any
-
 
 class DefaultProcessedOutputValidator(Validator):
     response: Any
@@ -62,7 +58,6 @@ class Function:
             run_evaluators=[],
             processed_output_evaluators=[],
             dataset_name=None,
-            is_traced=True,
             required=True,
             stream=False,
             fallback_strategies={},
@@ -73,7 +68,6 @@ class Function:
             input_validator=input_validator,
             output_validator=output_validator,
             processed_output_validator=processed_output_validator,
-            is_traced=is_traced,
             run_evaluators=run_evaluators,
             processed_output_evaluators=processed_output_evaluators,
             stream=stream,
@@ -89,7 +83,6 @@ class Function:
         self.input_validator = input_validator
         self.output_validator = output_validator
         self.processed_output_validator = processed_output_validator
-        self.is_traced = is_traced
         self.required = required
         self.logs = ""
         self.state = None
@@ -114,7 +107,6 @@ class Function:
         self.stream = stream
 
 
-
     @fallback_decorator
     async def __call__(self, **kwargs):
         try:
@@ -129,7 +121,7 @@ class Function:
 
             # Validate output
             self.transition(States.OUTPUT_VALIDATION)
-            self.output = self.validate_output(**self.output)
+            self.validate_output(**self.output)
 
             # Process output
             self.transition(States.PROCESSING_OUTPUT)
@@ -138,7 +130,7 @@ class Function:
             # Validate processed output
             self.transition(States.PROCESSED_OUTPUT_VALIDATION)
             if self.processed_output_validator:
-                self.processed_output = self.validate_processed_output(**self.processed_output)
+                self.validate_processed_output(**self.processed_output)
 
             final_output = {"status": "success",
                             "output": self.processed_output}

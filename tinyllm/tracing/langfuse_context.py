@@ -5,6 +5,7 @@ import traceback
 from contextlib import asynccontextmanager
 
 import langfuse
+import numpy as np
 
 from tinyllm import langfuse_client
 from tinyllm.util.helpers import count_tokens
@@ -55,16 +56,16 @@ class LangfuseContext:
         cls._current_trace.set(observation)
 
 
-def get_context_obs(type, name, function_input):
+def get_context_observation(type, name, observation_input):
     current_observation = LangfuseContext.get_obs()
     if isinstance(current_observation, langfuse.client.StatefulTraceClient):
         observation_method = getattr(current_observation, type)
-        current_observation = observation_method(name=name, **function_input)
+        current_observation = observation_method(name=name, **observation_input)
         LangfuseContext.set_parent_obs(current_observation)
         return current_observation
     else:
         observation_method = getattr(current_observation, type)
-        obs = observation_method(name=name, **function_input)
+        obs = observation_method(name=name, **observation_input)
         LangfuseContext.set_obs(obs)
         return obs
 
@@ -77,28 +78,23 @@ def handle_exception(obs, e):
     raise e
 
 
-def prepare_observation_input(input_mapping, kwargs):
+def prepare_observation_input(input_mapping, function_kwargs):
     if not input_mapping:
-        # stringify all non string or dict values
-        for key, value in kwargs.items():
-            if not isinstance(value, (str, dict)):
-                kwargs[key] = str(value)
-        return {'input': kwargs}
-    return {langfuse_kwarg: kwargs[function_kwarg] for langfuse_kwarg, function_kwarg in input_mapping.items()}
+        return {'input': convert_dict_to_string(function_kwargs)}
+    else:
+        return {langfuse_kwarg: function_kwargs[function_kwarg] for langfuse_kwarg, function_kwarg in input_mapping.items()}
 
 
 def convert_dict_to_string(d):
     for key, value in d.items():
         if isinstance(value, dict):
             convert_dict_to_string(value)
-        elif not isinstance(value, (str, dict, list, tuple)):
+        elif not isinstance(value, (str, dict, list, tuple, float, int, bool, np.array)):
             d[key] = str(value)
+    return d
 
-
-def end_observation(obs, function_input, function_output, output_mapping, observation_type):
-    mapped_output = {
-        # 'end_time':dt.datetime.utcnow(),
-    }
+def end_observation(obs, observation_input, function_output, output_mapping, observation_type):
+    mapped_obs_output = {}
     if type(function_output) == list:
         for i, item in enumerate(function_output):
             if type(item) == dict:
@@ -107,13 +103,13 @@ def end_observation(obs, function_input, function_output, output_mapping, observ
         convert_dict_to_string(function_output)
 
     if not output_mapping:
-        mapped_output = {'output': function_output}
+        mapped_obs_output = {'output': function_output}
     else:
         for langfuse_kwarg, function_kwarg in output_mapping.items():
-            mapped_output[langfuse_kwarg] = function_output[function_kwarg]
+            mapped_obs_output[langfuse_kwarg] = function_output[function_kwarg]
 
     if observation_type == 'generation':
-        prompt_tokens = count_tokens(function_input)
+        prompt_tokens = count_tokens(observation_input)
         completion_tokens = count_tokens(function_output)
         total_tokens = prompt_tokens + completion_tokens
 
@@ -124,16 +120,17 @@ def end_observation(obs, function_input, function_output, output_mapping, observ
                 'completionTokens': completion_tokens,
                 'totalTokens': total_tokens,
             },
-            **mapped_output)
+            **mapped_obs_output)
     elif observation_type == 'span':
-        obs.end(**mapped_output)
+        obs.end(**mapped_obs_output)
     elif observation_type == 'trace':
-        obs.end(**mapped_output)
+        obs.end(**mapped_obs_output)
 
 
 async def perform_evaluations(observation, result, func, args, evaluators):
-    if inspect.ismethod(func):
-        result.update({'observation': observation})
+    is_method = '.' in func.__qualname__
+    result.update({'observation': observation})
+    if is_method:
         self = args[0]
 
         # Function.run and Function.process_output evaluators
@@ -146,9 +143,12 @@ async def perform_evaluations(observation, result, func, args, evaluators):
                 for evaluator in self.process_output_evaluators:
                     await evaluator(**result, )
 
+    else:
         if evaluators:
             for evaluator in evaluators:
                 await evaluator(**result)
+
+    result.pop('observation')
 
 
 def conditional_args(observation_type, input_mapping=None, output_mapping=None):
@@ -167,17 +167,18 @@ def observation(observation_type, name=None, input_mapping=None, output_mapping=
 
     def decorator(func):
         @functools.wraps(func)
-        async def wrapper(*args, **kwargs):
+        async def wrapper(*args, **function_kwargs):
             nonlocal name
             if not name:
                 name = func.__qualname__ if hasattr(func, '__qualname__') else func.__name__
-            function_input = prepare_observation_input(input_mapping, kwargs)
-            function_input['start_time'] = dt.datetime.utcnow()
+            observation_input = prepare_observation_input(input_mapping, function_kwargs)
             async with LangfuseContext.trace_context(name):
-                obs = get_context_obs(observation_type, name, function_input)
+                obs = get_context_observation(observation_type, name, observation_input)
                 try:
-                    result = await func(*args, **kwargs)
-                    end_observation(obs, function_input, result, output_mapping, observation_type)
+                    result = await func(*args, **function_kwargs)
+                    if type(result) != dict:
+                        raise Exception('Functions with @observation  must return a dict')
+                    end_observation(obs, observation_input, result, output_mapping, observation_type)
                     await perform_evaluations(obs, result, func, args, evaluators)
                     return result
                 except Exception as e:
@@ -202,19 +203,19 @@ def streaming_observation(observation_type, name=None, input_mapping=None, outpu
             if not name:
                 name = func.__qualname__ if hasattr(func, '__qualname__') else func.__name__
 
-            function_input = {}
+            observation_input = {}
             if not input_mapping:
-                function_input = {'input': kwargs}
+                observation_input = {'input': kwargs}
             else:
                 for langfuse_kwarg, function_kwarg in input_mapping.items():
-                    function_input[langfuse_kwarg] = kwargs[function_kwarg]
+                    observation_input[langfuse_kwarg] = kwargs[function_kwarg]
 
             async with LangfuseContext.trace_context(name):
-                obs = get_context_obs(observation_type, name, function_input)
+                obs = get_context_observation(observation_type, name, observation_input)
                 try:
                     async for message in func(*args, **kwargs):
                         yield message
-                    end_observation(obs, function_input, message, output_mapping, observation_type)
+                    end_observation(obs, observation_input, message, output_mapping, observation_type)
                     await perform_evaluations(obs, message, func, args, evaluators)
                 except Exception as e:
                     handle_exception(obs, e)

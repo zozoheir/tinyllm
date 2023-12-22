@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 
 from tinyllm.function import Function
+from tinyllm.rag.document.document import Document, DocumentTypes
 from tinyllm.tracing.langfuse_context import observation
 
 Base = declarative_base()
@@ -126,7 +127,12 @@ class VectorStore(Function):
                 result = await session.execute(stmt, params)
                 rows = result.all()
 
-            return [{'text': r.text,
-                     'metadata': r.emetadata,
-                     'collection_name': r.collection_name,
-                     'distance': r.distance} for r in rows]
+            docs = [
+                (Document(content=row.text,
+                          type=DocumentTypes.TEXT,
+                          metadata=row.emetadata), row.distance) for row in rows
+            ]
+
+            return {
+                "docs": docs,
+            }
