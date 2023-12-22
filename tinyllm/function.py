@@ -26,7 +26,6 @@ def pretty_print(value):
 
 
 class FunctionInitValidator(Validator):
-    name: str
     input_validator: Optional[Type[Validator]]
     output_validator: Optional[Type[Validator]]
     processed_output_validator: Optional[Type[Validator]] = None
@@ -50,7 +49,7 @@ class Function:
 
     def __init__(
             self,
-            name,
+            name=None,
             user_id=None,
             input_validator=Validator,
             output_validator=DefaultOutputValidator,
@@ -64,7 +63,6 @@ class Function:
 
     ):
         FunctionInitValidator(
-            name=name,
             input_validator=input_validator,
             output_validator=output_validator,
             processed_output_validator=processed_output_validator,
@@ -78,7 +76,10 @@ class Function:
         self.init_timestamp = dt.datetime.now(pytz.UTC).isoformat()
         self.function_id = str(uuid.uuid4())
         self.logger = getLogger(__name__)
-        self.name = name
+        if name is None:
+            self.name = self.__class__.__name__
+        else:
+            self.name = name
 
         self.input_validator = input_validator
         self.output_validator = output_validator

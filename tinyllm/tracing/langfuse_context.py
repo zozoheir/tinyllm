@@ -82,7 +82,8 @@ def prepare_observation_input(input_mapping, function_kwargs):
     if not input_mapping:
         return {'input': convert_dict_to_string(function_kwargs)}
     else:
-        return {langfuse_kwarg: function_kwargs[function_kwarg] for langfuse_kwarg, function_kwarg in input_mapping.items()}
+        return {langfuse_kwarg: function_kwargs[function_kwarg] for langfuse_kwarg, function_kwarg in
+                input_mapping.items()}
 
 
 def convert_dict_to_string(d):
@@ -92,6 +93,7 @@ def convert_dict_to_string(d):
         elif not isinstance(value, (str, dict, list, tuple, float, int, bool, np.array)):
             d[key] = str(value)
     return d
+
 
 def end_observation(obs, observation_input, function_output, output_mapping, observation_type):
     mapped_obs_output = {}
@@ -159,8 +161,19 @@ def conditional_args(observation_type, input_mapping=None, output_mapping=None):
             output_mapping = {'output': 'message'}
     return input_mapping, output_mapping
 
+def get_obs_name(*args, func):
+    if len(args) > 0:
+        return args[0].name
+    else:
+        if hasattr(func, '__qualname__'):
+            return '.'.join(func.__qualname__.split('.')[-2::])
+        else:
+            return func.__name__
+
 
 ####### DECORATORS #######
+
+
 
 def observation(observation_type, name=None, input_mapping=None, output_mapping=None, evaluators=None):
     input_mapping, output_mapping = conditional_args(observation_type, input_mapping, output_mapping)
@@ -170,7 +183,7 @@ def observation(observation_type, name=None, input_mapping=None, output_mapping=
         async def wrapper(*args, **function_kwargs):
             nonlocal name
             if not name:
-                name = func.__qualname__ if hasattr(func, '__qualname__') else func.__name__
+                name = get_obs_name(*args, func=func)
             observation_input = prepare_observation_input(input_mapping, function_kwargs)
             async with LangfuseContext.trace_context(name):
                 obs = get_context_observation(observation_type, name, observation_input)

@@ -2,10 +2,7 @@ import unittest
 
 from tinyllm.eval.evaluator import Evaluator
 from tinyllm.function import Function
-from tinyllm.llms.lite_llm import LiteLLM
-from tinyllm.llms.lite_llm_stream import LiteLLMStream
 from tinyllm.tracing.langfuse_context import observation
-from tinyllm.util.helpers import get_openai_message
 from tinyllm.tests.base import AsyncioTestCase
 
 
@@ -15,6 +12,15 @@ class TestlitellmChat(AsyncioTestCase):
         super().setUp()
 
     def test_function_tracing(self):
+        class SuccessFullRunEvaluator(Evaluator):
+            async def run(self, **kwargs):
+                print('Running evaluator')
+                return {
+                    "evals": {
+                        "successful_score": 1,
+                    },
+                    "metadata": {}
+                }
 
         class TestFunction(Function):
 
@@ -24,7 +30,7 @@ class TestlitellmChat(AsyncioTestCase):
                     "result": 1
                 }
 
-            @observation(observation_type='span')
+            @observation(observation_type='span', name='process_output')
             async def process_output(self, **kwargs):
                 result = 10 + kwargs['result']
                 return {
