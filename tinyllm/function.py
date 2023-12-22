@@ -92,11 +92,10 @@ class Function:
         self.input = None
         self.output = None
         self.processed_output = None
-        self.current_observation = None
         self.run_evaluators = run_evaluators
         self.processed_output_evaluators = processed_output_evaluators
         for evaluator in self.processed_output_evaluators:
-            evaluator.name = 'proc:' + evaluator.name
+            evaluator.prefix = 'proc:'
 
         self.cache = {}
         self.dataset_name = dataset_name
@@ -142,7 +141,7 @@ class Function:
 
             # Evaluate processed output
             for evaluator in self.processed_output_evaluators:
-                await evaluator(**self.processed_output, observation=self.current_observation)
+                await evaluator(**self.processed_output, observation=self.observation)
 
             final_output = {"status": "success",
                             "output": self.processed_output}
