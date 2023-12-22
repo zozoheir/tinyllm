@@ -88,7 +88,9 @@ def prepare_observation_input(input_mapping, function_kwargs):
 
 def convert_dict_to_string(d):
     for key, value in d.items():
-        if isinstance(value, dict):
+        if value is None:
+            continue
+        elif isinstance(value, dict):
             convert_dict_to_string(value)
         elif not isinstance(value, (str, dict, list, tuple, float, int, bool, np.array)):
             d[key] = str(value)
@@ -129,27 +131,11 @@ def end_observation(obs, observation_input, function_output, output_mapping, obs
         obs.end(**mapped_obs_output)
 
 
-async def perform_evaluations(observation, result, func, args, evaluators):
-    is_method = '.' in func.__qualname__
+async def perform_evaluations(observation, result, evaluators):
     result.update({'observation': observation})
-    if is_method:
-        self = args[0]
-
-        # Function.run and Function.process_output evaluators
-        if func.__qualname__.split('.')[-1] == 'run':
-            if getattr(self, 'run_evaluators', None):
-                for evaluator in self.run_evaluators:
-                    await evaluator(**result)
-        elif func.__qualname__.split('.')[-1] == 'process_output':
-            if getattr(self, 'process_output_evaluators', None):
-                for evaluator in self.process_output_evaluators:
-                    await evaluator(**result, )
-
-    else:
-        if evaluators:
-            for evaluator in evaluators:
-                await evaluator(**result)
-
+    if evaluators:
+        for evaluator in evaluators:
+            await evaluator(**result)
     result.pop('observation')
 
 
@@ -162,13 +148,17 @@ def conditional_args(observation_type, input_mapping=None, output_mapping=None):
     return input_mapping, output_mapping
 
 def get_obs_name(*args, func):
+    name = None
     if len(args) > 0:
-        return args[0].name
+        name = args[0].name
     else:
         if hasattr(func, '__qualname__'):
-            return '.'.join(func.__qualname__.split('.')[-2::])
-        else:
-            return func.__name__
+            if func.__qualname__.split('.')[-2] != '<locals>':
+                name =  '.'.join(func.__qualname__.split('.')[-2::])
+            else:
+                name =  func.__name__
+    return name
+
 
 
 ####### DECORATORS #######
@@ -187,12 +177,19 @@ def observation(observation_type, name=None, input_mapping=None, output_mapping=
             observation_input = prepare_observation_input(input_mapping, function_kwargs)
             async with LangfuseContext.trace_context(name):
                 obs = get_context_observation(observation_type, name, observation_input)
+                # Pass the observation to the Function to run its Evaluators
+                if len(args) > 0:
+                    args[0].current_observation = obs
+
                 try:
                     result = await func(*args, **function_kwargs)
                     if type(result) != dict:
                         raise Exception('Functions with @observation  must return a dict')
                     end_observation(obs, observation_input, result, output_mapping, observation_type)
-                    await perform_evaluations(obs, result, func, args, evaluators)
+
+                    # Specific decorator's evaluators
+                    await perform_evaluations(obs, result, evaluators)
+
                     return result
                 except Exception as e:
                     handle_exception(obs, e)
@@ -203,6 +200,8 @@ def observation(observation_type, name=None, input_mapping=None, output_mapping=
         return wrapper
 
     return decorator
+
+
 
 
 def streaming_observation(observation_type, name=None, input_mapping=None, output_mapping=None, evaluators=None):

@@ -92,8 +92,11 @@ class Function:
         self.input = None
         self.output = None
         self.processed_output = None
+        self.current_observation = None
         self.run_evaluators = run_evaluators
         self.processed_output_evaluators = processed_output_evaluators
+        for evaluator in self.processed_output_evaluators:
+            evaluator.name = 'proc:' + evaluator.name
 
         self.cache = {}
         self.dataset_name = dataset_name
@@ -124,14 +127,23 @@ class Function:
             self.transition(States.OUTPUT_VALIDATION)
             self.validate_output(**self.output)
 
+            # Evaluate output
+            for evaluator in self.run_evaluators:
+                await evaluator(**self.output, observation=self.current_observation)
+
             # Process output
             self.transition(States.PROCESSING_OUTPUT)
             self.processed_output = await self.process_output(**self.output)
 
             # Validate processed output
             self.transition(States.PROCESSED_OUTPUT_VALIDATION)
+
             if self.processed_output_validator:
                 self.validate_processed_output(**self.processed_output)
+
+            # Evaluate processed output
+            for evaluator in self.processed_output_evaluators:
+                await evaluator(**self.processed_output, observation=self.current_observation)
 
             final_output = {"status": "success",
                             "output": self.processed_output}
