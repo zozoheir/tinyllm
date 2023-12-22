@@ -48,7 +48,7 @@ pip install tinyllm
 
 
 <p align="center">
-    <img src="https://github.com/zozoheir/tinyllm/assets/42655961/0284f94d-7c5d-4abb-900d-3fc3381d61dc" width="70%" height="70%" alt="trace">
+    <img src="https://github.com/zozoheir/tinyllm/assets/42655961/0284f94d-7c5d-4abb-900d-3fc3381d61dc" width="70%" height="70%" alt="initialize">
 </p>
 
 

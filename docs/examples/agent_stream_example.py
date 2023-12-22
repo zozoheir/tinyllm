@@ -67,7 +67,7 @@ async def run_agent_stream():
                              run_evaluators=[
                                  AnswerCorrectnessEvaluator(
                                      name="Functional call corrector",
-                                     is_traced=False,
+
                                  ),
                              ])
 

@@ -4,7 +4,7 @@ from tenacity import stop_after_attempt, wait_random_exponential, retry_if_excep
 
 from tinyllm.llms.lite_llm import LiteLLM
 from tinyllm.function_stream import FunctionStream
-from tinyllm.tracing.langfuse_context import streaming_observation
+from tinyllm.tracing.langfuse_context import observation
 from tinyllm.util.helpers import get_openai_message
 
 
@@ -15,7 +15,7 @@ class LiteLLMStream(LiteLLM, FunctionStream):
         wait=wait_random_exponential(min=1, max=10),
         retry=retry_if_exception_type((OpenAIError))
     )
-    @streaming_observation(observation_type='generation')
+    @observation(observation_type='generation', stream=True)
     async def run(self, **kwargs):
         tools_args = {}
         if kwargs.get('tools', None) is not None:

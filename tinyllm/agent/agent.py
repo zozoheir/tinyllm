@@ -41,9 +41,9 @@ class Agent(Function):
                  llm: Function = llm_store.get_llm(
                      name='LiteLLM',
                      llm_library=LLMs.LITE_LLM,
-                     is_traced=False,
+
                  ),
-                 memory: Memory = BufferMemory(name='Agent memory', is_traced=False),
+                 memory: Memory = BufferMemory(name='Agent memory'),
                  toolkit: Optional[Toolkit] = None,
                  example_manager: Optional[ExampleManager] = ExampleManager(),
                  **kwargs):
@@ -65,7 +65,7 @@ class Agent(Function):
             memory=memory,
         )
 
-    @observation(observation_type='span', name='Agent call')
+    @observation(observation_type='span')
     async def run(self,
                   **kwargs):
         input_msg = get_openai_message(role='user',

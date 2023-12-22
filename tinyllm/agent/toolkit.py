@@ -27,7 +27,7 @@ class Toolkit(Function):
         self.tools = tools
 
 
-    @observation(observation_type='span',name='Tookit', input_mapping={'input': 'tool_calls'})
+    @observation(observation_type='span', input_mapping={'input': 'tool_calls'})
     async def run(self,
                   **kwargs):
         tasks = []

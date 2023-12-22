@@ -47,13 +47,12 @@ tools = [
             },
             "required": ["asked_property"],
         },
-        is_traced=False,
+
     )
 ]
 toolkit = Toolkit(
     name='Toolkit',
     tools=tools,
-    is_traced=False,
 )
 
 llm_store = LLMStore()
@@ -66,7 +65,7 @@ class TestStreamingAgent(AsyncioTestCase):
         llm = llm_store.get_llm(
             name='Tinyllm manager',
             llm_library=LLMs.LITE_LLM,
-            is_traced=False,
+
         )
         tiny_agent = Agent(
             system_role="You are a helpful assistant",
@@ -74,19 +73,11 @@ class TestStreamingAgent(AsyncioTestCase):
             llm=llm,
             example_manager=ExampleManager(),
             toolkit=toolkit,
-            memory=BufferMemory(name='Agent memory', is_traced=False),
-            #run_evaluators=[
-            #    AnswerCorrectnessEvaluator(
-            #        name="Eval: correct user info",
-            #        is_traced=False,
-            #    ),
-            #],
-            is_traced=True
+            memory=BufferMemory(name='Agent memory'),
         )
-
         # Run the asynchronous test
         result = self.loop.run_until_complete(tiny_agent(user_input="What is the user's birthday?"))
-        result = self.loop.run_until_complete(tiny_agent(user_input="What is the user's birthday?"))
+        #result = self.loop.run_until_complete(tiny_agent(user_input="What is the user's birthday?"))
         first_choice_message = result['output']['response']['choices'][0]['message']
         # Verify the last message in the list
         self.assertEqual(result['status'], 'success')
