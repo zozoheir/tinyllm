@@ -4,8 +4,12 @@ from tinyllm.function import Function
 from tinyllm.validator import Validator
 
 
+
 class EvaluatorInitValidator(Validator):
-    prefix: Optional[str]
+    prefix: Optional[str] = ''
+
+class EvaluatorInputValidator(Validator):
+    observation: Any
 
 class EvaluatorInputValidator(Validator):
     observation: Any
@@ -22,6 +26,7 @@ class Evaluator(Function):
                  **kwargs):
         EvaluatorInitValidator(prefix=prefix)
         super().__init__(output_validator=EvaluatorOutputValidator,
+                         input_validator=EvaluatorInputValidator,
                          **kwargs)
         self.prefix = prefix
 

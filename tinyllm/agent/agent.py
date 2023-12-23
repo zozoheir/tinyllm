@@ -41,6 +41,7 @@ class Agent(Function):
                  llm: Function = llm_store.get_llm(
                      name='LiteLLM',
                      llm_library=LLMs.LITE_LLM,
+
                  ),
                  memory: Memory = BufferMemory(name='Agent memory'),
                  toolkit: Optional[Toolkit] = None,

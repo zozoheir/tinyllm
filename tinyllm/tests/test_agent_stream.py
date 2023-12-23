@@ -75,6 +75,7 @@ class TestStreamingAgent(AsyncioTestCase):
             run_evaluators=[
                 AnswerCorrectnessEvaluator(
                     name="Eval: correct user info",
+
                 ),
             ],
         )

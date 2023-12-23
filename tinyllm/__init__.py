@@ -39,6 +39,7 @@ def set_config(file_path: str):
     global langfuse_client
 
     # Load config file
+
     tinyllm_config = load_yaml_config(file_path)
 
     # Set LLM providers env vars from the config file
@@ -56,6 +57,8 @@ def set_config(file_path: str):
 
 def find_yaml_config(yaml_file_name: str, directories: list) -> dict:
     for directory in directories:
+        if directory is None:
+            continue
         yaml_path = Path(directory) / yaml_file_name
         if yaml_path.is_file():
             logger.info(f"Tinyllm: config found at {yaml_path}")
@@ -65,7 +68,7 @@ def find_yaml_config(yaml_file_name: str, directories: list) -> dict:
 # Directories to look for the config file, in order of priority
 env_variable_path = os.environ.get('TINYLLM_CONFIG_PATH', '').strip()
 directories = [
-    Path.cwd(),
+    Path.cwd() if Path.cwd().name != 'tinyllm' else None,
     Path.home(),
     Path.home() / 'Documents',
 ]

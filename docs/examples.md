@@ -13,6 +13,7 @@ prompt_template = OpenAIPromptTemplate(
 openai_chat = OpenAIChat(name='OpenAI Chat model',
                          model='gpt-3.5-turbo',
                          temperature=0,
+                         rag_example
                          max_tokens=100,
                          prompt_template=prompt_template)
 
@@ -100,6 +101,7 @@ loop = asyncio.get_event_loop()
 
 kg_qa_chain = Retriever(
     name="KG QA Chain",
+    rag_example
 )
 
 
@@ -219,8 +221,8 @@ async def main():
                        children=[
                            email_notification,
                            bg_check])
-        ]
-    )
+        ],
+        )
 
     result = await credit_analysis_chain(loan_application=good_loan_application_example)
 

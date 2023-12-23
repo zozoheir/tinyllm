@@ -5,7 +5,6 @@ from typing import Any, Optional, Type, Dict
 import pydantic
 import pytz
 from langfuse.api import CreateDatasetRequest, CreateDatasetItemRequest
-from langfuse.client import DatasetItemClient
 
 from smartpy.utility.log_util import getLogger
 from smartpy.utility.py_util import get_exception_info
@@ -35,16 +34,6 @@ class FunctionInitValidator(Validator):
     stream: Optional[bool]
 
 
-class DefaultInputValidator(Validator):
-    message: Dict[str, str]
-
-class DefaultOutputValidator(Validator):
-    response: Any
-
-class DefaultProcessedOutputValidator(Validator):
-    response: Any
-
-
 class Function:
 
     def __init__(
@@ -52,8 +41,8 @@ class Function:
             name=None,
             user_id=None,
             input_validator=Validator,
-            output_validator=DefaultOutputValidator,
-            processed_output_validator=None,
+            output_validator=Validator,
+            processed_output_validator=Validator,
             run_evaluators=[],
             processed_output_evaluators=[],
             dataset_name=None,
@@ -96,7 +85,7 @@ class Function:
         self.run_evaluators = run_evaluators
         self.processed_output_evaluators = processed_output_evaluators
         for evaluator in self.processed_output_evaluators:
-            evaluator.name = 'proc:' + evaluator.name
+            evaluator.prefix = 'proc:'
 
         self.cache = {}
         self.dataset_name = dataset_name
@@ -109,7 +98,7 @@ class Function:
 
         self.fallback_strategies = fallback_strategies
         self.stream = stream
-
+        self.observation = None
 
     @fallback_decorator
     async def __call__(self, **kwargs):
@@ -129,7 +118,7 @@ class Function:
 
             # Evaluate output
             for evaluator in self.run_evaluators:
-                await evaluator(**self.output, observation=self.current_observation)
+                await evaluator(**self.output, observation=self.observation)
 
             # Process output
             self.transition(States.PROCESSING_OUTPUT)
@@ -143,7 +132,7 @@ class Function:
 
             # Evaluate processed output
             for evaluator in self.processed_output_evaluators:
-                await evaluator(**self.processed_output, observation=self.current_observation)
+                await evaluator(**self.processed_output, observation=self.observation)
 
             final_output = {"status": "success",
                             "output": self.processed_output}
@@ -186,40 +175,8 @@ class Function:
 
         self.state = new_state
 
-    async def evaluate(self,
-                       **kwargs):
-        generation = kwargs['generation']
-        output = kwargs['output']
-        run_name = kwargs.get('run_name', "tinyllm_function")
-        # Need to link item with generation + call evaluators
-
-        # Create dataset item
-        if self.dataset:
-            item = langfuse_client.create_dataset_item(
-                CreateDatasetItemRequest(dataset_name=self.dataset_name,
-                                         input=output,
-                                         expected_output="")
-            )
-            item_client = DatasetItemClient(item, langfuse_client)
-            item_client.link(self.generation, run_name)
-
-        # Create eval_data args
-        eval_kwargs = {
-            'kwargs': kwargs,
-            'input': self.input,
-            'cache': self.cache,
-            'output': self.output,
-            'processed_output': self.processed_output,
-        }
-        # Call evaluators and score
-        for evaluator in self.evaluators:
-            evaluator_response = await evaluator(generation=generation,
-                                                 **eval_kwargs)
-            if evaluator_response['status'] != 'success':
-                self.log(evaluator_response['message'], level="error")
 
     def log(self, message, level="info"):
-
         if tinyllm_config['OPS']['LOGGING']:
             log_message = f"[{self.name}] {message}"
             if getattr(self, 'trace', None):
@@ -243,7 +200,7 @@ class Function:
         return self.processed_output_validator(**kwargs).dict()
 
     async def run(self, **kwargs) -> Any:
-        pass
+        return kwargs
 
     async def process_output(self, **kwargs):
         return kwargs

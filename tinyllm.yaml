@@ -1,12 +1,13 @@
-LLM_PROVIDERS:
-  OPENAI_API_KEY: ""
-LANGFUSE:
-  PUBLIC_KEY: ""
-  SECRET_KEY: ""
-  HOST: "https://cloud.langfuse.com/"
-POSTGRES:
-  USERNAME: ""
-  PASSWORD: ""
-  HOST: ""
-  PORT:
-  NAME: ""
+PROJECT_NAME:
+  LLM_PROVIDERS:
+    OPENAI_API_KEY: ""
+  LANGFUSE:
+    PUBLIC_KEY: ""
+    SECRET_KEY: ""
+    HOST: "https://cloud.langfuse.com/"
+  POSTGRES:
+    USERNAME: ""
+    PASSWORD: ""
+    HOST: ""
+    PORT:
+    NAME: ""

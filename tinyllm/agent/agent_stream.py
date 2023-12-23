@@ -2,8 +2,7 @@ import json
 from typing import Optional
 
 from smartpy.utility.log_util import getLogger
-from tinyllm.agent.agent import AgentInitValidator, AgentInputValidator, llm_store
-from tinyllm.function import Function
+from tinyllm.agent.agent import AgentInitValidator, AgentInputValidator
 
 from tinyllm.agent.toolkit import Toolkit
 from tinyllm.examples.example_manager import ExampleManager
@@ -11,7 +10,7 @@ from tinyllm.function_stream import FunctionStream
 from tinyllm.llms.llm_store import LLMs
 from tinyllm.memory.memory import BufferMemory, Memory
 from tinyllm.prompt_manager import PromptManager
-from tinyllm.tracing.langfuse_context import observation, streaming_observation
+from tinyllm.tracing.langfuse_context import observation
 from tinyllm.util.helpers import get_openai_message
 
 logger = getLogger(__name__)
@@ -21,10 +20,7 @@ class AgentStream(FunctionStream):
 
     def __init__(self,
                  system_role: str,
-                 llm: Function = llm_store.get_llm(
-                     name='LiteLLMStream',
-                     llm_library=LLMs.LITE_LLM_STREAM,
-                 ),
+                 llm: FunctionStream,
                  memory: Memory = BufferMemory(name='Agent memory'),
                  toolkit: Optional[Toolkit] = None,
                  example_manager: Optional[ExampleManager] = ExampleManager(),
@@ -48,7 +44,7 @@ class AgentStream(FunctionStream):
             memory=memory,
         )
 
-    @streaming_observation(observation_type='span')
+    @observation(observation_type='span', stream=True)
     async def run(self,
                   user_input,
                   **kwargs):

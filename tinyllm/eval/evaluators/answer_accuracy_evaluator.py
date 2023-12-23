@@ -52,6 +52,7 @@ class AnswerCorrectnessEvaluator(Evaluator):
         self.litellm_chat = LiteLLM(
             name="Answer Accuracy Evaluator",
             system_role=system_role,
+
         )
 
     async def run(self, **kwargs):

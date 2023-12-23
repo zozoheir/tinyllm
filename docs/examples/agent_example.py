@@ -5,7 +5,8 @@ from tinyllm.agent.tool import Tool
 from tinyllm.agent.toolkit import Toolkit
 from tinyllm.eval.evaluator import Evaluator
 from tinyllm.llms.llm_store import LLMStore, LLMs
-from tinyllm.memory.memory import BufferMemory
+from tinyllm.memory.memory import BufferMemory, Memory
+
 
 loop = asyncio.get_event_loop()
 
@@ -46,6 +47,7 @@ tools = [
             },
             "required": ["asked_property"],
         },
+
     )
 ]
 toolkit = Toolkit(
@@ -62,6 +64,7 @@ async def run_agent():
     llm = llm_store.get_llm(
         llm_library=LLMs.LITE_LLM,
         name='Tinyllm manager',
+
     )
     tiny_agent = Agent(name='Test: agent',
                        system_role="You are a helpful agent that can answer questions about the user's profile using available tools.",
@@ -71,6 +74,7 @@ async def run_agent():
                        run_evaluators=[
                            AnswerCorrectnessEvaluator(
                                name="Eval: correct user info",
+
                            ),
                        ])
 
