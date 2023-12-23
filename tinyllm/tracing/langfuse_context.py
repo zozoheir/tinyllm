@@ -1,7 +1,6 @@
 from contextvars import ContextVar
 from tinyllm.tracing.helpers import *
 
-
 current_observation_context = ContextVar('current_observation_context', default=None)
 
 model_parameters = [
@@ -50,7 +49,7 @@ class ObservationDecoratorFactory:
                 # Set the current observation in the context for child functions to access
                 token = current_observation_context.set(observation)
                 try:
-                    async for result in  func(*args, **function_input):
+                    async for result in func(*args, **function_input):
                         yield result
                     function_input.pop('observation')
                     await ObservationUtil.perform_evaluations(observation, result, evaluators)
@@ -58,18 +57,20 @@ class ObservationDecoratorFactory:
                     ObservationUtil.handle_exception(observation, e)
                 finally:
                     current_observation_context.reset(token)
-                    ObservationUtil.end_observation(observation, observation_input, result, output_mapping, observation_type, function_input)
+                    ObservationUtil.end_observation(observation, observation_input, result, output_mapping,
+                                                    observation_type, function_input)
 
             return wrapper
 
         return decorator
 
-
     @classmethod
     def get_decorator(self,
-                        observation_type,
-                        input_mapping=None, output_mapping=None,
-                        evaluators=None):
+                      observation_type,
+                      input_mapping=None,
+                      output_mapping=None,
+                      evaluators=None,
+                      **kwargs):
         def decorator(func):
             @wraps(func)
             async def wrapper(*args, **function_input):
@@ -106,14 +107,6 @@ def observation(observation_type='span', input_mapping=None, output_mapping=None
                                                                      input_mapping,
                                                                      output_mapping)
     if stream:
-        return ObservationDecoratorFactory.get_streaming_decorator(observation_type, input_mapping, output_mapping,
-                                                                     evaluators)
+        return ObservationDecoratorFactory.get_streaming_decorator(observation_type, input_mapping, output_mapping,evaluators)
     else:
-        return ObservationDecoratorFactory.get_decorator(observation_type, input_mapping, output_mapping, evaluators)
-
-
-def auto_decorate_methods(cls):
-    for method_name in ['run', 'process_output']:
-        if method_name in cls.__dict__:  # Check if method is overridden in subclass
-            setattr(cls, method_name, observation(getattr(cls, method_name)))
-    return cls
+        return ObservationDecoratorFactory.get_decorator(observation_type, input_mapping, output_mapping,evaluators)

@@ -10,7 +10,6 @@ from smartpy.utility.py_util import get_exception_info
 from tinyllm.exceptions import InvalidStateTransition
 from tinyllm import langfuse_client, tinyllm_config
 from tinyllm.state import States, ALLOWED_TRANSITIONS
-from tinyllm.tracing.langfuse_context import auto_decorate_methods
 from tinyllm.validator import Validator
 from tinyllm.util.fallback_strategy import fallback_decorator
 
@@ -34,7 +33,6 @@ class FunctionInitValidator(Validator):
     stream: Optional[bool]
 
 
-@auto_decorate_methods
 class Function:
 
     def __init__(
