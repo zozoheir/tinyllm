@@ -48,6 +48,7 @@ TRACE: retrieval
 ```
 ```python
 import asyncio
+from tinyllm.tracing.langfuse_context import observation
 
 @observation('span')
 async def retrieval(**kwargs):
