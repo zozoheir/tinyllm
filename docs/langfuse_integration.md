@@ -46,9 +46,9 @@ from tinyllm.tracing.langfuse_context import observation
 
 @observation('span')
 async def retrieval(**kwargs):
-    await vector_db_search(input=kwargs['input'])
-    response = await user_output(messages=kwargs['messages'])
-    await db_insert(input=kwargs['input'])
+    await vector_db_search(input=kwargs['query'])
+    response = await user_output(messages=[{},{}])
+    await db_insert(response=response)
     return response
 
 @observation('span')
@@ -67,7 +67,7 @@ async def user_output(**kwargs):
     return {'message': 'User response'}
 
 if __name__ == "__main__":
-    asyncio.run(retrieval(input={'dummy_input'}, messages=[{'dummy_message'}]))
+    asyncio.run(retrieval(query='What is the best car of the 90s?'))
 
 ```
 
