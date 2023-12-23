@@ -35,5 +35,6 @@ class Evaluator(Function):
             self.input['observation'].score(
                 name=self.prefix+name,
                 value=score,
-                comment=pprint.pformat(kwargs['comment']),
+                comment=pprint.pformat(kwargs['metadata']),
             )
+        return kwargs

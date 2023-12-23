@@ -1,3 +1,9 @@
+"""
+VISUALIZATION OF THE AGENT STREAM EXAMPLE
+
+https://us.cloud.langfuse.com/project/cloz2bp020000l008kg9ujywd/traces/39a332ed-8c3d-4bc7-b4b7-b1738d1a5912
+"""
+
 import asyncio
 
 from tinyllm.agent.agent_stream import AgentStream
@@ -59,8 +65,7 @@ async def run_agent_stream():
         name='Tinyllm manager',
     )
 
-    tiny_agent = AgentStream(name='Test: agent stream',
-                             system_role="You are a helpful agent that can answer questions about the user's profile using available tools.",
+    tiny_agent = AgentStream(system_role="You are a helpful agent that can answer questions about the user's profile using available tools.",
                              llm=llm_stream,
                              toolkit=toolkit,
                              run_evaluators=[
