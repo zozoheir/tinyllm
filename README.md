@@ -23,6 +23,11 @@ pip install tinyllm
 </p>
 
 
+ 
+## Getting started
+* ####  [Setup](https://github.com/zozoheir/tinyllm/blob/main/docs/setup.md)
+* ####  [Examples](https://github.com/zozoheir/tinyllm/blob/main/docs/examples/)
+
 
 ## 🚀 Features
 #### Build LLM apps with:
@@ -43,10 +48,6 @@ pip install tinyllm
 - **Logging:** Records detailed logs for debugging and auditing purposes.
 - **Finite State Machine design:** Manages the function's lifecycle through defined states, ensuring controlled and predictable execution.
 
-
- 
-## Getting started
-* ####  [Start from these examples of using an Agent with a Toolkit](https://github.com/zozoheir/tinyllm/blob/main/docs/examples/)
 
 
 <p align="center">
