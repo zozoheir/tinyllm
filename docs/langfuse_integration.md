@@ -37,13 +37,7 @@ for attributes, different methods etc. Functions are, also automatically traced.
 TRACE: retrieval
 |
 |-- SPAN: vector_db_search
-|   |
-|   |-- EVENT: search_logic
-|
 |-- GENERATION: user_output
-|   |
-|   |-- EVENT: output_logic
-|
 |-- EVENT: db_insert
 ```
 ```python
