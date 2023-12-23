@@ -4,13 +4,13 @@ from typing import Any, Optional, Type, Dict
 
 import pydantic
 import pytz
-from langfuse.api import CreateDatasetRequest, CreateDatasetItemRequest
 
 from smartpy.utility.log_util import getLogger
 from smartpy.utility.py_util import get_exception_info
 from tinyllm.exceptions import InvalidStateTransition
 from tinyllm import langfuse_client, tinyllm_config
 from tinyllm.state import States, ALLOWED_TRANSITIONS
+from tinyllm.tracing.langfuse_context import auto_decorate_methods
 from tinyllm.validator import Validator
 from tinyllm.util.fallback_strategy import fallback_decorator
 
@@ -34,6 +34,7 @@ class FunctionInitValidator(Validator):
     stream: Optional[bool]
 
 
+@auto_decorate_methods
 class Function:
 
     def __init__(
@@ -88,13 +89,6 @@ class Function:
             evaluator.prefix = 'proc:'
 
         self.cache = {}
-        self.dataset_name = dataset_name
-        self.dataset = None
-        if self.dataset_name is not None:
-            try:
-                self.dataset = langfuse_client.get_dataset(name=dataset_name)
-            except pydantic.error_wrappers.ValidationError:
-                self.dataset = langfuse_client.create_dataset(CreateDatasetRequest(name=dataset_name))
 
         self.fallback_strategies = fallback_strategies
         self.stream = stream

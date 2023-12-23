@@ -7,11 +7,10 @@ TRACE: rag_example
 |   |   |
 |   |-- GENERATION: final_answer
 |   |   |
-|   |-- SPAN: db_insert
+|   |-- EVENT: db_insert
 |   |   |
 |   |   |
 """
-
 
 import asyncio
 
@@ -29,16 +28,16 @@ async def rag_example(**kwargs):
     # This is the top-level trace
     await retrieval(input=dummy_input)  # Retrieval span
     response = await final_answer(messages=dummy_messages)  # Final answer generation
-    await db_insert(input=dummy_input)  # Database insert span
     return response
 
 @observation('span')
 async def retrieval(**kwargs):
     await vector_db_search(input=dummy_input)  # Vector database search event
     response = await user_output(messages=dummy_messages)  # User output generation
+    await db_insert(input=dummy_input)  # Database insert span
     return response
 
-@observation('event')
+@observation('span')
 async def vector_db_search(**kwargs):
     return dummy_response
 

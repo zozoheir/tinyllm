@@ -39,8 +39,7 @@ class TestFunction(AsyncioTestCase):
             operator.transition(States.COMPLETE)
 
     def test_invalid_input(self):
-        operator = AddOneOperator(name="AddOneTest",
-                                  required=False)
+        operator = AddOneOperator()
         self.loop.run_until_complete(operator(value="wrong input"))
         assert operator.state == States.FAILED
 

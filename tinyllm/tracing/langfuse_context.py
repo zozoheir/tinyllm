@@ -1,9 +1,6 @@
-
 from contextvars import ContextVar
-from functools import wraps
-
-from tinyllm.function import Function
 from tinyllm.tracing.helpers import *
+
 
 current_observation_context = ContextVar('current_observation_context', default=None)
 
@@ -85,7 +82,7 @@ class ObservationDecoratorFactory:
                                                               observation_input)
                 token = current_observation_context.set(observation)
                 if len(args) > 0:
-                    if isinstance(args[0], Function):
+                    if args and type(args[0]).__name__ == 'Function':
                         args[0].observation = observation
                 try:
                     result = await func(*args, **function_input)
@@ -113,3 +110,10 @@ def observation(observation_type='span', input_mapping=None, output_mapping=None
                                                                      evaluators)
     else:
         return ObservationDecoratorFactory.get_decorator(observation_type, input_mapping, output_mapping, evaluators)
+
+
+def auto_decorate_methods(cls):
+    for method_name in ['run', 'process_output']:
+        if method_name in cls.__dict__:  # Check if method is overridden in subclass
+            setattr(cls, method_name, observation(getattr(cls, method_name)))
+    return cls
