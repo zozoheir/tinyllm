@@ -5,6 +5,7 @@ import traceback
 from functools import wraps
 
 import langfuse
+import numpy as np
 
 from tinyllm import langfuse_client
 from tinyllm.util.helpers import count_tokens
@@ -47,7 +48,7 @@ class ObservationUtil:
         if not input_mapping:
             # stringify all non string or dict values
             for key, value in kwargs.items():
-                if not isinstance(value, (str, dict)):
+                if not isinstance(value, (str, dict, list, tuple, int, float)):
                     kwargs[key] = str(value)
             return {'input': kwargs}
         return {langfuse_kwarg: kwargs[function_kwarg] for langfuse_kwarg, function_kwarg in input_mapping.items()}
@@ -55,9 +56,9 @@ class ObservationUtil:
     @classmethod
     def convert_dict_to_string(cls, d):
         for key, value in d.items():
-            if isinstance(value, dict):
+            if type(value) == dict:
                 cls.convert_dict_to_string(value)
-            elif not isinstance(value, (str, dict, list, tuple)):
+            elif not type(value) in (str, dict, list, tuple, int, float, np.array):
                 d[key] = str(value)
 
     @classmethod
@@ -120,7 +121,7 @@ class ObservationUtil:
         # Decorated method
         if len(args) > 0:
             if hasattr(args[0], 'name'):
-                name = args[0].name+'.'+func.__name__
+                name = args[0].name+('.'+func.__name__ if func.__name__ != 'wrapper' else '')
             else:
                 name = args[0].__class__.__name__+'.'+func.__name__
 
