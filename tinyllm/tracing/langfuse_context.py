@@ -40,10 +40,11 @@ class ObservationDecoratorFactory:
                 observation_input = ObservationUtil.prepare_observation_input(input_mapping, function_input)
 
                 # Get the current observation
-                observation = ObservationUtil.get_current_obs(parent_observation=parent_observation,
+                observation = ObservationUtil.get_current_obs(*args,
+                                                              parent_observation=parent_observation,
                                                               observation_type=observation_type,
                                                               name=name,
-                                                              function_input=observation_input)
+                                                              observation_input=observation_input)
                 # Pass the observation to the class (so it can evaluate it)
                 function_input['observation'] = observation
                 # Set the current observation in the context for child functions to access
@@ -77,10 +78,11 @@ class ObservationDecoratorFactory:
                 parent_observation = current_observation_context.get()
                 name = ObservationUtil.get_obs_name(*args, func=func)
                 observation_input = ObservationUtil.prepare_observation_input(input_mapping, function_input)
-                observation = ObservationUtil.get_current_obs(parent_observation,
-                                                              observation_type,
-                                                              name,
-                                                              observation_input)
+                observation = ObservationUtil.get_current_obs(*args,
+                                                              parent_observation=parent_observation,
+                                                              observation_type=observation_type,
+                                                              name=name,
+                                                              observation_input=observation_input)
                 token = current_observation_context.set(observation)
                 if len(args) > 0:
                     if args and type(args[0]).__name__ == 'Function':

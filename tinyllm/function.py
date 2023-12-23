@@ -10,6 +10,7 @@ from smartpy.utility.py_util import get_exception_info
 from tinyllm.exceptions import InvalidStateTransition
 from tinyllm import langfuse_client, tinyllm_config
 from tinyllm.state import States, ALLOWED_TRANSITIONS
+from tinyllm.tracing.langfuse_context import observation
 from tinyllm.validator import Validator
 from tinyllm.util.fallback_strategy import fallback_decorator
 
@@ -44,7 +45,6 @@ class Function:
             processed_output_validator=Validator,
             run_evaluators=[],
             processed_output_evaluators=[],
-            dataset_name=None,
             required=True,
             stream=False,
             fallback_strategies={},
@@ -87,11 +87,12 @@ class Function:
             evaluator.prefix = 'proc:'
 
         self.cache = {}
-
+        self.generation = None
         self.fallback_strategies = fallback_strategies
         self.stream = stream
         self.observation = None
 
+    @observation('span')
     @fallback_decorator
     async def __call__(self, **kwargs):
         try:

@@ -34,13 +34,16 @@ class LiteLLM(Function):
     def __init__(self, **kwargs):
         super().__init__(input_validator=LiteLLMChatInputValidator,
                          **kwargs)
+        self.generation = None
 
     @observation(observation_type='generation',input_mapping={'input':'messages'},output_mapping={'output':'response'})
     async def run(self, **kwargs):
         tools_args = {}
         if kwargs.get('tools', None) is not None:
-            tools_args = {'tools': kwargs.get('tools', None),
-                          'tool_choice': kwargs.get('tool_choice', 'auto')}
+            tools_args = {}
+            if 'tools' in kwargs:
+                tools_args['tools'] = kwargs['tools']
+                tools_args['tools_choice'] = kwargs.get('tools_choice', 'auto')
         api_result = await acompletion(
             messages=kwargs['messages'],
             model=kwargs.get('model', 'gpt-3.5-turbo'),

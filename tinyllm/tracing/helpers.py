@@ -1,4 +1,3 @@
-
 import datetime as dt
 import inspect
 import traceback
@@ -9,8 +8,6 @@ import numpy as np
 
 from tinyllm import langfuse_client
 from tinyllm.util.helpers import count_tokens
-
-
 
 model_parameters = [
     "model",
@@ -30,7 +27,6 @@ model_parameters = [
 ]
 
 
-
 ## I want you to implement an ObservationWrapper class that implements all of the above functions as class methods
 
 class ObservationUtil:
@@ -46,20 +42,32 @@ class ObservationUtil:
     @classmethod
     def prepare_observation_input(cls, input_mapping, kwargs):
         if not input_mapping:
-            # stringify all non string or dict values
-            for key, value in kwargs.items():
-                if not isinstance(value, (str, dict, list, tuple, int, float)):
-                    kwargs[key] = str(value)
+            # stringify values  
+            kwargs = cls.keep_accepted_types(kwargs)
             return {'input': kwargs}
         return {langfuse_kwarg: kwargs[function_kwarg] for langfuse_kwarg, function_kwarg in input_mapping.items()}
 
     @classmethod
-    def convert_dict_to_string(cls, d):
-        for key, value in d.items():
-            if type(value) == dict:
-                cls.convert_dict_to_string(value)
-            elif not type(value) in (str, dict, list, tuple, int, float, np.array):
-                d[key] = str(value)
+    def keep_accepted_types(self, d):
+        acceptable_types = (str, dict, list, tuple, int, float, np.ndarray)
+
+        def is_acceptable(v):
+            if isinstance(v, acceptable_types):
+                if isinstance(v, list):
+                    return all(isinstance(item, acceptable_types) for item in v)
+                return True
+            return False
+
+        def clean(value):
+            if isinstance(value, dict):
+                return {k: clean(v) for k, v in value.items() if is_acceptable(v)}
+            elif isinstance(value, list):
+                return [clean(item) for item in value if is_acceptable(item)]
+            else:
+                return value
+
+        return clean(d)
+
 
     @classmethod
     def end_observation(cls, obs, function_input, function_output, output_mapping, observation_type, function_kwargs):
@@ -67,13 +75,7 @@ class ObservationUtil:
             return
 
         mapped_output = {}
-        if type(function_output) == list:
-            for i, item in enumerate(function_output):
-                if type(item) == dict:
-                    cls.convert_dict_to_string(item)
-        elif type(function_output) == dict:
-            cls.convert_dict_to_string(function_output)
-
+        function_output = cls.keep_accepted_types(function_output)
         if not output_mapping:
             mapped_output = {'output': function_output}
         else:
@@ -121,9 +123,9 @@ class ObservationUtil:
         # Decorated method
         if len(args) > 0:
             if hasattr(args[0], 'name'):
-                name = args[0].name+('.'+func.__name__ if func.__name__ != 'wrapper' else '')
+                name = args[0].name + ('.' + func.__name__ if func.__name__ != 'wrapper' else '')
             else:
-                name = args[0].__class__.__name__+'.'+func.__name__
+                name = args[0].__class__.__name__ + '.' + func.__name__
 
         # Decorated function
         else:
@@ -134,16 +136,26 @@ class ObservationUtil:
                     name = func.__name__
         return name
 
-
     @classmethod
-    def get_current_obs(cls, parent_observation=None, observation_type=None, name=None, function_input=None):
+    def get_current_obs(cls,
+                        *args,
+                        parent_observation,
+                        observation_type,
+                        name,
+                        observation_input):
         if parent_observation is None:
             # This is the root function, create a new trace
-            observation = langfuse_client.trace(name=name, **function_input)
+            observation = langfuse_client.trace(name=name, **observation_input)
             observation_method = getattr(observation, observation_type)
-            observation = observation_method(name=name, **function_input)
+            observation = observation_method(name=name, **observation_input)
         else:
             # Create child observations based on the type
             observation_method = getattr(parent_observation, observation_type)
-            observation = observation_method(name=name, **function_input)
+            observation = observation_method(name=name, **observation_input)
+
+        if len(args) > 0:
+            if hasattr(args[0], 'generation'):
+                if observation_type == 'generation':
+                    args[0].generation = observation
+
         return observation
