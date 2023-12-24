@@ -2,12 +2,12 @@
 TRACE: rag_example
 |   |   |
 |   |-- SPAN: retrieval
-|   |   |-- GENERATION: query_generation
-|   |   |-- SPAN: vector_db_search
+|   |   |-- GENERATION: query_generation # Generate queries for vector search
+|   |   |-- SPAN: vector_db_search # Search for documents
 |   |   |
-|   |-- GENERATION: final_answer
+|   |-- GENERATION: final_answer # Generate answer
 |   |   |
-|   |-- EVENT: db_insert
+|   |-- EVENT: db_insert # Insert interaction to your database
 |   |   |
 |   |   |
 """
