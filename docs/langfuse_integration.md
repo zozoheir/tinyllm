@@ -27,50 +27,11 @@ compute graphs.
 ## Usage
 
 
-Basic Example: Retrieval Chain
+[Basic Example: Retrieval Chain
+](https://github.com/zozoheir/tinyllm/blob/main/docs/examples/tracing_nested_functions.py): check out this example of tracing a retrieval chain of functions within a tinyllm application, showcasing the simplicity of integrating Langfuse tracing.
 
-Below is an example of tracing a retrieval chain within a tinyllm application, showcasing the simplicity of integrating Langfuse tracing.
-Typically, in tinyllm chains are created through the Function class, which is a class representation of a chain, allowing
-for attributes, different methods etc. Functions are, also automatically traced.
-
-```
-TRACE: retrieval
-|
-|-- SPAN: vector_db_search
-|-- GENERATION: user_output
-|-- EVENT: db_insert
-```
-```python
-import asyncio
-from tinyllm.tracing.langfuse_context import observation
-
-@observation('span')
-async def retrieval(**kwargs):
-    await vector_db_search(input=kwargs['query'])
-    response = await user_output(messages=[{},{}])
-    await db_insert(response=response)
-    return response
-
-@observation('span')
-async def vector_db_search(**kwargs):
-    # Logic for vector database search
-    return {'search_result': 'dummy_response'}
-
-@observation('event')
-async def db_insert(**kwargs):
-    # Logic for database insert
-    return {'db_status': 'success'}
-
-@observation('generation')
-async def user_output(**kwargs):
-    # Logic for user output generation
-    return {'message': 'User response'}
-
-if __name__ == "__main__":
-    asyncio.run(retrieval(query='What is the best car of the 90s?'))
-
-```
-
+While this example traces python function calls, typically in tinyllm chains are using through the Function class, allowing
+for class attributes/extensions/customizations, different methods etc. 
 
 
 ## Mapping function inputs and outputs to Langfuse fields
