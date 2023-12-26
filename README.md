@@ -103,6 +103,8 @@ Tinyllm only cares about Concurrency, Chaining and organizing IO Bound tasks.
 ### Logging
 Finite state machine with predictable and controlled state transitions for easy debugging of your chains/compute graphs.
 
+Below is the trace for asking "What is the user's birthday" to an Agent with a get_user_property Tool. 
+
 ```
 INFO | tinyllm.function | 2023-12-25 19:37:10,617 : [Standard example selector] transition to: States.INIT 
 INFO | tinyllm.function | 2023-12-25 19:37:12,720 : [BufferMemory] transition to: States.INIT 
