@@ -101,15 +101,71 @@ on a GPU/CPU level and should be abstracted away using an LLM microservice.
 Tinyllm only cares about Concurrency, Chaining and organizing IO Bound tasks.
 
 ### Logging
-The generation id is logged to quickly go from reading code to visualizating the chaining/conversation in Langfuse.
+Finite state machine with predictable and controlled state transitions for easy debugging of your chains/compute graphs.
 
 ```
-INFO | tinyllm.function | 2023-12-07 16:45:44,040 : [Test: LiteLLMChat_memory] transition to: States.PROCESSING_OUTPUT 
-INFO | tinyllm.function | 2023-12-07 16:45:44,040 : [Test: LiteLLMChat_memory] transition to: States.PROCESSED_OUTPUT_VALIDATION 
-INFO | tinyllm.function | 2023-12-07 16:45:44,040 : [Test: LiteLLMChat_memory] transition to: States.COMPLETE 
-INFO | tinyllm.function | 2023-12-07 16:45:44,040 : [Test: LiteLLMChat|0a6c5186-8361-4245-b555-625a0595d744] transition to: States.OUTPUT_VALIDATION 
-INFO | tinyllm.function | 2023-12-07 16:45:44,040 : [Test: LiteLLMChat|0a6c5186-8361-4245-b555-625a0595d744] transition to: States.PROCESSING_OUTPUT 
-INFO | tinyllm.function | 2023-12-07 16:45:44,041 : [Test: LiteLLMChat|0a6c5186-8361-4245-b555-625a0595d744] transition to: States.PROCESSED_OUTPUT_VALIDATION 
-INFO | tinyllm.function | 2023-12-07 16:45:44,041 : [Test: LiteLLMChat|0a6c5186-8361-4245-b555-625a0595d744] transition to: States.COMPLETE 
+INFO | tinyllm.function | 2023-12-25 19:37:10,617 : [Standard example selector] transition to: States.INIT 
+INFO | tinyllm.function | 2023-12-25 19:37:12,720 : [BufferMemory] transition to: States.INIT 
+INFO | tinyllm.function | 2023-12-25 19:37:12,729 : [get_user_property] transition to: States.INIT 
+INFO | tinyllm.function | 2023-12-25 19:37:12,729 : [Toolkit] transition to: States.INIT 
+INFO | tinyllm.function | 2023-12-25 19:37:12,731 : [LiteLLM] transition to: States.INIT 
+INFO | tinyllm.function | 2023-12-25 19:37:12,732 : [BufferMemory] transition to: States.INIT 
+INFO | tinyllm.function | 2023-12-25 19:37:12,732 : [AnswerCorrectnessEvaluator] transition to: States.INIT 
+INFO | tinyllm.function | 2023-12-25 19:37:12,732 : [Agent] transition to: States.INIT 
+INFO | tinyllm.function | 2023-12-25 19:37:12,737 : [Agent] transition to: States.INPUT_VALIDATION 
+INFO | tinyllm.function | 2023-12-25 19:37:12,737 : [Agent] transition to: States.RUNNING 
+INFO | tinyllm.function | 2023-12-25 19:37:12,739 : [LiteLLM] transition to: States.INPUT_VALIDATION 
+INFO | tinyllm.function | 2023-12-25 19:37:12,740 : [LiteLLM] transition to: States.RUNNING 
+INFO | tinyllm.function | 2023-12-25 19:37:13,547 : [LiteLLM] transition to: States.OUTPUT_VALIDATION 
+INFO | tinyllm.function | 2023-12-25 19:37:13,548 : [LiteLLM] transition to: States.PROCESSING_OUTPUT 
+INFO | tinyllm.function | 2023-12-25 19:37:13,548 : [LiteLLM] transition to: States.PROCESSED_OUTPUT_VALIDATION 
+INFO | tinyllm.function | 2023-12-25 19:37:13,548 : [LiteLLM] transition to: States.COMPLETE 
+INFO | tinyllm.function | 2023-12-25 19:37:13,899 : [BufferMemory] transition to: States.INPUT_VALIDATION 
+INFO | tinyllm.function | 2023-12-25 19:37:13,899 : [BufferMemory] transition to: States.RUNNING 
+INFO | tinyllm.function | 2023-12-25 19:37:13,899 : [BufferMemory] transition to: States.OUTPUT_VALIDATION 
+INFO | tinyllm.function | 2023-12-25 19:37:13,899 : [BufferMemory] transition to: States.PROCESSING_OUTPUT 
+INFO | tinyllm.function | 2023-12-25 19:37:13,900 : [BufferMemory] transition to: States.PROCESSED_OUTPUT_VALIDATION 
+INFO | tinyllm.function | 2023-12-25 19:37:13,900 : [BufferMemory] transition to: States.COMPLETE 
+INFO | tinyllm.function | 2023-12-25 19:37:14,444 : [BufferMemory] transition to: States.INPUT_VALIDATION 
+INFO | tinyllm.function | 2023-12-25 19:37:14,444 : [BufferMemory] transition to: States.RUNNING 
+INFO | tinyllm.function | 2023-12-25 19:37:14,444 : [BufferMemory] transition to: States.OUTPUT_VALIDATION 
+INFO | tinyllm.function | 2023-12-25 19:37:14,444 : [BufferMemory] transition to: States.PROCESSING_OUTPUT 
+INFO | tinyllm.function | 2023-12-25 19:37:14,444 : [BufferMemory] transition to: States.PROCESSED_OUTPUT_VALIDATION 
+INFO | tinyllm.function | 2023-12-25 19:37:14,445 : [BufferMemory] transition to: States.COMPLETE 
+INFO | tinyllm.function | 2023-12-25 19:37:15,001 : [Toolkit] transition to: States.INPUT_VALIDATION 
+INFO | tinyllm.function | 2023-12-25 19:37:15,002 : [Toolkit] transition to: States.RUNNING 
+INFO | tinyllm.function | 2023-12-25 19:37:15,003 : [get_user_property] transition to: States.INPUT_VALIDATION 
+INFO | tinyllm.function | 2023-12-25 19:37:15,004 : [get_user_property] transition to: States.RUNNING 
+INFO | tinyllm.function | 2023-12-25 19:37:15,005 : [get_user_property] transition to: States.OUTPUT_VALIDATION 
+INFO | tinyllm.function | 2023-12-25 19:37:15,005 : [get_user_property] transition to: States.PROCESSING_OUTPUT 
+INFO | tinyllm.function | 2023-12-25 19:37:15,005 : [get_user_property] transition to: States.PROCESSED_OUTPUT_VALIDATION 
+INFO | tinyllm.function | 2023-12-25 19:37:15,005 : [get_user_property] transition to: States.COMPLETE 
+INFO | tinyllm.function | 2023-12-25 19:37:15,510 : [Toolkit] transition to: States.OUTPUT_VALIDATION 
+INFO | tinyllm.function | 2023-12-25 19:37:15,511 : [Toolkit] transition to: States.PROCESSING_OUTPUT 
+INFO | tinyllm.function | 2023-12-25 19:37:15,511 : [Toolkit] transition to: States.PROCESSED_OUTPUT_VALIDATION 
+INFO | tinyllm.function | 2023-12-25 19:37:15,511 : [Toolkit] transition to: States.COMPLETE 
+INFO | tinyllm.function | 2023-12-25 19:37:15,838 : [LiteLLM] transition to: States.INPUT_VALIDATION 
+INFO | tinyllm.function | 2023-12-25 19:37:15,839 : [LiteLLM] transition to: States.RUNNING 
+INFO | tinyllm.function | 2023-12-25 19:37:16,628 : [LiteLLM] transition to: States.OUTPUT_VALIDATION 
+INFO | tinyllm.function | 2023-12-25 19:37:16,629 : [LiteLLM] transition to: States.PROCESSING_OUTPUT 
+INFO | tinyllm.function | 2023-12-25 19:37:16,629 : [LiteLLM] transition to: States.PROCESSED_OUTPUT_VALIDATION 
+INFO | tinyllm.function | 2023-12-25 19:37:16,629 : [LiteLLM] transition to: States.COMPLETE 
+INFO | tinyllm.function | 2023-12-25 19:37:16,814 : [BufferMemory] transition to: States.INPUT_VALIDATION 
+INFO | tinyllm.function | 2023-12-25 19:37:16,814 : [BufferMemory] transition to: States.RUNNING 
+INFO | tinyllm.function | 2023-12-25 19:37:16,814 : [BufferMemory] transition to: States.OUTPUT_VALIDATION 
+INFO | tinyllm.function | 2023-12-25 19:37:16,815 : [BufferMemory] transition to: States.PROCESSING_OUTPUT 
+INFO | tinyllm.function | 2023-12-25 19:37:16,815 : [BufferMemory] transition to: States.PROCESSED_OUTPUT_VALIDATION 
+INFO | tinyllm.function | 2023-12-25 19:37:16,815 : [BufferMemory] transition to: States.COMPLETE 
+INFO | tinyllm.function | 2023-12-25 19:37:17,148 : [Agent] transition to: States.OUTPUT_VALIDATION 
+INFO | tinyllm.function | 2023-12-25 19:37:17,149 : [AnswerCorrectnessEvaluator] transition to: States.INPUT_VALIDATION 
+INFO | tinyllm.function | 2023-12-25 19:37:17,149 : [AnswerCorrectnessEvaluator] transition to: States.RUNNING 
+INFO | tinyllm.function | 2023-12-25 19:37:17,149 : [AnswerCorrectnessEvaluator] transition to: States.OUTPUT_VALIDATION 
+INFO | tinyllm.function | 2023-12-25 19:37:17,150 : [AnswerCorrectnessEvaluator] transition to: States.PROCESSING_OUTPUT 
+INFO | tinyllm.function | 2023-12-25 19:37:17,151 : [AnswerCorrectnessEvaluator] transition to: States.PROCESSED_OUTPUT_VALIDATION 
+INFO | tinyllm.function | 2023-12-25 19:37:17,151 : [AnswerCorrectnessEvaluator] transition to: States.COMPLETE 
+INFO | tinyllm.function | 2023-12-25 19:37:17,846 : [Agent] transition to: States.PROCESSING_OUTPUT 
+INFO | tinyllm.function | 2023-12-25 19:37:17,847 : [Agent] transition to: States.PROCESSED_OUTPUT_VALIDATION 
+INFO | tinyllm.function | 2023-12-25 19:37:17,847 : [Agent] transition to: States.COMPLETE 
+{'status': 'success', 'output': {'response': {'id': 'chatcmpl-8ZpjY0QmXbDiMIcSRwKuCUny4sxul', 'choices': [{'finish_reason': 'stop', 'index': 0, 'message': {'content': "The user's birthday is on January 1st.", 'role': 'assistant'}}], 'created': 1703551035, 'model': 'gpt-3.5-turbo-0613', 'object': 'chat.completion', 'system_fingerprint': None, 'usage': {'completion_tokens': 12, 'prompt_tokens': 138, 'total_tokens': 150}, '_response_ms': 785.606}}}
 ```
 
