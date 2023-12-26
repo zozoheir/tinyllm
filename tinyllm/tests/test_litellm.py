@@ -36,7 +36,6 @@ class TestlitellmChat(AsyncioTestCase):
     def test_litellm_chat_evaluator(self):
         class SuccessFullRunEvaluator(Evaluator):
             async def run(self, **kwargs):
-                print('')
                 return {
                     "evals": {
                         "successful_score": 1,

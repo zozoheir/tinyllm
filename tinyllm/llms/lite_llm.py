@@ -43,7 +43,7 @@ class LiteLLM(Function):
             tools_args = {}
             if 'tools' in kwargs:
                 tools_args['tools'] = kwargs['tools']
-                tools_args['tools_choice'] = kwargs.get('tools_choice', 'auto')
+                tools_args['tool_choice'] = kwargs.get('tool_choice', 'auto')
         api_result = await acompletion(
             messages=kwargs['messages'],
             model=kwargs.get('model', 'gpt-3.5-turbo'),

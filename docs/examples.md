@@ -83,7 +83,7 @@ string_list = [
 context_builder = SingleSourceDocumentsFolderFitter(start_string="KNOWLEDGE GRAPH",
                                                     end_string="KNOWLEDGE GRAPH",
                                                     available_token_size=1000)
-final_context = context_builder.format(
+final_context = context_builder.to_string(
     search_results=string_list,
     header="[post]",
     ignore_keys=["summary", "title"]

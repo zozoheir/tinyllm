@@ -1,4 +1,3 @@
-
 import tinyllm
 
 from sqlalchemy import text
@@ -37,7 +36,6 @@ class Embeddings(Base):
     embedding = Column(Vector(dim=384))
     text = Column(String)
     emetadata = Column(postgresql.JSON)
-
 
 
 class VectorStore(Function):
@@ -129,11 +127,14 @@ class VectorStore(Function):
                 rows = result.all()
 
             docs = [
-                (Document(content=row.text,
-                          type=DocumentTypes.TEXT,
-                          metadata=row.emetadata), row.distance) for row in rows
+                {
+                    'document': Document(content=row.text,
+                                         type=DocumentTypes.TEXT,
+                                         metadata=row.emetadata),
+                    'distance': row.distance,
+                } for row in rows
             ]
 
             return {
-                "docs": docs,
+                "documents": docs,
             }

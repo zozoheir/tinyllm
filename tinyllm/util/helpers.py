@@ -126,7 +126,7 @@ def count_tokens(input: Union[List[Dict], Dict, str],
     elif isinstance(input, dict):
         dict_string = stringify_dict(header=kwargs.get('header', '[doc]'),
                                      dict=input,
-                                     ignore_keys=kwargs.get('ignore_keys', []))
+                                     include_keys=kwargs.get('include_keys', []))
         return num_tokens_from_string(dict_string)
 
     else:

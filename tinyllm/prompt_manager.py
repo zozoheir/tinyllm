@@ -33,7 +33,8 @@ class PromptManager:
                 examples.append(usr_msg)
                 examples.append(assistant_msg)
 
-        answer_format_msg = [get_openai_message(role='user', content=self.answer_formatting_prompt)] if self.answer_formatting_prompt is not None else []
+        answer_format_msg = [get_openai_message(role='user',
+                                                content=self.answer_formatting_prompt)] if self.answer_formatting_prompt is not None else []
 
         # -- Messages order --
         # system prompt
@@ -46,15 +47,7 @@ class PromptManager:
 
         return messages
 
-
-    @property
-    def available_token_size(self):
-        memories_size = 0
-        if self.memory:
-            memories_size = count_tokens(self.memory.memories,
-                                         header='',
-                                         ignore_keys=[])
-            system_role_size = count_tokens(get_openai_message(role='system',
-                                                               content=self.llm.system_role))
-        return (OPENAI_MODELS_CONTEXT_SIZES[
-                    self.model] - system_role_size - memories_size - self.max_tokens - self.answer_format_prompt_size - 10) * 0.99
+    async def add_memory(self,
+                         message):
+        if self.memory is not None:
+            await self.memory(message=message)

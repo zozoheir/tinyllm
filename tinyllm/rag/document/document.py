@@ -14,25 +14,38 @@ class Document:
 
     def __init__(self,
                  content,
-                 metadata,
+                 metadata: dict,
                  type=DocumentTypes.TEXT,
                  header='[doc]',
-                 ignore_keys=[]):
+                 include_keys=['content']):
         self.content = content
         self.metadata = metadata
         self.type = type
         self.header = header
-        self.ignore_keys = ignore_keys
+        self.include_keys = include_keys
 
     @property
     def size(self):
-        content = self.format()
+        content = self.to_string()
         return count_tokens(content)
 
-    def format(self):
+
+    def to_dict(self):
         if self.type == DocumentTypes.TEXT:
+            metacopy = self.metadata.copy()
+            metacopy.update({'content': self.content})
+            return metacopy
+        elif self.type == DocumentTypes.DICTIONARY:
             return self.content
+
+
+    def to_string(self):
+        if self.type == DocumentTypes.TEXT:
+            dic = self.to_dict()
+            return stringify_dict(header=self.header,
+                                  dict=dic,
+                                  include_keys=self.include_keys)
         elif self.type == DocumentTypes.DICTIONARY:
             return stringify_dict(header=self.header,
                                   dict=self.content,
-                                  ignore_keys=self.ignore_keys)
+                                  include_keys=self.include_keys)

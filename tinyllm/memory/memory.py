@@ -26,9 +26,7 @@ class Memory(Function):
 
     @property
     def size(self):
-        return count_tokens(self.memories,
-                            header='',
-                            ignore_keys=[])
+        return count_tokens(self.memories)
 
     @abstractmethod
     async def load_memories(self):

@@ -16,3 +16,4 @@ If the config file is not provided, the library will look for a tinyllm.yaml con
 - The user's home directory
 - The user's Document's directory
 
+

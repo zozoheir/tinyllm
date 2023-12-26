@@ -71,7 +71,7 @@ class TestStreamingAgent(AsyncioTestCase):
             llm=llm,
             example_manager=ExampleManager(),
             toolkit=toolkit,
-            memory=BufferMemory(name='Agent memory'),
+            memory=BufferMemory(),
             run_evaluators=[
                 AnswerCorrectnessEvaluator(
                     name="Eval: correct user info",

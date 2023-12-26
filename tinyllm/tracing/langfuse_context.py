@@ -53,6 +53,7 @@ class ObservationDecoratorFactory:
                     async for result in func(*args, **function_input):
                         yield result
                     function_input.pop('observation')
+                    if type(result) != dict: result = {'result': result}
                     await ObservationUtil.perform_evaluations(observation, result, evaluators)
                 except Exception as e:
                     ObservationUtil.handle_exception(observation, e)
@@ -70,8 +71,7 @@ class ObservationDecoratorFactory:
                       observation_type,
                       input_mapping=None,
                       output_mapping=None,
-                      evaluators=None,
-                      **kwargs):
+                      evaluators=None):
         def decorator(func):
             @wraps(func)
             async def wrapper(*args, **function_input):
@@ -85,10 +85,10 @@ class ObservationDecoratorFactory:
                                                               observation_input=observation_input)
                 token = current_observation_context.set(observation)
                 if len(args) > 0:
-                    if args and type(args[0]).__name__ == 'Function':
-                        args[0].observation = observation
+                    args[0].observation = observation
                 try:
                     result = await func(*args, **function_input)
+                    if type(result)!=dict: result = {'result': result}
                     await ObservationUtil.perform_evaluations(observation, result, evaluators)
                     return result
                 except Exception as e:

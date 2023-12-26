@@ -1,11 +1,8 @@
 import json
 from typing import Optional
 
-from langsmith import traceable
-
 from smartpy.utility.log_util import getLogger
 from tinyllm.function import Function
-from tinyllm.agent.base import AgentBase
 
 from tinyllm.agent.toolkit import Toolkit
 from tinyllm.examples.example_manager import ExampleManager
@@ -22,10 +19,10 @@ logger = getLogger(__name__)
 class AgentInitValidator(Validator):
     system_role: str
     llm: Function
-    memory: Memory
+    memory: Optional[Memory]
     toolkit: Optional[Toolkit]
     example_manager: Optional[ExampleManager]
-
+    answer_formatting_prompt: Optional[str]
 
 class AgentInputValidator(Validator):
     user_input: str
@@ -38,32 +35,32 @@ class Agent(Function):
 
     def __init__(self,
                  system_role: str,
-                 llm: Function = llm_store.get_llm(
-                     name='LiteLLM',
-                     llm_library=LLMs.LITE_LLM,
-
-                 ),
-                 memory: Memory = BufferMemory(name='Agent memory'),
+                 llm: Function,
+                 memory: Memory = BufferMemory(),
                  toolkit: Optional[Toolkit] = None,
                  example_manager: Optional[ExampleManager] = ExampleManager(),
+                 answer_formatting_prompt: Optional[str] = None,
                  **kwargs):
         AgentInitValidator(system_role=system_role,
                            llm=llm,
                            toolkit=toolkit,
                            memory=memory,
-                           example_manager=example_manager)
+                           example_manager=example_manager,
+                           answer_formatting_prompt=answer_formatting_prompt)
         super().__init__(
             input_validator=AgentInputValidator,
             **kwargs)
         self.system_role = system_role
         self.llm = llm
-        self.memory = memory
         self.toolkit = toolkit
+        self.example_manager = example_manager
         self.prompt_manager = PromptManager(
             system_role=system_role,
             example_manager=example_manager,
             memory=memory,
+            answer_formatting_prompt=answer_formatting_prompt,
         )
+
 
     @observation(observation_type='span')
     async def run(self,
@@ -77,7 +74,7 @@ class Agent(Function):
             response_msg = await self.llm(messages=prompt_messages,
                                           tools=self.toolkit.as_dict_list() if self.toolkit else None,
                                           **kwargs)
-            await self.prompt_manager.memory(message=input_msg)
+            await self.prompt_manager.add_memory(message=input_msg)
 
             if response_msg['status'] == 'success':
                 is_tool_call = response_msg['output']['response']['choices'][0]['finish_reason'] == 'tool_calls'
@@ -91,7 +88,7 @@ class Agent(Function):
                     tool_call_msg['content'] = ''
                     tool_calls = tool_call_msg['tool_calls']
 
-                    await self.prompt_manager.memory(message=tool_call_msg)
+                    await self.prompt_manager.add_memory(message=tool_call_msg)
 
                     # Memorize tool result
                     tool_call = tool_calls[0]

@@ -29,9 +29,9 @@ class TestVectorStore(AsyncioTestCase):
         collection_filters = [self.collection_name]
         metadata_filters = {"type": ["test"]}
         results = self.loop.run_until_complete(self.vector_store.similarity_search(query, k, collection_filters, metadata_filters))
-        docs = results['docs']
+        docs = results['documents']
         self.assertTrue(len(docs) <= k)
-        self.assertTrue(all(r[0].metadata['type'] == 'test' for r in docs))
+        self.assertTrue(all(r['document'].metadata['type'] == 'test' for r in docs))
 
 
     def tearDown(self):

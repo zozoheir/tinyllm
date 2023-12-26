@@ -12,4 +12,5 @@ class LLMStore:
 
     def get_llm(self, llm_library, **kwargs):
         llm_class = llm_library.value
-        return llm_class(**kwargs)
+        instance_of_class = llm_class(**kwargs)
+        return instance_of_class

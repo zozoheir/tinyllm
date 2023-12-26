@@ -1,3 +1,4 @@
+import inspect
 from typing import Dict, Callable
 
 from tinyllm.function import Function
@@ -46,5 +47,8 @@ class Tool(Function):
 
     @observation(observation_type='span', input_mapping={'input': 'arguments'})
     async def run(self, **kwargs):
-        tool_response = self.python_lambda(**kwargs['arguments'])
+        if inspect.iscoroutinefunction(self.python_lambda):
+            tool_response = await self.python_lambda(**kwargs['arguments'])
+        else:
+            tool_response = self.python_lambda(**kwargs['arguments'])
         return {'response': get_openai_message(role='tool', content=tool_response, name=self.name)}

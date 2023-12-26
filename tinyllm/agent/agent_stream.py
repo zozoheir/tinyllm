@@ -21,27 +21,29 @@ class AgentStream(FunctionStream):
     def __init__(self,
                  system_role: str,
                  llm: FunctionStream,
-                 memory: Memory = BufferMemory(name='Agent memory'),
+                 memory: Memory = BufferMemory(),
                  toolkit: Optional[Toolkit] = None,
                  example_manager: Optional[ExampleManager] = ExampleManager(),
+                 answer_formatting_prompt: Optional[str] = None,
                  **kwargs):
         AgentInitValidator(system_role=system_role,
                            llm=llm,
                            toolkit=toolkit,
                            memory=memory,
-                           example_manager=example_manager)
+                           example_manager=example_manager,
+                           answer_formatting_prompt=answer_formatting_prompt)
         super().__init__(
             input_validator=AgentInputValidator,
             **kwargs)
         self.system_role = system_role
         self.llm = llm
-        self.memory = memory
         self.toolkit = toolkit
         self.example_manager = example_manager
         self.prompt_manager = PromptManager(
             system_role=system_role,
             example_manager=example_manager,
             memory=memory,
+            answer_formatting_prompt=answer_formatting_prompt,
         )
 
     @observation(observation_type='span', stream=True)
@@ -54,7 +56,7 @@ class AgentStream(FunctionStream):
 
         while True:
             prompt_messages = await self.prompt_manager.format(message=input_msg)
-            await self.prompt_manager.memory(message=input_msg)
+            await self.prompt_manager.add_memory(message=input_msg)
 
             async for msg in self.llm(messages=prompt_messages,
                                       tools=self.toolkit.as_dict_list() if self.toolkit else None,
@@ -76,7 +78,7 @@ class AgentStream(FunctionStream):
                     }
                     api_tool_call['function'] = json_tool_call
                     msg_output['delta']['content'] = ''
-                    await self.prompt_manager.memory(message=msg_output['delta'])
+                    await self.prompt_manager.add_memory(message=msg_output['delta'])
 
                     # Memorize tool result
                     tool_results = await self.toolkit(

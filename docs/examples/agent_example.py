@@ -53,7 +53,6 @@ tools = [
             },
             "required": ["asked_property"],
         },
-
     )
 ]
 toolkit = Toolkit(
@@ -69,12 +68,9 @@ async def run_agent():
     tiny_agent = Agent(system_role="You are a helpful agent that can answer questions about the user's profile using available tools.",
                        llm=llm,
                        toolkit=toolkit,
-                       memory=BufferMemory(name='Agent memory'),
+                       memory=BufferMemory(),
                        run_evaluators=[
-                           AnswerCorrectnessEvaluator(
-                               name="Eval: correct user info",
-
-                           ),
+                           AnswerCorrectnessEvaluator(),
                        ])
 
     result = await tiny_agent(user_input="What is the user's birthday?")

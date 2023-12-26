@@ -30,7 +30,7 @@ class TestlitellmChat(AsyncioTestCase):
                     "result": 1
                 }
 
-            @observation(observation_type='span', name='process_output')
+            @observation(observation_type='span')
             async def process_output(self, **kwargs):
                 result = 10 + kwargs['result']
                 return {

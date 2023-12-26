@@ -37,7 +37,10 @@ class DocumentStore:
     def add_docs(self,
                  docs: List[Document],
                  name: str):
-        self.store[name] = docs
+        if name in self.store:
+            self.store[name] += docs
+        else:
+            self.store[name] = docs
 
     def fit_store(self,
                   context_size,
@@ -49,7 +52,8 @@ class DocumentStore:
         if not weights:
             weights = [1 / len(docs_lists)] * len(docs_lists)
         else:
-            assert len(weights) == len(docs_lists), "Length of weights must be equal to the number of document store keys."
+            assert len(weights) == len(
+                docs_lists), "Length of weights must be equal to the number of document store keys."
 
         # Normalize weights to ensure they sum up to 1
         total_weight = sum(weights)
@@ -58,36 +62,38 @@ class DocumentStore:
         # Calculate token size for each source based on weights
         token_sizes = [int(weight * context_size) for weight in normalized_weights]
 
-        fitted_docs = []
-
+        i = 0
+        section_names = list(self.store.keys())
         for doc_list, token_size in zip(docs_lists, token_sizes):
+            section_docs = []
             # For each doc source, count how many docs can fit into its token size
             current_tokens = 0
             for doc in doc_list:
                 doc_tokens = doc.size
                 if current_tokens + doc_tokens <= token_size:
-                    fitted_docs.append(doc)
+                    section_docs.append(doc)
                     current_tokens += doc_tokens
                 else:
                     break
-        return fitted_docs
 
+            self.store[section_names[i]] = section_docs
+            i += 1
 
-    def format(self,
-               start_string: str,
-               end_string: str,
-               context_size,
-               weights: [List[float]] = None,
-               ):
-        # Remove duplicates
-        #final_docs = remove_duplicate_dicts(search_results)
-
+    def to_string(self,
+                  start_string: str = '-----SUPPORTING DOCS-----',
+                  end_string: str = '-----END OF SUPPORTING DOCS-----',
+                  context_size: int = None,
+                  weights: [List[float]] = None,
+                  ):
         # Fit the multiple sources of docs based on weights
-        self.fitted_doc_list = self.fit_store(context_size,
-                                              weights)
+        self.fit_store(context_size,
+                       weights)
 
         # Convert to appropriate format
-        fitted_context_string = '/n'.join([doc.format() for doc in self.fitted_doc_list])
+        fitted_context_string = ''
+        for section_name, docs in self.store.items():
+            fitted_context_string += section_name + '\n'
+            fitted_context_string += f'/n '.join([doc.to_string() for doc in docs])
 
         # Format the final context
         formatted_context = start_string + "\n" + fitted_context_string + "\n" + end_string

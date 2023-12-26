@@ -16,9 +16,7 @@ class TestDocsStore(unittest.TestCase):
             {"content": "Third document text.",
              "metadata": {}}
         ]
-        self.docs = [Document(**doc,
-                              header="[doc]",
-                              ignore_keys=['metadata']) for doc in self.docs]
+        self.docs = [Document(**doc) for doc in self.docs]
         self.document_store = DocumentStore()
         self.document_store.add_docs(
             name='test_section',
@@ -33,13 +31,12 @@ class TestDocsStore(unittest.TestCase):
              "metadata": {}}
         ]
         self.docs_2 = [Document(**doc,
-                              header="[doc]",
-                              ignore_keys=['metadata']) for doc in self.docs_2]
+                                header="[doc]",
+                                include_keys=['content','metadata']) for doc in self.docs_2]
         self.document_store.add_docs(
             name='test_section_2',
             docs=self.docs_2
         )
-
 
     def test_get_context(self):
         start_string = "SUPPORTING DOCS"
@@ -50,7 +47,7 @@ class TestDocsStore(unittest.TestCase):
         context_available = doc1_size + self.docs_2[0].size
 
         # Use the DocsContextBuilder to get the final context
-        final_context = self.document_store.format(
+        final_context = self.document_store.to_string(
             start_string=start_string,
             end_string=end_string,
             context_size=context_available,
@@ -61,9 +58,9 @@ class TestDocsStore(unittest.TestCase):
         self.assertTrue(end_string in final_context)
         # Assert the presence of document texts in the final context
         for doc in self.docs[:2]:
-            self.assertTrue(doc.format() in final_context)
+            self.assertTrue(doc.to_string() in final_context)
         for doc in self.docs_2[:1]:
-            self.assertTrue(doc.format() in final_context)
+            self.assertTrue(doc.to_string() in final_context)
 
 
 if __name__ == '__main__':

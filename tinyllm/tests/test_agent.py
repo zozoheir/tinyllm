@@ -47,7 +47,6 @@ tools = [
             },
             "required": ["asked_property"],
         },
-
     )
 ]
 toolkit = Toolkit(
@@ -63,17 +62,12 @@ class TestStreamingAgent(AsyncioTestCase):
 
     def test_agent(self):
         llm = llm_store.get_llm(
-            name='Tinyllm manager',
             llm_library=LLMs.LITE_LLM,
-
         )
         tiny_agent = Agent(
             system_role="You are a helpful assistant",
-            name='Test: agent',
             llm=llm,
-            example_manager=ExampleManager(),
             toolkit=toolkit,
-            memory=BufferMemory(name='Agent memory'),
         )
         # Run the asynchronous test
         result = self.loop.run_until_complete(tiny_agent(user_input="What is the user's birthday?"))

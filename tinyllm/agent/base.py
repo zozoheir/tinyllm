@@ -14,7 +14,7 @@ class AgentBase:
                  llm: Union[FunctionStream, Function],
                  toolkit: Toolkit,
                  system_role: str = "You are a helpful assistant",
-                 memory=BufferMemory(name='Agent memory'),
+                 memory=BufferMemory(),
                  example_manager=ExampleManager(),
                  **kwargs):
         self.toolkit = toolkit

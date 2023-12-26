@@ -29,7 +29,8 @@ class LiteLLMStream(LiteLLM, FunctionStream):
             max_tokens=kwargs.get('max_tokens', 400),
             messages=kwargs['messages'],
             stream=True,
-            **tools_args
+            **tools_args,
+            num_retries=kwargs.get('num_retries', 3),
         )
 
         # We need to track 2 things: the response delta and the function_call

@@ -44,32 +44,28 @@ def stringify_key_value(key: str, value: Any) -> str:
 
 def stringify_dict(header: str,
                    dict: Dict[str, Any],
-                   ignore_keys: Optional[List[str]] = None) -> str:
+                   include_keys: Optional[List[str]] = None) -> str:
     """
     Formats a dictionary into a string with a specific format.
 
     :param dict: A dictionary to format.
-    :param ignore_keys: A list of keys to ignore. Default is None.
+    :param include_keys: A list of keys to include. Default is None, which includes all keys.
     :return: A formatted string.
     """
-    ignore_keys = ignore_keys or []
     all_strings = []
     for key, value in dict.items():
+        # Include the key only if include_keys is None (include all keys) or the key is in include_keys
+        if include_keys is None or key in include_keys:
+            if value is None:
+                value = ""
 
-        if key in ignore_keys:
-            continue
+            if key in ['created_at', 'updated_at', 'timestamp']:
+                value = str(value).split('+')[0]
 
-        if value is None:
-            value=""
+            generated_string = stringify_key_value(key, str(value).split('+')[0])
+            all_strings.append(generated_string)
 
-        if key in ['created_at', 'updated_at', 'timestamp']:
-            value = str(value).split('+')[0]
-
-        generated_string = stringify_key_value(key, str(value).split('+')[0])
-        all_strings.append(generated_string)
-
-    dict_string_representation = stringify_string_list(all_strings,
-                                                       separator="\n")
+    dict_string_representation = stringify_string_list(all_strings, separator="\n")
     return header + "\n" + dict_string_representation
 
 

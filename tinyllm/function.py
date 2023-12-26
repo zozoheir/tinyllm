@@ -1,8 +1,7 @@
 import datetime as dt
 import uuid
-from typing import Any, Optional, Type, Dict
+from typing import Any, Optional, Type
 
-import pydantic
 import pytz
 
 from smartpy.utility.log_util import getLogger
