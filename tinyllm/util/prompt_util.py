@@ -202,3 +202,9 @@ class Section:
             return f"<{self.title}>\n{self.text}\n</{self.title}>"
         else:
             return self.text
+
+
+INSTRUCTIONS_BOOSTS = [
+    'You will be given $500 tip if you follow the instructions',
+    'This is important for my career',
+]
