@@ -54,11 +54,10 @@ class AgentStream(FunctionStream):
                                        content=user_input)
 
         while True:
-            run_kwargs = await self.prompt_manager.format(message=input_msg,
+            kwargs = await self.prompt_manager.format(message=input_msg,
                                                           **kwargs)
 
             async for msg in self.llm(tools=self.toolkit.as_dict_list() if self.toolkit else None,
-                                      **run_kwargs,
                                       **kwargs):
                 yield msg
 

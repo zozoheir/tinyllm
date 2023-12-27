@@ -72,10 +72,9 @@ class Agent(Function):
 
         while True:
 
-            run_kwargs = await self.prompt_manager.format(message=input_msg,
-                                                          **kwargs)
+            kwargs = await self.prompt_manager.format(message=input_msg,
+                                                      **kwargs)
             response_msg = await self.llm(tools=self.toolkit.as_dict_list() if self.toolkit else None,
-                                          **run_kwargs,
                                           **kwargs)
             await self.prompt_manager.add_memory(message=input_msg)
 

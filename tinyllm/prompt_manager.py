@@ -55,12 +55,10 @@ class PromptManager:
                                                 prompt_to_completion_multiplier=kwargs.get(
                                                     'prompt_to_completion_multiplier', 1),
                                                 input_size=count_tokens(messages))
-
-        return {
-            'messages': messages,
-            'max_tokens': max_tokens,
-            'model': model,
-        }
+        kwargs['messages'] = messages
+        kwargs['max_tokens'] = max_tokens
+        kwargs['model'] = model
+        return kwargs
 
     async def add_memory(self,
                          message):
