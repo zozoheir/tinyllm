@@ -123,7 +123,7 @@ class ObservationUtil:
         # Decorated method
         if len(args) > 0:
             if hasattr(args[0], 'name'):
-                name = args[0].name + ('.' + func.__name__ if func.__name__ != 'wrapper' else '')
+                name = args[0].name + ('.' + func.__name__ if func.__name__ not in ['wrapper','__call__'] else '')
             else:
                 name = args[0].__class__.__name__ + '.' + func.__name__
 

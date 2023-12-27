@@ -40,7 +40,6 @@ class FunctionStream(Function):
             # Run
             self.transition(States.RUNNING)
             async for message in self.run(**validated_input ):
-
                 # Output validation
                 if 'status' in message.keys():
                     if message['status'] == 'success':
@@ -55,6 +54,7 @@ class FunctionStream(Function):
                        "output": message}
 
             message['streaming_status'] = 'completed'
+
             yield {"status": "success",
                    "output": message}
 
@@ -62,11 +62,15 @@ class FunctionStream(Function):
 
             # Process output
             self.transition(States.PROCESSING_OUTPUT)
-            self.processed_output = await self.process_output(**self.output )
+            self.processed_output = await self.process_output(**self.output)
 
             # Validate processed output
             if self.processed_output_validator:
                 self.processed_output = self.validate_processed_output(**self.processed_output)
+
+            # Evaluate processed output
+            for evaluator in self.processed_output_evaluators:
+                await evaluator(**self.processed_output, observation=self.observation)
 
             # Return final output
             final_output = {"status": "success",
@@ -79,15 +83,11 @@ class FunctionStream(Function):
             langfuse_client.flush()
 
         except Exception as e:
-            self.error_message = str(e)
-            self.transition(States.FAILED, msg='/n'.join(traceback.format_exception(e)))
-            langfuse_client.flush()
-
+            output_message = await self.handle_exception(e)
+            # Raise or return error
             if tinyllm_config['OPS']['DEBUG']:
                 raise e
+            if type(e) in self.fallback_strategies:
+                raise e
             else:
-                if type(e) in self.fallback_strategies:
-                    raise e
-                else:
-                    yield {"status": "error",
-                           "message": traceback.format_exception(e)}
+                yield output_message

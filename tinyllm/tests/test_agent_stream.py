@@ -62,7 +62,6 @@ class TestStreamingAgent(AsyncioTestCase):
     def test_agent_stream(self):
         llm = llm_store.get_llm(
             llm_library=LLMs.LITE_LLM_STREAM,
-            name='Tinyllm manager',
         )
 
         tiny_agent = AgentStream(

@@ -1,4 +1,5 @@
 import datetime as dt
+import traceback
 import uuid
 from typing import Any, Optional, Type
 
@@ -77,7 +78,6 @@ class Function:
         self.logs = ""
         self.state = None
         self.transition(States.INIT)
-        self.error_message = None
         self.input = None
         self.output = None
         self.processed_output = None
@@ -112,7 +112,7 @@ class Function:
 
             # Evaluate output
             for evaluator in self.run_evaluators:
-                await evaluator(**self.output, observation=self.observation)
+                await evaluator(**{'status': 'success', 'output': self.output}, observation=self.observation)
 
             # Process output
             self.transition(States.PROCESSING_OUTPUT)
@@ -126,7 +126,7 @@ class Function:
 
             # Evaluate processed output
             for evaluator in self.processed_output_evaluators:
-                await evaluator(**self.processed_output, observation=self.observation)
+                await evaluator(**{'status': 'success', 'output': self.processed_output}, observation=self.observation)
 
             final_output = {"status": "success",
                             "output": self.processed_output}
@@ -137,38 +137,54 @@ class Function:
             return final_output
 
         except Exception as e:
-            self.error_message = str(e)
-            self.transition(States.FAILED, msg=str(e))
-            detailed_error_msg = get_exception_info(e)
-            self.log(detailed_error_msg, level="error")
-            langfuse_client.flush()
+            output_message = await self.handle_exception(e)
+            # Raise or return error
             if tinyllm_config['OPS']['DEBUG']:
                 raise e
             if type(e) in self.fallback_strategies:
                 raise e
             else:
-                return {"status": "error",
-                        "message": detailed_error_msg}
+                return output_message
+
+
+    async def handle_exception(self,
+                               e):
+        detailed_error_msg = str(traceback.format_exception(e))
+        self.transition(States.FAILED, msg=detailed_error_msg)
+        self.log(detailed_error_msg, level="error")
+        langfuse_client.flush()
+        output_message = {"status": "error",
+                          "message": detailed_error_msg}
+
+        # Evaluate output if not already done
+        if self.state < States.OUTPUT_EVALUATION:
+            for evaluator in self.run_evaluators:
+                await evaluator(**output_message, observation=self.observation)
+
+        if self.state < States.PROCESSED_OUTPUT_EVALUATION:
+            for evaluator in self.processed_output_evaluators:
+                await evaluator(**output_message, observation=self.observation)
+
+        return output_message
 
     def transition(self, new_state: States, msg: Optional[str] = None):
         if new_state not in ALLOWED_TRANSITIONS[self.state]:
             raise InvalidStateTransition(
-                self, f"Invalid state transition from {self.state} to {new_state}"
+                self, f"Invalid state transition from {self.state.name} to {new_state.name}"
             )
         log_level = "error" if new_state == States.FAILED else "info"
         if log_level == 'error':
             self.log(
-                f"transition from {self.state} to: {new_state}" + (f" ({msg})" if msg is not None else ""),
+                f"transition from {self.state.name} to: {new_state.name}" + (f" ({msg})" if msg is not None else ""),
                 level=log_level,
             )
         else:
             self.log(
-                f"transition to: {new_state}" + (f" ({msg})" if msg is not None else ""),
+                f"transition to: {new_state.name}" + (f" ({msg})" if msg is not None else ""),
                 level=log_level,
             )
 
         self.state = new_state
-
 
     def log(self, message, level="info"):
         if tinyllm_config['OPS']['LOGGING']:

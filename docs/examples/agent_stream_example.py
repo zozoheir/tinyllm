@@ -62,7 +62,6 @@ async def run_agent_stream():
 
     llm_stream = llm_store.get_llm(
         llm_library=LLMs.LITE_LLM_STREAM,
-        name='Tinyllm manager',
     )
 
     tiny_agent = AgentStream(system_role="You are a helpful agent that can answer questions about the user's profile using available tools.",
