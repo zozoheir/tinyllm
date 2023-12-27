@@ -5,6 +5,7 @@ from typing import Any
 from tinyllm.function import Function
 from tinyllm import langfuse_client, tinyllm_config
 from tinyllm.state import States
+from tinyllm.tracing.langfuse_context import observation
 from tinyllm.validator import Validator
 
 
@@ -27,7 +28,7 @@ class FunctionStream(Function):
                   **kwargs):
         yield None
 
-    # @fallback_decorator
+    @observation('span', stream=True)
     async def __call__(self, **kwargs):
         try:
             self.input = kwargs

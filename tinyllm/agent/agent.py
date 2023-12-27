@@ -65,7 +65,6 @@ class Agent(Function):
             answer_formatting_prompt=answer_formatting_prompt,
         )
 
-    @observation('span')
     async def run(self,
                   **kwargs):
         input_msg = get_openai_message(role='user',

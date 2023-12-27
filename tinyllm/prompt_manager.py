@@ -6,6 +6,11 @@ import datetime as dt
 
 
 class PromptManager:
+    """
+    This class is responsible for formatting the prompt for the LLM and managing:
+    - model (to avoid exceeding the token limit)
+    - max_tokens (based on the expected completion size)
+    """
 
     def __init__(self,
                  system_role: str,
@@ -19,16 +24,11 @@ class PromptManager:
         self.answer_formatting_prompt = answer_formatting_prompt
         self.add_current_time = add_current_time
 
-    async def format(self,
-                     message,
-                     **kwargs):
-
+    async def format_messages(self, message):
         system_role = get_openai_message(role='system',
                                          content=self.system_role)
         memories = [] if self.memory is None else await self.memory.get_memories()
-
         examples = []
-
         examples += self.example_manager.constant_examples
         if self.example_manager.example_selector.example_dicts and message['role'] == 'user':
             best_examples = await self.example_manager.example_selector(input=message['content'])
@@ -40,21 +40,21 @@ class PromptManager:
 
         answer_format_msg = [get_openai_message(role='user',
                                                 content=self.answer_formatting_prompt)] if self.answer_formatting_prompt is not None else []
-
-        # -- Messages order --
-        # system prompt
-        # memories
-        # constant examples
-        # selected (variable) examples
-        # Answer formatting prompt
-        # input message
         if self.add_current_time:
             system_role = f'{self.system_role} \nThe current time is:{str(dt.datetime.utcnow())}'
-
         messages = [system_role] + memories + examples + answer_format_msg + [message]
+        return messages
 
-        max_tokens, model = self.get_run_config(input_size=count_tokens(messages),
-                                                **kwargs)
+
+    async def format(self,
+                     message,
+                     **kwargs):
+
+        messages = await self.format_messages(message)
+        max_tokens, model = self.get_run_config(model=kwargs.get('model', DEFAULT_LLM_MODEL),
+                                                prompt_to_completion_multiplier=kwargs.get(
+                                                    'prompt_to_completion_multiplier', 1),
+                                                input_size=count_tokens(messages))
 
         return {
             'messages': messages,
@@ -68,13 +68,13 @@ class PromptManager:
             await self.memory(message=message)
 
     @property
+
     async def size(self):
         messages = await self.format(message=get_openai_message(role='user', content=''))
         return count_tokens(messages)
 
-    def get_run_config(self, input_size, **kwargs):
-        prompt_to_completion_multiplier = kwargs.get('prompt_to_completion_multiplier', 1)
-        model = kwargs.get('model', DEFAULT_LLM_MODEL)
+
+    def get_run_config(self, input_size, prompt_to_completion_multiplier, model):
         model_token_limit = LLM_TOKEN_LIMITS[model]
         context_size_available = model_token_limit - input_size
 

@@ -46,7 +46,6 @@ class AgentStream(FunctionStream):
             answer_formatting_prompt=answer_formatting_prompt,
         )
 
-    @observation(observation_type='span', stream=True)
     async def run(self,
                   user_input,
                   **kwargs):

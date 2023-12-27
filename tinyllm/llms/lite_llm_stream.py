@@ -54,7 +54,7 @@ class LiteLLMStream(LiteLLM, FunctionStream):
             if status == "streaming":
                 if chunk_role == "assistant":
                     completion += delta['content']
-
+                    delta_to_return = delta
                 elif chunk_role == "tool":
                     if function_call['name'] is None:
                         function_call['name'] = delta['tool_calls'][0]['function']['name']
@@ -67,7 +67,7 @@ class LiteLLMStream(LiteLLM, FunctionStream):
             yield {
                 "streaming_status": status,
                 "type": chunk_role,
-                "delta": delta_to_return or '',
+                "delta": delta_to_return,
                 "completion": completion,
                 "message": get_openai_message(role=chunk_role,
                                               content=completion),
