@@ -7,11 +7,11 @@ from tinyllm.agent.agent import AgentInitValidator, AgentInputValidator
 from tinyllm.agent.toolkit import Toolkit
 from tinyllm.examples.example_manager import ExampleManager
 from tinyllm.function_stream import FunctionStream
-from tinyllm.llms.llm_store import LLMs
+from tinyllm.llms.lite_llm import LLM_TOKEN_LIMITS, DEFAULT_LLM_MODEL, DEFAULT_CONTEXT_FALLBACK_DICT
 from tinyllm.memory.memory import BufferMemory, Memory
 from tinyllm.prompt_manager import PromptManager
 from tinyllm.tracing.langfuse_context import observation
-from tinyllm.util.helpers import get_openai_message
+from tinyllm.util.helpers import get_openai_message, count_tokens
 
 logger = getLogger(__name__)
 
@@ -55,13 +55,15 @@ class AgentStream(FunctionStream):
                                        content=user_input)
 
         while True:
-            prompt_messages = await self.prompt_manager.format(message=input_msg)
-            await self.prompt_manager.add_memory(message=input_msg)
+            run_kwargs = await self.prompt_manager.format(message=input_msg,
+                                                          **kwargs)
 
-            async for msg in self.llm(messages=prompt_messages,
-                                      tools=self.toolkit.as_dict_list() if self.toolkit else None,
+            async for msg in self.llm(tools=self.toolkit.as_dict_list() if self.toolkit else None,
+                                      **run_kwargs,
                                       **kwargs):
                 yield msg
+
+            await self.prompt_manager.add_memory(message=input_msg)
 
             # Agent decides to call a tool
             if msg['status'] == 'success':

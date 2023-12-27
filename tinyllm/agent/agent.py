@@ -18,11 +18,12 @@ logger = getLogger(__name__)
 
 class AgentInitValidator(Validator):
     system_role: str
-    llm: Function
+    llm: Optional[Function]
     memory: Optional[Memory]
     toolkit: Optional[Toolkit]
     example_manager: Optional[ExampleManager]
     answer_formatting_prompt: Optional[str]
+
 
 class AgentInputValidator(Validator):
     user_input: str
@@ -35,7 +36,7 @@ class Agent(Function):
 
     def __init__(self,
                  system_role: str,
-                 llm: Function,
+                 llm: Function = None,
                  memory: Memory = BufferMemory(),
                  toolkit: Optional[Toolkit] = None,
                  example_manager: Optional[ExampleManager] = ExampleManager(),
@@ -51,7 +52,10 @@ class Agent(Function):
             input_validator=AgentInputValidator,
             **kwargs)
         self.system_role = system_role
-        self.llm = llm
+        if llm is None:
+            self.llm = llm_store.default_llm
+        else:
+            self.llm = llm
         self.toolkit = toolkit
         self.example_manager = example_manager
         self.prompt_manager = PromptManager(
@@ -61,8 +65,7 @@ class Agent(Function):
             answer_formatting_prompt=answer_formatting_prompt,
         )
 
-
-    @observation(observation_type='span')
+    @observation('span')
     async def run(self,
                   **kwargs):
         input_msg = get_openai_message(role='user',
@@ -70,9 +73,10 @@ class Agent(Function):
 
         while True:
 
-            prompt_messages = await self.prompt_manager.format(message=input_msg)
-            response_msg = await self.llm(messages=prompt_messages,
-                                          tools=self.toolkit.as_dict_list() if self.toolkit else None,
+            run_kwargs = await self.prompt_manager.format(message=input_msg,
+                                                          **kwargs)
+            response_msg = await self.llm(tools=self.toolkit.as_dict_list() if self.toolkit else None,
+                                          **run_kwargs,
                                           **kwargs)
             await self.prompt_manager.add_memory(message=input_msg)
 

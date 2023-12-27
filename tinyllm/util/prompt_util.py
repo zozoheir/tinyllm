@@ -9,17 +9,6 @@ from tinyllm.util import os_util
 
 
 
-OPENAI_MODELS_MAX_TOKENS = {
-    "gpt-3.5-turbo": 4096,
-    "gpt-3.5-turbo-16k": 16384,
-    "gpt-3.5-turbo-0613": 4096,
-    "gpt-3.5-turbo-16k-0613": 16384,
-    "text-davinci-003 (Legacy)": 4097,
-    "text-davinci-002 (Legacy)": 4097,
-    "code-davinci-002 (Legacy)": 8001
-}
-
-
 def stringify_string_list(paragraphs: List[str],
                           separator="\n") -> str:
     """
@@ -68,7 +57,23 @@ def stringify_dict(header: str,
     dict_string_representation = stringify_string_list(all_strings, separator="\n")
     return header + "\n" + dict_string_representation
 
+def stringify_dict_list(header: str,
+                        dict_list: List[Dict[str, Any]],
+                        include_keys: Optional[List[str]] = None) -> str:
+    """
+    Formats a list of dictionaries into a string with a specific format.
 
+    :param dict_list: A list of dictionaries to format.
+    :param include_keys: A list of keys to include. Default is None, which includes all keys.
+    :return: A formatted string.
+    """
+    all_strings = []
+    for dict in dict_list:
+        dict_string_representation = stringify_dict("", dict, include_keys)
+        all_strings.append(dict_string_representation)
+
+    dict_list_string_representation = stringify_string_list(all_strings, separator="\n\n")
+    return header + "\n" + dict_list_string_representation
 
 def remove_imports(code: str) -> str:
     lines = code.split('\n')
@@ -186,3 +191,14 @@ def get_optimal_source_chunk(triplet, source):
     start = max(0, start - 50)
     end = min(len(source), end + 50)
     return start, end
+
+
+
+class Section:
+    def __call__(self, text, title=None):
+        self.text = text
+        self.title = title.upper() if title else None
+        if self.title:
+            return f"<{self.title}>\n{self.text}\n</{self.title}>"
+        else:
+            return self.text

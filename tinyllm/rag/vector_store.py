@@ -91,6 +91,18 @@ class VectorStore(Function):
                     await session.execute(stmt)
                 await session.commit()
 
+        return {
+            "documents": [
+                {
+                    "document": Document(content=text,
+                                         type=DocumentTypes.TEXT,
+                                         metadata=metadata),
+                    "embedding": embedding
+
+                } for text, embedding, metadata in zip(texts, embeddings, metadatas)
+            ]
+        }
+
     @observation(observation_type='span')
     async def similarity_search(self, query, k, collection_filters, metadata_filters=None):
         query_embedding = self.embedding_function(query)

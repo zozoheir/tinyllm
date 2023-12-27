@@ -14,3 +14,14 @@ class LLMStore:
         llm_class = llm_library.value
         instance_of_class = llm_class(**kwargs)
         return instance_of_class
+
+    @property
+    def llm_libraries(self):
+        return [llm.name for llm in LLMs]
+
+    @property
+    def default_llm(self):
+        llm = self.get_llm(
+            llm_library=LLMs.LITE_LLM,
+        )
+        return llm
