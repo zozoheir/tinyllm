@@ -46,7 +46,7 @@ class LiteLLMStream(LiteLLM, FunctionStream):
 
         async for chunk in response:
             chunk_dict = chunk.model_dump()
-            status = self.get_stream_status(chunk_dict)
+            status = self.get_streaming_status(chunk_dict)
             chunk_role = self.get_chunk_type(chunk_dict)
             delta = chunk_dict['choices'][0]['delta']
 
@@ -74,6 +74,7 @@ class LiteLLMStream(LiteLLM, FunctionStream):
                 "last_chunk": chunk_dict,
             }
 
+
     def get_chunk_type(self,
                        chunk):
         delta = chunk['choices'][0]['delta']
@@ -83,8 +84,8 @@ class LiteLLMStream(LiteLLM, FunctionStream):
 
         return "assistant"
 
-    def get_stream_status(self,
-                          chunk):
+    def get_streaming_status(self,
+                             chunk):
         if chunk['choices'][0]['finish_reason']:
             return "success"
         else:

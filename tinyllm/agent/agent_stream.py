@@ -7,20 +7,19 @@ from tinyllm.agent.agent import AgentInitValidator, AgentInputValidator
 from tinyllm.agent.toolkit import Toolkit
 from tinyllm.examples.example_manager import ExampleManager
 from tinyllm.function_stream import FunctionStream
-from tinyllm.llms.lite_llm import LLM_TOKEN_LIMITS, DEFAULT_LLM_MODEL, DEFAULT_CONTEXT_FALLBACK_DICT
+from tinyllm.llms.llm_store import LLMStore
 from tinyllm.memory.memory import BufferMemory, Memory
 from tinyllm.prompt_manager import PromptManager
-from tinyllm.tracing.langfuse_context import observation
 from tinyllm.util.helpers import get_openai_message, count_tokens
 
 logger = getLogger(__name__)
-
+llm_store = LLMStore()
 
 class AgentStream(FunctionStream):
 
     def __init__(self,
                  system_role: str,
-                 llm: FunctionStream,
+                 llm: FunctionStream = None,
                  memory: Memory = BufferMemory(),
                  toolkit: Optional[Toolkit] = None,
                  example_manager: Optional[ExampleManager] = ExampleManager(),
@@ -37,6 +36,8 @@ class AgentStream(FunctionStream):
             **kwargs)
         self.system_role = system_role
         self.llm = llm
+        if llm is None:
+            self.llm = llm_store.default_llm_stream
         self.toolkit = toolkit
         self.example_manager = example_manager
         self.prompt_manager = PromptManager(
@@ -59,7 +60,8 @@ class AgentStream(FunctionStream):
 
             async for msg in self.llm(tools=self.toolkit.as_dict_list() if self.toolkit else None,
                                       **kwargs):
-                yield msg
+                if msg['output']['streaming_status'] == 'streaming':
+                    yield msg
 
             await self.prompt_manager.add_memory(message=input_msg)
 
