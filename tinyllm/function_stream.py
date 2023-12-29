@@ -1,6 +1,5 @@
-import traceback
 from abc import abstractmethod
-from typing import Any
+from typing import Any, Optional
 
 from tinyllm.function import Function
 from tinyllm import langfuse_client, tinyllm_config
@@ -12,7 +11,7 @@ from tinyllm.validator import Validator
 class DefaultFunctionStreamOutputValidator(Validator):
     streaming_status: str
     type: str  # assistant_response, tool
-    delta: dict
+    delta: Optional[dict]
     completion: Any
 
 

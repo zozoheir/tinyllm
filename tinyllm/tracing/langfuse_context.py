@@ -46,13 +46,13 @@ class ObservationDecoratorFactory:
                                                               name=name,
                                                               observation_input=observation_input)
                 # Pass the observation to the class (so it can evaluate it)
-                function_input['observation'] = observation
+                if len(args) > 0:
+                    args[0].observation = observation
                 # Set the current observation in the context for child functions to access
                 token = current_observation_context.set(observation)
                 try:
                     async for result in func(*args, **function_input):
                         yield result
-                    function_input.pop('observation')
                     if type(result) != dict: result = {'result': result}
                     await ObservationUtil.perform_evaluations(observation, result, evaluators)
                 except Exception as e:

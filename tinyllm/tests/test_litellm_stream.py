@@ -25,12 +25,13 @@ class TestlitellmChat(AsyncioTestCase):
             return msgs
 
         result = self.loop.run_until_complete(get_stream())
+        deltas = []
         for res in result:
             print(res['output']['streaming_status'])
-            print(res['output']['delta']['content'])
-            self.assertEqual(res['status'], 'success')
+            if res['output']['streaming_status'] != 'finished-streaming':
+                deltas.append(res['output']['last_completion_delta']['content'])
 
-        deltas = [res['output']['delta']['content'] for res in result]
+            self.assertEqual(res['status'], 'success')
         final_string = ''.join(deltas)
         self.assertTrue(final_string[-1] != final_string[-2], "The last Delta has been returned twice")
 

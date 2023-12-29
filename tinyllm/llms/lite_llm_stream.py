@@ -34,12 +34,14 @@ class LiteLLMStream(LiteLLM, FunctionStream):
         )
 
         # We need to track 2 things: the response delta and the function_call
-        delta_to_return = None
         function_call = {
             "name": None,
             "arguments": ""
         }
         completion = ""
+        last_completion_delta = None
+        finish_delta = None
+
         # OpenAI function call works as follows: function name available at delta.tool_calls[0].function.
         # It returns a diction where: 'name' is returned only in the first chunk
         # tool argument tokens are sent in chunks after so need to keep track of them
@@ -50,24 +52,32 @@ class LiteLLMStream(LiteLLM, FunctionStream):
             chunk_role = self.get_chunk_type(chunk_dict)
             delta = chunk_dict['choices'][0]['delta']
 
+            # When using tools:
+            # We need the last response delta as it contains the full function message
+            # The finish message does not contain any delta so we need to keep track of all deltas
+
             # If streaming , we need to store chunks of the completion/function call
             if status == "streaming":
                 if chunk_role == "assistant":
                     completion += delta['content']
-                    delta_to_return = delta
+                    last_completion_delta = delta
                 elif chunk_role == "tool":
                     if function_call['name'] is None:
                         function_call['name'] = delta['tool_calls'][0]['function']['name']
-                    if delta_to_return is None:
-                        delta_to_return = delta
+                    if last_completion_delta is None:
+                        last_completion_delta = delta
 
                     completion = function_call
                     function_call['arguments'] += delta['tool_calls'][0]['function']['arguments']
 
+            elif status == "finished-streaming":
+                finish_delta = delta
+
             yield {
                 "streaming_status": status,
                 "type": chunk_role,
-                "delta": delta_to_return,
+                "last_completion_delta": last_completion_delta,
+                "finish_delta": finish_delta,
                 "completion": completion,
                 "message": get_openai_message(role=chunk_role,
                                               content=completion),
@@ -86,7 +96,7 @@ class LiteLLMStream(LiteLLM, FunctionStream):
 
     def get_streaming_status(self,
                              chunk):
-        if chunk['choices'][0]['finish_reason']:
-            return "success"
+        if chunk['choices'][0]['finish_reason'] in ['stop','tool_calls']:
+            return "finished-streaming"
         else:
             return "streaming"
