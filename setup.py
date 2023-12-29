@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(name='tinyllm',
-      version='0.1.0-beta.1',
+      version='0.1.0',
       description='Development and management infrastructure for LLM applications',
       packages=find_packages(),
       install_requires=[
