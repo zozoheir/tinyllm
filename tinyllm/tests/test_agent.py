@@ -61,13 +61,12 @@ llm_store = LLMStore()
 class TestStreamingAgent(AsyncioTestCase):
 
     def test_agent(self):
-        llm = llm_store.get_llm(
-            llm_library=LLMs.LITE_LLM,
-        )
         tiny_agent = Agent(
             system_role="You are a helpful assistant",
-            llm=llm,
+            llm=llm_store.default_llm,
             toolkit=toolkit,
+            user_id='test_user',
+            session_id='test_session',
         )
         # Run the asynchronous test
         result = self.loop.run_until_complete(tiny_agent(user_input="What is the user's birthday?"))

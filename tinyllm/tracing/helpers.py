@@ -45,6 +45,7 @@ class ObservationUtil:
             # stringify values  
             kwargs = cls.keep_accepted_types(kwargs)
             return {'input': kwargs}
+
         return {langfuse_kwarg: kwargs[function_kwarg] for langfuse_kwarg, function_kwarg in input_mapping.items()}
 
     @classmethod
@@ -67,7 +68,6 @@ class ObservationUtil:
                 return value
 
         return clean(d)
-
 
     @classmethod
     def end_observation(cls, obs, function_input, function_output, output_mapping, observation_type, function_kwargs):
@@ -123,7 +123,7 @@ class ObservationUtil:
         # Decorated method
         if len(args) > 0:
             if hasattr(args[0], 'name'):
-                name = args[0].name + ('.' + func.__name__ if func.__name__ not in ['wrapper','__call__'] else '')
+                name = args[0].name + ('.' + func.__name__ if func.__name__ not in ['wrapper', '__call__'] else '')
             else:
                 name = args[0].__class__.__name__ + '.' + func.__name__
 
@@ -143,16 +143,31 @@ class ObservationUtil:
                         observation_type,
                         name,
                         observation_input):
+
         if parent_observation is None:
             # This is the root function, create a new trace
-            observation = langfuse_client.trace(name=name, **observation_input)
+            optional_args = {}
+            for arg in ['user_id', 'session_id']:
+                if len(args) > 0:
+                    if getattr(args[0], arg, None):
+                        optional_args[arg] = getattr(args[0], arg)
+
+            observation = langfuse_client.trace(name=name,
+                                                **optional_args,
+                                                **observation_input)
+            # Pass the trace to the Function
+            if len(args) > 0:
+                args[0].observation = observation
             observation_method = getattr(observation, observation_type)
             observation = observation_method(name=name, **observation_input)
         else:
             # Create child observations based on the type
             observation_method = getattr(parent_observation, observation_type)
             observation = observation_method(name=name, **observation_input)
+            # Pass the parent trace to this function
+            args[0].observation = parent_observation
 
+        # Pass the generation
         if len(args) > 0:
             if hasattr(args[0], 'generation'):
                 if observation_type == 'generation':

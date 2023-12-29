@@ -26,7 +26,8 @@ class ObservationDecoratorFactory:
     @classmethod
     def get_streaming_decorator(self,
                                 observation_type,
-                                input_mapping=None, output_mapping=None,
+                                input_mapping=None,
+                                output_mapping=None,
                                 evaluators=None):
         def decorator(func):
             @wraps(func)

@@ -26,6 +26,7 @@ def pretty_print(value):
 
 class FunctionInitValidator(Validator):
     user_id: Optional[str]
+    session_id: Optional[str]
     input_validator: Optional[Type[Validator]]
     output_validator: Optional[Type[Validator]]
     processed_output_validator: Optional[Type[Validator]] = None
@@ -41,6 +42,7 @@ class Function:
             self,
             name=None,
             user_id=None,
+            session_id=None,
             input_validator=Validator,
             output_validator=Validator,
             processed_output_validator=Validator,
@@ -53,6 +55,7 @@ class Function:
     ):
         FunctionInitValidator(
             user_id=user_id,
+            session_id=session_id,
             input_validator=input_validator,
             output_validator=output_validator,
             processed_output_validator=processed_output_validator,
@@ -60,23 +63,23 @@ class Function:
             processed_output_evaluators=processed_output_evaluators,
             stream=stream,
         )
-        self.parent_observation = None
 
-        self.user_id = str(user_id)
-        self.init_timestamp = dt.datetime.now(pytz.UTC).isoformat()
-        self.function_id = str(uuid.uuid4())
-        self.logger = getLogger(__name__)
+        self.user_id = user_id # For tracing in langfuse
+        self.session_id = session_id
+        self.observation = None # For logging
+
         if name is None:
             self.name = self.__class__.__name__
         else:
             self.name = name
+        self.logger = getLogger(self.name)
 
         self.input_validator = input_validator
         self.output_validator = output_validator
         self.processed_output_validator = processed_output_validator
         self.required = required
-        self.logs = ""
         self.state = None
+        # Need the init the above to run the transition
         self.transition(States.INIT)
         self.input = None
         self.output = None
@@ -186,19 +189,19 @@ class Function:
 
         self.state = new_state
 
+    @property
+    def log_prefix(self):
+        if self.observation:
+            return f"[{self.observation.id}][{self.name}]"
+        else:
+            return f"[{self.name}]"
+
     def log(self, message, level="info"):
         if tinyllm_config['OPS']['LOGGING']:
-            log_message = f"[{self.name}] {message}"
-            if getattr(self, 'trace', None):
-                # Add generation id to log message if trace is enabled
-                if self.generation:
-                    log_message = f"[{self.name}|{self.generation.id}] {message}"
-
-            self.logs += "\n" + log_message
             if level == "error":
-                self.logger.error(log_message)
+                self.logger.error(self.log_prefix+' '+message)
             else:
-                self.logger.info(log_message)
+                self.logger.info(self.log_prefix+' '+message)
 
     def validate_input(self, **kwargs):
         return self.input_validator(**kwargs).dict()
