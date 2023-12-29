@@ -25,3 +25,10 @@ class LLMStore:
             llm_library=LLMs.LITE_LLM,
         )
         return llm
+
+    @property
+    def default_llm_stream(self):
+        llm = self.get_llm(
+            llm_library=LLMs.LITE_LLM_STREAM,
+        )
+        return llm

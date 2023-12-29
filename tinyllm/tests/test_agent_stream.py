@@ -59,7 +59,30 @@ llm_store = LLMStore()
 # Define the test class
 class TestStreamingAgent(AsyncioTestCase):
 
-    def test_agent_stream(self):
+    def test_agent_stream_hi(self):
+        tiny_agent = AgentStream(
+            system_role="You are a helpful assistant",
+            name='Test: agent stream',
+            toolkit=toolkit,
+        )
+
+        async def async_test():
+            msgs = []
+            async for message in tiny_agent(user_input="Hi"):
+                msgs.append(message)
+            return msgs
+
+        # Run the asynchronous test
+        msgs = self.loop.run_until_complete(async_test())
+        res = ""
+        for msg in msgs:
+            res += msg['output']['last_completion_delta']['content']
+        self.assertTrue('???' not in res)
+
+        # Verify the last message in the list
+        self.assertEqual(msgs[-1]['status'], 'success', "The last message status should be 'success'")
+
+    def test_tool_call(self):
         llm = llm_store.get_llm(
             llm_library=LLMs.LITE_LLM_STREAM,
         )

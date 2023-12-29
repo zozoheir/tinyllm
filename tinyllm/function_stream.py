@@ -1,6 +1,5 @@
-import traceback
 from abc import abstractmethod
-from typing import Any
+from typing import Any, Optional
 
 from tinyllm.function import Function
 from tinyllm import langfuse_client, tinyllm_config
@@ -12,7 +11,7 @@ from tinyllm.validator import Validator
 class DefaultFunctionStreamOutputValidator(Validator):
     streaming_status: str
     type: str  # assistant_response, tool
-    delta: dict
+    delta: Optional[dict]
     completion: Any
 
 
@@ -39,7 +38,7 @@ class FunctionStream(Function):
 
             # Run
             self.transition(States.RUNNING)
-            async for message in self.run(**validated_input ):
+            async for message in self.run(**validated_input):
                 # Output validation
                 if 'status' in message.keys():
                     if message['status'] == 'success':
@@ -53,11 +52,6 @@ class FunctionStream(Function):
                 yield {"status": "success",
                        "output": message}
 
-            message['streaming_status'] = 'completed'
-
-            yield {"status": "success",
-                   "output": message}
-
             self.output = message
 
             # Process output
@@ -66,17 +60,11 @@ class FunctionStream(Function):
 
             # Validate processed output
             if self.processed_output_validator:
-                self.processed_output = self.validate_processed_output(**self.processed_output)
+                self.validate_processed_output(**self.processed_output)
 
             # Evaluate processed output
             for evaluator in self.processed_output_evaluators:
                 await evaluator(**self.processed_output, observation=self.observation)
-
-            # Return final output
-            final_output = {"status": "success",
-                            "output": self.processed_output}
-
-            yield final_output
 
             # Complete
             self.transition(States.COMPLETE)

@@ -12,20 +12,6 @@ class TestlitellmChat(AsyncioTestCase):
     def setUp(self):
         super().setUp()
 
-    def test_litellm_chat_stream(self):
-        litellmstream_chat = LiteLLMStream(name='Test: LiteLLM Stream')
-
-        async def get_stream():
-            message = get_openai_message(role='user',
-                                         content="Hi")
-            async for msg in litellmstream_chat(messages=[message]):
-                i = 0
-            return msg
-
-        result = self.loop.run_until_complete(get_stream())
-
-        self.assertTrue(result['output']['streaming_status'], 'completed')
-
     def test_litellm_chat(self):
         message = get_openai_message(role='user',
                                      content="Hi")
