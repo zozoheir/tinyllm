@@ -1,7 +1,6 @@
 from typing import Optional, Any
 
-from langchain.adapters import openai
-from litellm import OpenAIError, acompletion
+from litellm import  acompletion
 
 from tinyllm.function import Function
 from tinyllm.tracing.langfuse_context import observation
