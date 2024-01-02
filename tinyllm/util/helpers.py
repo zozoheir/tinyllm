@@ -1,8 +1,6 @@
 from typing import Union, List, Dict
 
 import tiktoken
-from langchain_community.callbacks.openai_info import standardize_model_name, MODEL_COST_PER_1K_TOKENS, \
-    get_openai_token_cost_for_model
 
 from tinyllm.util.prompt_util import stringify_dict
 
@@ -64,26 +62,6 @@ def get_openai_message(role,
            'content': str(content)}
     msg.update(kwargs)
     return msg
-
-def get_openai_api_cost(model: str,
-                        completion_tokens: int,
-                        prompt_tokens: int):
-    """Collect token usage."""
-    total_tokens = completion_tokens + prompt_tokens
-    model_name = standardize_model_name(model)
-    total_cost = 0
-    if model_name in MODEL_COST_PER_1K_TOKENS:
-        completion_cost = get_openai_token_cost_for_model(
-            model_name, completion_tokens, is_completion=True
-        )
-        prompt_cost = get_openai_token_cost_for_model(model_name, prompt_tokens)
-        total_cost += prompt_cost + completion_cost
-    return {
-        'request_cost': total_cost,
-        'total_tokens': total_tokens,
-        'prompt_tokens': prompt_tokens,
-        'completion_tokens': completion_tokens,
-    }
 
 
 def num_tokens_from_string(string: str, encoding_name: str = 'cl100k_base') -> int:
