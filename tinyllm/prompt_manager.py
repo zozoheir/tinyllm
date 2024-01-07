@@ -29,14 +29,16 @@ class PromptManager:
                                          content=self.system_role)
         memories = [] if self.memory is None else await self.memory.get_memories()
         examples = []
-        examples += self.example_manager.constant_examples
-        if self.example_manager.example_selector.example_dicts and message['role'] == 'user':
-            best_examples = await self.example_manager.example_selector(input=message['content'])
-            for good_example in best_examples['output']['best_examples']:
-                usr_msg = get_openai_message(role='user', content=good_example['user'])
-                assistant_msg = get_openai_message(role='assistant', content=good_example['assistant'])
-                examples.append(usr_msg)
-                examples.append(assistant_msg)
+
+        if self.example_manager is not None:
+            examples += self.example_manager.constant_examples
+            if self.example_manager.example_selector is not None and  message['role'] == 'user':
+                best_examples = await self.example_manager.example_selector(input=message['content'])
+                for good_example in best_examples['output']['best_examples']:
+                    usr_msg = get_openai_message(role='user', content=good_example['user'])
+                    assistant_msg = get_openai_message(role='assistant', content=good_example['assistant'])
+                    examples.append(usr_msg)
+                    examples.append(assistant_msg)
 
         answer_format_msg = [get_openai_message(role='user',
                                                 content=self.answer_formatting_prompt)] if self.answer_formatting_prompt is not None else []

@@ -36,10 +36,10 @@ class Agent(Function):
 
     def __init__(self,
                  system_role: str,
+                 example_manager: Optional[ExampleManager] = None,
                  llm: Function = None,
                  memory: Memory = BufferMemory(),
                  toolkit: Optional[Toolkit] = None,
-                 example_manager: Optional[ExampleManager] = ExampleManager(),
                  answer_formatting_prompt: Optional[str] = None,
                  **kwargs):
         AgentInitValidator(system_role=system_role,

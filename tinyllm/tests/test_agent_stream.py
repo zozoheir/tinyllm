@@ -88,10 +88,9 @@ class TestStreamingAgent(AsyncioTestCase):
         )
 
         tiny_agent = AgentStream(
-            system_role="You are a helpful assistant",
             name='Test: agent stream',
+            system_role="You are a helpful assistant",
             llm=llm,
-            example_manager=ExampleManager(),
             toolkit=toolkit,
             memory=BufferMemory(),
             run_evaluators=[

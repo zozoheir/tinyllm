@@ -76,7 +76,8 @@ class VectorStore(Function):
         if metadatas is None:
             metadatas = [None] * len(texts)
 
-        embeddings = self.embedding_function(texts)
+
+        embeddings = await self.embedding_function(texts)
 
         async with self._Session() as session:
             async with session.begin():
@@ -105,8 +106,8 @@ class VectorStore(Function):
 
     @observation(observation_type='span')
     async def similarity_search(self, query, k, collection_filters, metadata_filters=None):
-        query_embedding = self.embedding_function(query)
-
+        query_embedding = await self.embedding_function(query)
+        query_embedding = query_embedding[0]
         async with self._Session() as session:  # Use an asynchronous session
             async with session.begin():
                 # Initialize the base SQL query

@@ -12,13 +12,8 @@ def get_top_n_similar_vectors_index(input_vector, vectors, k=5):
     return [int(index) for index in top_similarities_indices]
 
 def get_openai_embedding(text, model="text-embedding-ada-002"):
-    text = text.replace("\n", " ")
-    try:
-        embedding = openai.Embedding.create(input=[text], model=model)['data'][0]['embedding']
-    except Exception as e:
-        raise e
+    embedding = openai.Embedding.create(input=[text], model=model)['data'][0]['embedding']
     return embedding
-
 
 def generate_raw_ngrams(text, n):
     tokens = text.split()

@@ -29,8 +29,11 @@ class Evaluator(Function):
                          input_validator=EvaluatorInputValidator,
                          **kwargs)
         self.prefix = prefix
+        self.evals = None
+
 
     async def process_output(self, **kwargs):
+        self.evals = kwargs['evals']
         for name, score in kwargs['evals'].items():
             self.input['observation'].score(
                 name=self.prefix+name,

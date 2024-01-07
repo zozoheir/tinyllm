@@ -6,9 +6,6 @@ from sqlalchemy import delete
 from tinyllm.tests.base import AsyncioTestCase
 from tinyllm.rag.vector_store import VectorStore, Embeddings
 
-embedding_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
-embedding_function = lambda x: embedding_model.encode(x)
-
 
 class TestVectorStore(AsyncioTestCase):
 

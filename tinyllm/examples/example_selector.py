@@ -1,6 +1,7 @@
 from typing import List, Dict, Optional, Callable
 
-from tinyllm.embeddings.models import default_embedding_function
+import numpy as np
+
 from tinyllm.function import Function
 from tinyllm.validator import Validator
 from tinyllm.util.ai_util import get_top_n_similar_vectors_index
@@ -22,14 +23,19 @@ class ProcessedOutputValidator(Validator):
 class ExampleSelectorInitValidator(Validator):
     examples: List[dict]
     embedding_function: Callable
+    embeddings: Optional[List]
 
 
 class ExampleSelector(Function):
+
     def __init__(self,
-                 embedding_function=default_embedding_function,
+                 embedding_function,
                  examples=[],
+                 embeddings=None,
                  **kwargs):
-        ExampleSelectorInitValidator(examples=examples, embedding_function=embedding_function)
+        ExampleSelectorInitValidator(examples=examples,
+                                     embedding_function=embedding_function,
+                                     embeddings=embeddings)
         super().__init__(
             input_validator=InputValidator,
             output_validator=OutputValidator,
@@ -37,18 +43,25 @@ class ExampleSelector(Function):
             **kwargs
         )
         self.example_dicts = examples
+        self.embeddings = embeddings
         self.embedding_function = embedding_function
-        for example in self.example_dicts:
-            if example.get('embeddings') is None and embedding_function is not None:
-                example['embeddings'] = self.embedding_function(example['user'])
-            elif example.get('embeddings') is None and embedding_function is None:
-                raise Exception('Example selector needs embedding function or existing embeddings to work')
+        all_example_dicts_have_embeddings = all([example.get('embedding') is not None for example in self.example_dicts])
+        if all_example_dicts_have_embeddings is False and self.embedding_function is None:
+            raise Exception('Example selector needs either an embedding function or vector embeddings for each example')
 
-        self.embeddings = [example['embeddings'] for example in self.example_dicts]
+    async def embed_examples(self,
+                             **kwargs):
+        example_dicts = kwargs.get('example_dicts', self.example_dicts)
+        embeddings = []
+        for example in example_dicts:
+            embeddings_list = await self.embedding_function(example['user'])
+            embeddings.append(embeddings_list[0])
+        self.embeddings = embeddings
 
     async def run(self, **kwargs):
-        query_embedding = self.embedding_function(kwargs['input'])
-        similar_indexes = get_top_n_similar_vectors_index(input_vector=query_embedding, vectors=self.embeddings, k=kwargs['k'])
+        embeddings = await self.embedding_function(kwargs['input'])
+        query_embedding = embeddings[0]
+        similar_indexes = get_top_n_similar_vectors_index(input_vector=query_embedding[0], vectors=self.embeddings, k=kwargs['k'])
         return {'best_examples': [self.example_dicts[i] for i in similar_indexes]}
 
     async def process_output(self, **kwargs):
