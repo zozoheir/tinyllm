@@ -1,7 +1,6 @@
 <p align="center">
-    <img src="https://github.com/zozoheir/tinyllm/assets/42655961/326db3ed-5382-407f-b4ce-ffe8df240431" width="70%" height="70%" alt="tinyllm logo">
+    <img src="https://github.com/zozoheir/tinyllm/assets/42655961/f2edacd9-1c60-4d0d-9884-da2b3b7749ef" alt="tinyllm arc">
 </p>
-
 
 # 🚀 What is tinyllm?
 tinyllm is a lightweight framework for developing, debugging and monitoring LLM and Agent powered applications at scale. The main goal of the library is to keep code as simple and readable as possible while allowing user to create complex agents or LLM workflows in production.
@@ -16,15 +15,7 @@ It provides a structured approach to handle various aspects of function executio
 pip install tinyllm
 ```
 
-## 🚀 Architecture
-
-<p align="center">
-    <img src="https://github.com/zozoheir/tinyllm/assets/42655961/f2edacd9-1c60-4d0d-9884-da2b3b7749ef" alt="tinyllm arc">
-</p>
-
-
- 
-## Getting started
+## 🚀 Getting started
 * ####  [Setup](https://github.com/zozoheir/tinyllm/blob/main/docs/setup.md)
 * ####  [Examples](https://github.com/zozoheir/tinyllm/blob/main/docs/examples/)
 
@@ -42,7 +33,7 @@ pip install tinyllm
 - **PGVector store:** PostgreSQL DB with the pgvector extension for vector storage.
 - **Prompt engineering tools:** utility modules for prompt engineering, optimization and string formatting
 
-#### Deploy to production with:
+#### 🚀 Deploy to production with:
 - **Layered validation:** 3 validations happen during the Function lifecycle: input, output and output processing.
 - **IO Standardization:** Maintains consistent response patterns and failure handling across different function implementations.
 - **Observability:** Integrates with Langfuse for
