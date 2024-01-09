@@ -19,7 +19,7 @@ pip install tinyllm
 ## 🚀 Architecture
 
 <p align="center">
-    <img src="https://github.com/zozoheir/tinyllm/assets/42655961/88cd037d-16ac-442f-ac23-db7d5a8d0403" alt="tinyllm arc">
+    <img src="https://github.com/zozoheir/tinyllm/assets/42655961/10948d1e-cb60-4fa7-8e32-7bf7b5b59259" alt="tinyllm arc">
 </p>
 
 
