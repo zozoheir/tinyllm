@@ -31,7 +31,8 @@ pip install tinyllm
 
 ## 🚀 Features
 #### Build LLM apps with:
-- **20+ model providers** available (OpenAI, Huggingface etc ...)
+- **LiteLLM integration**: 20+ model providers available (OpenAI, Huggingface etc ...)
+- **Langfuse integration**: Monitor trace and debug LLMs, Agents, Tools, RAG pipelines etc in structured run trees
 - **Agents:** An agent is an LLM with Memory, a Toolkit and an ExampleManager
 - **Tools and Toolkits**: let your Agent run python functions using Tools
 - **Example manager**: constant examples + variable examples using and example selector with similarity search
@@ -44,7 +45,7 @@ pip install tinyllm
 #### Deploy to production with:
 - **Layered validation:** 3 validations happen during the Function lifecycle: input, output and output processing.
 - **IO Standardization:** Maintains consistent response patterns and failure handling across different function implementations.
-- **Observability:** Integrates with Langfuse for monitoring and tracing of function execution at scale.
+- **Observability:** Integrates with Langfuse for
 - **Logging:** Records detailed logs for debugging and auditing purposes.
 - **Finite State Machine design:** Manages the function's lifecycle through defined states, ensuring controlled and predictable execution.
 
