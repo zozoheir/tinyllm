@@ -1,7 +1,6 @@
 <p align="center">
-    <img src="https://github.com/zozoheir/tinyllm/assets/42655961/326db3ed-5382-407f-b4ce-ffe8df240431" width="70%" height="70%" alt="tinyllm logo">
+    <img src="https://github.com/zozoheir/tinyllm/assets/42655961/f2edacd9-1c60-4d0d-9884-da2b3b7749ef" alt="tinyllm arc">
 </p>
-
 
 # 🚀 What is tinyllm?
 tinyllm is a lightweight framework for developing, debugging and monitoring LLM and Agent powered applications at scale. The main goal of the library is to keep code as simple and readable as possible while allowing user to create complex agents or LLM workflows in production.
@@ -16,22 +15,15 @@ It provides a structured approach to handle various aspects of function executio
 pip install tinyllm
 ```
 
-## 🚀 Architecture
-
-<p align="center">
-    <img src="https://github.com/zozoheir/tinyllm/assets/42655961/88cd037d-16ac-442f-ac23-db7d5a8d0403" alt="tinyllm arc">
-</p>
-
-
- 
-## Getting started
+## 🚀 Getting started
 * ####  [Setup](https://github.com/zozoheir/tinyllm/blob/main/docs/setup.md)
 * ####  [Examples](https://github.com/zozoheir/tinyllm/blob/main/docs/examples/)
 
 
 ## 🚀 Features
 #### Build LLM apps with:
-- **20+ model providers** available (OpenAI, Huggingface etc ...)
+- **LiteLLM integration**: 20+ model providers available (OpenAI, Huggingface etc ...)
+- **Langfuse integration**: Monitor trace and debug LLMs, Agents, Tools, RAG pipelines etc in structured run trees
 - **Agents:** An agent is an LLM with Memory, a Toolkit and an ExampleManager
 - **ToolStore and Toolkits**: let your Agent run python functions using ToolStore
 - **Example manager**: constant examples + variable examples using and example selector with similarity search
@@ -41,10 +33,10 @@ pip install tinyllm
 - **PGVector store:** PostgreSQL DB with the pgvector extension for vector storage.
 - **Prompt engineering tools:** utility modules for prompt engineering, optimization and string formatting
 
-#### Deploy to production with:
+#### 🚀 Deploy to production with:
 - **Layered validation:** 3 validations happen during the Function lifecycle: input, output and output processing.
 - **IO Standardization:** Maintains consistent response patterns and failure handling across different function implementations.
-- **Observability:** Integrates with Langfuse for monitoring and tracing of function execution at scale.
+- **Observability:** Integrates with Langfuse for
 - **Logging:** Records detailed logs for debugging and auditing purposes.
 - **Finite State Machine design:** Manages the function's lifecycle through defined states, ensuring controlled and predictable execution.
 
