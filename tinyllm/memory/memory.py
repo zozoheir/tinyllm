@@ -43,7 +43,7 @@ class BufferMemoryInitValidator(Validator):
 class BufferMemory(Memory):
 
     def __init__(self,
-                 buffer_size=5,
+                 buffer_size=10,
                  **kwargs):
         BufferMemoryInitValidator(buffer_size=buffer_size)
         super().__init__(**kwargs)

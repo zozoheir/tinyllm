@@ -44,12 +44,12 @@ def stringify_dict(header: str,
     all_strings = []
     for key, value in dict.items():
         # Include the key only if include_keys is None (include all keys) or the key is in include_keys
-        if include_keys is None or key in include_keys:
+        if include_keys==[] or key in include_keys:
             if value is None:
                 value = ""
 
             if key in ['created_at', 'updated_at', 'timestamp']:
-                value = str(value).split('+')[0]
+                value = str(value).split('+')[0] if '+' in str(value) else str(value)
 
             generated_string = stringify_key_value(key, str(value).split('+')[0])
             all_strings.append(generated_string)

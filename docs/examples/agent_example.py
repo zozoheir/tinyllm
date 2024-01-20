@@ -7,12 +7,11 @@ https://us.cloud.langfuse.com/project/cloz2bp020000l008kg9ujywd/traces/e5d46730-
 import asyncio
 
 from tinyllm.agent.agent import Agent
-from tinyllm.agent.tool import Tool
-from tinyllm.agent.toolkit import Toolkit
+from tinyllm.agent.tools.tool import Tool
+from tinyllm.agent.tool import Toolkit
 from tinyllm.eval.evaluator import Evaluator
 from tinyllm.llms.llm_store import LLMStore, LLMs
-from tinyllm.memory.memory import BufferMemory, Memory
-
+from tinyllm.memory.memory import BufferMemory
 
 loop = asyncio.get_event_loop()
 

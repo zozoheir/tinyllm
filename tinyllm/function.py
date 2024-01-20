@@ -32,7 +32,6 @@ class FunctionInitValidator(Validator):
     processed_output_validator: Optional[Type[Validator]] = None
     run_evaluators: Optional[list]
     processed_output_evaluators: Optional[list]
-    dataset_name: Optional[str]
     stream: Optional[bool]
 
 
@@ -142,10 +141,10 @@ class Function:
         except Exception as e:
             output_message = await self.handle_exception(e)
             # Raise or return error
-            if tinyllm_config['OPS']['DEBUG']:
-                raise e
             if type(e) in self.fallback_strategies:
                 raise e
+            elif tinyllm_config['OPS']['DEBUG']:
+                exit()
             else:
                 return output_message
 

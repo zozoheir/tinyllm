@@ -60,8 +60,7 @@ class ExampleSelector(Function):
 
     async def run(self, **kwargs):
         embeddings = await self.embedding_function(kwargs['input'])
-        query_embedding = embeddings[0]
-        similar_indexes = get_top_n_similar_vectors_index(input_vector=query_embedding[0], vectors=self.embeddings, k=kwargs['k'])
+        similar_indexes = get_top_n_similar_vectors_index(input_vector=embeddings[0], vectors=self.embeddings, k=kwargs['k'])
         return {'best_examples': [self.example_dicts[i] for i in similar_indexes]}
 
     async def process_output(self, **kwargs):

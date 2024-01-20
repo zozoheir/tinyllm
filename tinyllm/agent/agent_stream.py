@@ -3,14 +3,14 @@ from typing import Optional
 
 from smartpy.utility.log_util import getLogger
 from tinyllm.agent.agent import AgentInitValidator, AgentInputValidator
+from tinyllm.agent.tool import Toolkit
 
-from tinyllm.agent.toolkit import Toolkit
 from tinyllm.examples.example_manager import ExampleManager
 from tinyllm.function_stream import FunctionStream
 from tinyllm.llms.llm_store import LLMStore
 from tinyllm.memory.memory import BufferMemory, Memory
 from tinyllm.prompt_manager import PromptManager
-from tinyllm.util.helpers import get_openai_message, count_tokens
+from tinyllm.util.helpers import get_openai_message
 
 logger = getLogger(__name__)
 llm_store = LLMStore()
@@ -25,20 +25,22 @@ class AgentStream(FunctionStream):
                  memory: Memory = BufferMemory(),
                  toolkit: Optional[Toolkit] = None,
                  answer_formatting_prompt: Optional[str] = None,
+                 tool_retries: int = 3,
                  **kwargs):
         AgentInitValidator(system_role=system_role,
                            llm=llm,
                            toolkit=toolkit,
                            memory=memory,
                            example_manager=example_manager,
-                           answer_formatting_prompt=answer_formatting_prompt)
+                           answer_formatting_prompt=answer_formatting_prompt,
+                           tool_retries=tool_retries
+                           )
         super().__init__(
             input_validator=AgentInputValidator,
             **kwargs)
         self.system_role = system_role
         self.llm = llm
-        if llm is None:
-            self.llm = llm_store.default_llm_stream
+        self.llm = llm or llm_store.default_llm_stream
         self.toolkit = toolkit
         self.example_manager = example_manager
         self.prompt_manager = PromptManager(
@@ -47,6 +49,7 @@ class AgentStream(FunctionStream):
             memory=memory,
             answer_formatting_prompt=answer_formatting_prompt,
         )
+        self.tool_retries = tool_retries
 
     async def run(self,
                   user_input,
@@ -56,8 +59,8 @@ class AgentStream(FunctionStream):
                                        content=user_input)
 
         while True:
-            kwargs = await self.prompt_manager.format(message=input_msg,
-                                                      **kwargs)
+            kwargs = await self.prompt_manager.prepare_llm_request(message=input_msg,
+                                                                   **kwargs)
 
             async for msg in self.llm(tools=self.toolkit.as_dict_list() if self.toolkit else None,
                                       **kwargs):

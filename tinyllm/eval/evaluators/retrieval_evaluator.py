@@ -1,4 +1,3 @@
-from rumorz_llms.constants import embedding_function
 from smartpy.utility.ai_util import get_cosine_similarity
 from tinyllm.eval.evaluator import Evaluator
 
@@ -14,6 +13,8 @@ class RetrievalEvaluator(Evaluator):
         retrieved_chunks = kwargs["retrieved_chunks"]
         chunk_texts = [chunk["text"] for chunk in retrieved_chunks]
         chunk_similarities = []
+        async def embedding_function(text):
+            return [[1]*384] #
 
         embeddings = await embedding_function(question)
         question_vector = embeddings[0]

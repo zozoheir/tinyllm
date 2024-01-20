@@ -6,7 +6,7 @@
 # 🚀 What is tinyllm?
 tinyllm is a lightweight framework for developing, debugging and monitoring LLM and Agent powered applications at scale. The main goal of the library is to keep code as simple and readable as possible while allowing user to create complex agents or LLM workflows in production.
 
-`Function` and its streaming equivalent `FunctionStream` are the core classes in tinyllm. They are designed to standardize and control LLM, Tools and any relevant calls for scalable production use in stream mode and otherwise.
+`Function` and its streaming equivalent `FunctionStream` are the core classes in tinyllm. They are designed to standardize and control LLM, ToolStore and any relevant calls for scalable production use in stream mode and otherwise.
 
 It provides a structured approach to handle various aspects of function execution, including input/output validation, output processing, error handling, evaluation, all while keeping code readable. You can create a chain with its own prompt, LLM model and evaluators all in a single file. No need to jump through many class definitions, no spaghetti code. Any other library agent/chain (langchain/llama-index...) can also seamlessly be imported as a tinyllm Function.
 
@@ -33,7 +33,7 @@ pip install tinyllm
 #### Build LLM apps with:
 - **20+ model providers** available (OpenAI, Huggingface etc ...)
 - **Agents:** An agent is an LLM with Memory, a Toolkit and an ExampleManager
-- **Tools and Toolkits**: let your Agent run python functions using Tools
+- **ToolStore and Toolkits**: let your Agent run python functions using ToolStore
 - **Example manager**: constant examples + variable examples using and example selector with similarity search
 - **Memory:** conversations history
 - **Retrieval Augmented Generation**: RAG tools to search and generate answers

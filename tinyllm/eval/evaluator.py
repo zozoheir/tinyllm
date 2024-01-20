@@ -16,7 +16,7 @@ class EvaluatorInputValidator(Validator):
 
 class EvaluatorOutputValidator(Validator):
     evals: dict
-    comment: Any
+    comment: Optional[Any] = ""
 
 
 class Evaluator(Function):

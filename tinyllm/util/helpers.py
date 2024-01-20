@@ -98,6 +98,8 @@ def count_tokens(input: Union[List[Dict], Dict, str],
             return 0
         if isinstance(input[0], str):
             return sum([num_tokens_from_string(string) for string in input])
+        elif isinstance(input[0], dict):
+            return sum([count_tokens(input_dict) for input_dict in input])
         return sum([count_tokens(input_dict, **kwargs) for input_dict in input])
     elif isinstance(input, str):
         return num_tokens_from_string(input)

@@ -1,5 +1,17 @@
 #!/bin/bash
 
+PYTHONPATH="$PYTHONPATH:/Users/othmanezoheir/PycharmProjects/openagents/smartpy"
+PYTHONPATH="$PYTHONPATH:/Users/othmanezoheir/PycharmProjects/openagents/rumorz-backend"
+PYTHONPATH="$PYTHONPATH:/Users/othmanezoheir/PycharmProjects/openagents/rumorz-env"
+PYTHONPATH="$PYTHONPATH:/Users/othmanezoheir/PycharmProjects/openagents/rumorz-jobs"
+PYTHONPATH="$PYTHONPATH:/Users/othmanezoheir/PycharmProjects/openagents/rumorz-models"
+PYTHONPATH="$PYTHONPATH:/Users/othmanezoheir/PycharmProjects/openagents/rumorz-pyenv"
+PYTHONPATH="$PYTHONPATH:/Users/othmanezoheir/PycharmProjects/openagents/rumorz-llms"
+PYTHONPATH="$PYTHONPATH:/Users/othmanezoheir/PycharmProjects/openagents/langdt"
+
+export PYTHONPATH
+
+
 # Set up a virtual environment path for ease of use
 VENV_PATH="/Users/othmanezoheir/venv/rumorz-jobs-2/bin/python"
 cd /Users/othmanezoheir/PycharmProjects/openagents/tinyllm

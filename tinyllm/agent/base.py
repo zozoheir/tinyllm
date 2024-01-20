@@ -1,6 +1,6 @@
 from typing import Union
 
-from tinyllm.agent.toolkit import Toolkit
+from tinyllm.agent.tool import Toolkit
 from tinyllm.examples.example_manager import ExampleManager
 from tinyllm.function import Function
 from tinyllm.function_stream import FunctionStream

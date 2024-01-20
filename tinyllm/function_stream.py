@@ -11,7 +11,7 @@ from tinyllm.validator import Validator
 class DefaultFunctionStreamOutputValidator(Validator):
     streaming_status: str
     type: str  # assistant_response, tool
-    delta: Optional[dict]
+    last_completion_delta: Optional[dict]
     completion: Any
 
 

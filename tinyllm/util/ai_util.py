@@ -1,3 +1,5 @@
+from textwrap import dedent
+
 import numpy as np
 import openai
 
@@ -23,3 +25,5 @@ def generate_raw_ngrams(text, n):
     ngrams = [tuple(tokens[i:i + n]) for i in range(len(tokens) - n + 1)]
 
     return ngrams
+
+remove_spaces = lambda x: dedent(x).strip() if x else x

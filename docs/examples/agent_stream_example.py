@@ -7,8 +7,8 @@ https://us.cloud.langfuse.com/project/cloz2bp020000l008kg9ujywd/traces/39a332ed-
 import asyncio
 
 from tinyllm.agent.agent_stream import AgentStream
-from tinyllm.agent.tool import Tool
-from tinyllm.agent.toolkit import Toolkit
+from tinyllm.agent.tools.tool import Tool
+from tinyllm.agent.tool import Toolkit
 from tinyllm.eval.evaluator import Evaluator
 from tinyllm.llms.llm_store import LLMStore, LLMs
 

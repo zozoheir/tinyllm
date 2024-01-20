@@ -31,7 +31,7 @@ class Tool(Function):
         super().__init__(
             input_validator=ToolInputValidator,
             **kwargs)
-        self.description = description
+        self.description = description.strip()
         self.parameters = parameters
         self.python_lambda = python_lambda
 

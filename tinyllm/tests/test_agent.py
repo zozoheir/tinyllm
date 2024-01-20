@@ -1,12 +1,9 @@
 import unittest
 
 from tinyllm.agent.agent import Agent
-from tinyllm.agent.tool import Tool
-from tinyllm.agent.toolkit import Toolkit
+from tinyllm.agent.tool import tinyllm_toolkit
 from tinyllm.eval.evaluator import Evaluator
-from tinyllm.examples.example_manager import ExampleManager
-from tinyllm.llms.llm_store import LLMStore, LLMs
-from tinyllm.memory.memory import BufferMemory
+from tinyllm.llms.llm_store import LLMStore
 from tinyllm.tests.base import AsyncioTestCase
 
 
@@ -24,57 +21,55 @@ class AnswerCorrectnessEvaluator(Evaluator):
         return evals
 
 
-def get_user_property(asked_property):
-    if asked_property == "name":
-        return "Elias"
-    elif asked_property == "birthday":
-        return "January 1st"
-
-
-tools = [
-    Tool(
-        name="get_user_property",
-        description="This is the tool you use retrieve ANY information about the user. Use it to answer questions about his birthday and any personal info",
-        python_lambda=get_user_property,
-        parameters={
-            "type": "object",
-            "properties": {
-                "asked_property": {
-                    "type": "string",
-                    "enum": ["birthday", "name"],
-                    "description": "The specific property the user asked about",
-                },
-            },
-            "required": ["asked_property"],
-        },
-    )
-]
-toolkit = Toolkit(
-    name='Toolkit',
-    tools=tools,
-)
-
 llm_store = LLMStore()
 
 
 # Define the test class
+
 class TestStreamingAgent(AsyncioTestCase):
 
-    def test_agent(self):
+    def test_wiki_tool(self):
         tiny_agent = Agent(
             system_role="You are a helpful assistant",
             llm=llm_store.default_llm,
-            toolkit=toolkit,
+            toolkit=tinyllm_toolkit(),
             user_id='test_user',
             session_id='test_session',
         )
         # Run the asynchronous test
-        result = self.loop.run_until_complete(tiny_agent(user_input="What is the user's birthday?"))
-        #result = self.loop.run_until_complete(tiny_agent(user_input="What is the user's birthday?"))
-        first_choice_message = result['output']['response']['choices'][0]['message']
-        # Verify the last message in the list
-        self.assertEqual(result['status'], 'success')
-        self.assertTrue('january 1st' in first_choice_message['content'].lower())
+        result = self.loop.run_until_complete(tiny_agent(user_input="What does wiki say about Morocco"))
+        self.assertTrue(result['status'] == 'success')
+
+
+    def test_fibonacci_code(self):
+        tiny_agent = Agent(
+            system_role="You are a helpful assistant",
+            llm=llm_store.default_llm,
+            toolkit=tinyllm_toolkit(),
+            user_id='test_user',
+            session_id='test_session',
+        )
+        # Run the asynchronous test
+        result = self.loop.run_until_complete(tiny_agent(user_input="Use python to give me the 5th fibonacci number"))
+        self.assertTrue(result['status'] == 'success')
+        if result['status'] == 'success':
+            msg_content = result['output']['response']['choices'][0]['message']['content']
+            self.assertTrue('5' in str(msg_content))
+
+    def test_multi_tool(self):
+        tiny_agent = Agent(
+            name="Test: Agent multi Tool",
+            system_role="You are a helpful assistant",
+            llm=llm_store.default_llm,
+            toolkit=tinyllm_toolkit(),
+            user_id='test_user',
+            session_id='test_session',
+        )
+        # Run the asynchronous test
+        query = """Plan then execute this task for me: I need to multiply the population of Morocco by the population of
+         Senegal, then square that number by Elon Musk's age"""
+        result = self.loop.run_until_complete(tiny_agent(user_input=query))
+        self.assertTrue(result['status'] == 'success')
 
 
 # This allows the test to be run standalone

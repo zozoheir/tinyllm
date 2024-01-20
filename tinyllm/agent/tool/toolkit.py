@@ -1,8 +1,8 @@
 import asyncio
 from typing import List, Dict
 
+from tinyllm.agent.tool.tool import Tool
 from tinyllm.function import Function
-from tinyllm.agent.tool import Tool
 
 from tinyllm.tracing.langfuse_context import observation
 from tinyllm.validator import Validator

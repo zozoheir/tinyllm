@@ -48,18 +48,19 @@ class PromptManager:
         return messages
 
 
-    async def format(self,
-                     message,
-                     **kwargs):
+    async def prepare_llm_request(self,
+                                  message,
+                                  **kwargs):
 
         messages = await self.format_messages(message)
+        prompt_to_completion_multiplier = kwargs.pop('prompt_to_completion_multiplier', 1)
         max_tokens, model = self.get_run_config(model=kwargs.get('model', DEFAULT_LLM_MODEL),
-                                                prompt_to_completion_multiplier=kwargs.get(
-                                                    'prompt_to_completion_multiplier', 1),
+                                                prompt_to_completion_multiplier=prompt_to_completion_multiplier,
                                                 input_size=count_tokens(messages))
+
         kwargs['messages'] = messages
-        kwargs['max_tokens'] = max_tokens
-        kwargs['model'] = model
+        kwargs['max_tokens'] = kwargs.get('max_tokens', max_tokens)
+        kwargs['model'] = kwargs.get('model', model)
         return kwargs
 
     async def add_memory(self,
@@ -70,7 +71,7 @@ class PromptManager:
     @property
 
     async def size(self):
-        messages = await self.format(message=get_openai_message(role='user', content=''))
+        messages = await self.prepare_llm_request(message=get_openai_message(role='user', content=''))
         return count_tokens(messages)
 
 
@@ -80,6 +81,6 @@ class PromptManager:
 
         max_tokens = max(500, input_size * prompt_to_completion_multiplier)
         expected_total_size = input_size + max_tokens
-        if expected_total_size > context_size_available:
+        if expected_total_size/context_size_available > 0.9:
             model = DEFAULT_CONTEXT_FALLBACK_DICT[model]
-        return max_tokens, model
+        return int(max_tokens), model

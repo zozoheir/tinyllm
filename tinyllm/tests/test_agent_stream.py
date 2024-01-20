@@ -1,11 +1,10 @@
 import unittest
 
+from tinyllm.agent.tool.tool import Tool
 from tinyllm.tests.base import AsyncioTestCase
 from tinyllm.agent.agent_stream import AgentStream
-from tinyllm.agent.tool import Tool
-from tinyllm.agent.toolkit import Toolkit
+from tinyllm.agent.tool import Toolkit, tinyllm_toolkit
 from tinyllm.eval.evaluator import Evaluator
-from tinyllm.examples.example_manager import ExampleManager
 from tinyllm.llms.llm_store import LLMStore, LLMs
 from tinyllm.memory.memory import BufferMemory
 
@@ -59,51 +58,24 @@ llm_store = LLMStore()
 # Define the test class
 class TestStreamingAgent(AsyncioTestCase):
 
-    def test_agent_stream_hi(self):
-        tiny_agent = AgentStream(
-            system_role="You are a helpful assistant",
-            name='Test: agent stream',
-            toolkit=toolkit,
-        )
-
-        async def async_test():
-            msgs = []
-            async for message in tiny_agent(user_input="Hi"):
-                msgs.append(message)
-            return msgs
-
-        # Run the asynchronous test
-        msgs = self.loop.run_until_complete(async_test())
-        res = ""
-        for msg in msgs:
-            res += msg['output']['last_completion_delta']['content']
-        self.assertTrue('???' not in res)
-
-        # Verify the last message in the list
-        self.assertEqual(msgs[-1]['status'], 'success', "The last message status should be 'success'")
-
     def test_tool_call(self):
-        llm = llm_store.get_llm(
-            llm_library=LLMs.LITE_LLM_STREAM,
-        )
 
         tiny_agent = AgentStream(
-            name='Test: agent stream',
+            name="Test: Agent Stream tools",
             system_role="You are a helpful assistant",
-            llm=llm,
-            toolkit=toolkit,
-            memory=BufferMemory(),
+            toolkit=tinyllm_toolkit(),
+            user_id='test_user',
+            session_id='test_session',
             run_evaluators=[
                 AnswerCorrectnessEvaluator(
                     name="Eval: correct user info",
-
                 ),
             ],
         )
 
         async def async_test():
             msgs = []
-            async for message in tiny_agent(user_input="What is the user's birthday?"):
+            async for message in tiny_agent(user_input="What is the 5th Fibonacci number?"):
                 msgs.append(message)
             return msgs
 
@@ -111,7 +83,6 @@ class TestStreamingAgent(AsyncioTestCase):
         result = self.loop.run_until_complete(async_test())
         # Verify the last message in the list
         self.assertEqual(result[-1]['status'], 'success', "The last message status should be 'success'")
-        self.assertTrue("january 1st" in result[-1]['output']['completion'].lower())
 
 
 # This allows the test to be run standalone

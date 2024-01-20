@@ -1,6 +1,5 @@
 import unittest
 
-from sentence_transformers import SentenceTransformer
 from sqlalchemy import delete
 
 from tinyllm.tests.base import AsyncioTestCase
@@ -11,6 +10,10 @@ class TestVectorStore(AsyncioTestCase):
 
     def setUp(self):
         super().setUp()
+
+        async def embedding_function(text):
+            return [[1]*384] #
+
         # Environment Variables for DB
         self.vector_store = VectorStore(embedding_function=embedding_function)
         self.test_texts = ["Hello, world!", "Hi there!", "How are you?"]

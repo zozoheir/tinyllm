@@ -40,7 +40,7 @@ class RagEvaluationPipeline:
                 "generated_answer": generated_output,
                 "generation_id": generation_id
             }
-            data_point.update(toinsert)
+            data_point.add_many(toinsert)
 
         # Run each evaluator
         for data_point in self.qa_test_set:
@@ -48,7 +48,7 @@ class RagEvaluationPipeline:
             for evaluator in self.evaluators:
                 eval_result = await evaluator(**data_point)
                 if eval_result['status'] == 'success':
-                    data_point['scores'].update(eval_result['output'])
+                    data_point['scores'].add_many(eval_result['output'])
                 else:
-                    data_point['scores'].update(eval_result)
+                    data_point['scores'].add_many(eval_result)
         return self.qa_test_set

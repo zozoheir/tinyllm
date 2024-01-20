@@ -36,7 +36,7 @@ class ObservationUtil:
         if 'end' in dir(obs):
             obs.end(level='ERROR', status_message=str(traceback.format_exception(e)))
         elif 'update' in dir(obs):
-            obs.update(level='ERROR', status_message=str(traceback.format_exception(e)))
+            obs.add_many(level='ERROR', status_message=str(traceback.format_exception(e)))
         raise e
 
     @classmethod
