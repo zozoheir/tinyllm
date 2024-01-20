@@ -8,6 +8,7 @@ async def embedding_function(text):
     return [[1] * 384]  #
 
 
+
 class TestExampleSelector(AsyncioTestCase):
 
     def setUp(self):

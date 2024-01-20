@@ -1,8 +1,9 @@
+import openai
 from litellm import acompletion
 from openai import OpenAIError
 from tenacity import stop_after_attempt, wait_random_exponential, retry_if_exception_type, retry
 
-from tinyllm.llms.lite_llm import LiteLLM
+from tinyllm.llms.lite_llm import LiteLLM, DEFAULT_CONTEXT_FALLBACK_DICT
 from tinyllm.function_stream import FunctionStream
 from tinyllm.tracing.langfuse_context import observation
 from tinyllm.util.helpers import get_openai_message
@@ -13,7 +14,7 @@ class LiteLLMStream(LiteLLM, FunctionStream):
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_random_exponential(min=1, max=10),
-        retry=retry_if_exception_type((OpenAIError))
+        retry=retry_if_exception_type((OpenAIError, openai.InternalServerError))
     )
     @observation(observation_type='generation', stream=True)
     async def run(self, **kwargs):
@@ -31,6 +32,8 @@ class LiteLLMStream(LiteLLM, FunctionStream):
             stream=True,
             **tools_args,
             num_retries=kwargs.get('num_retries', 3),
+            context_window_fallback_dict=kwargs.get('context_window_fallback_dict',
+                                                    DEFAULT_CONTEXT_FALLBACK_DICT)
         )
 
         # We need to track 2 things: the response delta and the function_call
@@ -84,7 +87,6 @@ class LiteLLMStream(LiteLLM, FunctionStream):
                 "last_chunk": chunk_dict,
             }
 
-
     def get_chunk_type(self,
                        chunk):
         delta = chunk['choices'][0]['delta']
@@ -96,7 +98,7 @@ class LiteLLMStream(LiteLLM, FunctionStream):
 
     def get_streaming_status(self,
                              chunk):
-        if chunk['choices'][0]['finish_reason'] in ['stop','tool_calls']:
+        if chunk['choices'][0]['finish_reason'] in ['stop', 'tool_calls']:
             return "finished-streaming"
         else:
             return "streaming"

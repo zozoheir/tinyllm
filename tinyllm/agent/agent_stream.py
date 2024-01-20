@@ -22,7 +22,7 @@ class AgentStream(FunctionStream):
                  system_role: str,
                  example_manager: Optional[ExampleManager] = None,
                  llm: FunctionStream = None,
-                 memory: Memory = BufferMemory(),
+                 memory: Memory = None,
                  toolkit: Optional[Toolkit] = None,
                  answer_formatting_prompt: Optional[str] = None,
                  tool_retries: int = 3,
@@ -46,7 +46,7 @@ class AgentStream(FunctionStream):
         self.prompt_manager = PromptManager(
             system_role=system_role,
             example_manager=example_manager,
-            memory=memory,
+            memory=memory or BufferMemory(),
             answer_formatting_prompt=answer_formatting_prompt,
         )
         self.tool_retries = tool_retries

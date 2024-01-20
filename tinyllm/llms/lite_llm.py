@@ -1,6 +1,9 @@
 from typing import Optional, Any
 
+import openai
 from litellm import  acompletion
+from openai import OpenAIError
+from tenacity import retry, stop_after_attempt, wait_random_exponential, retry_if_exception_type
 
 from tinyllm.function import Function
 from tinyllm.tracing.langfuse_context import observation
@@ -25,7 +28,7 @@ LLM_TOKEN_LIMITS = {
     "text-davinci-003": 4096,
     "text-davinci-002": 4096,
     "code-davinci-002": 8001,
-    "gpt-4-1106-preview": 4096,
+    "gpt-4-1106-preview": 180000,
     "gpt-4-vision-preview": 4096,
     "gpt-4": 8192,
     "gpt-4-32k": 32768,
@@ -68,6 +71,11 @@ class LiteLLM(Function):
 
     @observation(observation_type='generation', input_mapping={'input': 'messages'},
                  output_mapping={'output': 'response'})
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_random_exponential(min=1, max=10),
+        retry=retry_if_exception_type((OpenAIError, openai.InternalServerError))
+    )
     async def run(self, **kwargs):
         tools_args = {}
         if kwargs.get('tools', None) is not None:
@@ -83,7 +91,7 @@ class LiteLLM(Function):
             n=kwargs.get('n', 1),
             max_tokens=kwargs.get('max_tokens', 400),
             context_window_fallback_dict=kwargs.get('context_window_fallback_dict',
-                                                    {"gpt-3.5-turbo": "gpt-3.5-turbo-16k"}),
+                                                    DEFAULT_CONTEXT_FALLBACK_DICT),
             **tools_args
         )
         model_dump = api_result.model_dump()

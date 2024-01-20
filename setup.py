@@ -5,6 +5,7 @@ setup(name='tinyllm',
       description='Development and management infrastructure for LLM applications',
       packages=find_packages(),
       install_requires=[
+          'astor',
           'click',
           'tenacity',
           'langfuse',
