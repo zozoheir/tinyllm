@@ -1,5 +1,5 @@
 <p align="center">
-    <img src="https://github.com/zozoheir/tinyllm/assets/42655961/52d828be-b829-424b-a92f-c2211b85d1d1" alt="tinyllm arc">
+    <img src="https://github.com/zozoheir/tinyllm/assets/42655961/77e4ad59-2103-4e9d-94bb-f6a5e47357eb" alt="tinyllm arc">
 </p>
 
 # 🚀 What is tinyllm?
