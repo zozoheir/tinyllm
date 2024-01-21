@@ -83,17 +83,23 @@ class LiteLLM(Function):
             if 'tools' in kwargs:
                 tools_args['tools'] = kwargs['tools']
                 tools_args['tool_choice'] = kwargs.get('tool_choice', 'auto')
+        try:
+            api_result = await acompletion(
+                messages=kwargs['messages'],
+                model=kwargs.get('model', DEFAULT_LLM_MODEL),
+                temperature=kwargs.get('temperature', 0),
+                n=kwargs.get('n', 1),
+                max_tokens=kwargs.get('max_tokens', 400),
+                context_window_fallback_dict=kwargs.get('context_window_fallback_dict',
+                                                        DEFAULT_CONTEXT_FALLBACK_DICT),
+                **tools_args
+            )
+        except openai.BadRequestError as e:
 
-        api_result = await acompletion(
-            messages=kwargs['messages'],
-            model=kwargs.get('model', DEFAULT_LLM_MODEL),
-            temperature=kwargs.get('temperature', 0),
-            n=kwargs.get('n', 1),
-            max_tokens=kwargs.get('max_tokens', 400),
-            context_window_fallback_dict=kwargs.get('context_window_fallback_dict',
-                                                    DEFAULT_CONTEXT_FALLBACK_DICT),
-            **tools_args
-        )
+            print(e)
+
+
+
         model_dump = api_result.model_dump()
         msg_type = 'tool' if model_dump['choices'][0]['finish_reason'] == 'tool_calls' else 'completion'
         message = model_dump['choices'][0]['message']

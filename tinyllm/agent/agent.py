@@ -33,7 +33,6 @@ class AgentInputValidator(Validator):
 llm_store = LLMStore()
 
 
-
 class Agent(Function):
 
     def __init__(self,
@@ -76,7 +75,6 @@ class Agent(Function):
         else:
             return self.toolkit.as_dict_list() if self.toolkit else None
 
-
     async def run(self,
                   **kwargs):
 
@@ -89,6 +87,7 @@ class Agent(Function):
 
             request_kwargs = await self.prompt_manager.prepare_llm_request(message=input_msg,
                                                                            **kwargs)
+
             response_msg = await self.llm(tools=self.tools,
                                           **request_kwargs)
             await self.prompt_manager.add_memory(message=input_msg)
@@ -130,14 +129,18 @@ class Agent(Function):
 
                 else:
                     # Agent decides to respond
+                    msg_content = response_msg['output']['response']['choices'][0]['message']['content']
+                    await self.prompt_manager.add_memory(
+                        message=get_openai_message(role='assistant', content=msg_content)
+                    )
                     return {'response': response_msg['output']['response']}
             else:
                 raise (Exception(response_msg))
-
 
     def is_tool_stuck(self, session_tool_results):
         if len(session_tool_results) < self.tool_retries:
             return False
         retry_window_tool_results = session_tool_results[len(session_tool_results) - self.tool_retries:]
-        all_results_the_same = all([tool_results == retry_window_tool_results[0] for tool_results in retry_window_tool_results])
+        all_results_the_same = all(
+            [tool_results == retry_window_tool_results[0] for tool_results in retry_window_tool_results])
         return all_results_the_same

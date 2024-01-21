@@ -51,4 +51,17 @@ class BufferMemory(Memory):
         self.memories = []
 
     async def get_memories(self):
-        return self.memories[-self.buffer_size:]
+        memories_to_return = []
+        msg_count = 0
+        # Make sure we keep complete tool calls msgs
+        for memory in self.memories[::-1]:
+            memories_to_return.append(memory)
+            if 'tool_calls' in memory or memory['role'] == 'tool':
+                continue
+            else:
+                msg_count += 1
+
+            if msg_count == self.buffer_size:
+                break
+
+        return memories_to_return[::-1]
