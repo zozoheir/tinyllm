@@ -17,16 +17,17 @@ class PromptManager:
                  example_manager: ExampleManager,
                  memory: Memory,
                  answer_formatting_prompt: str = None,
-                 add_current_time: bool = False, ):
+                 is_time_aware: bool = True, ):
         self.system_role = system_role
         self.example_manager = example_manager
         self.memory = memory
         self.answer_formatting_prompt = answer_formatting_prompt
-        self.add_current_time = add_current_time
+        self.is_time_aware = is_time_aware
 
     async def format_messages(self, message):
+        system_content = self.system_role if self.is_time_aware is False else self.system_role+'\n\n\n<Current time: '+str(dt.datetime.utcnow()).split('.')[0]
         system_role = get_openai_message(role='system',
-                                         content=self.system_role)
+                                         content=system_content)
         memories = [] if self.memory is None else await self.memory.get_memories()
         examples = []
 
@@ -42,8 +43,7 @@ class PromptManager:
 
         answer_format_msg = [get_openai_message(role='user',
                                                 content=self.answer_formatting_prompt)] if self.answer_formatting_prompt is not None else []
-        if self.add_current_time:
-            system_role = f'{self.system_role} \nThe current time is:{str(dt.datetime.utcnow())}'
+
         messages = [system_role] + memories + examples + answer_format_msg + [message]
         return messages
 
