@@ -9,7 +9,6 @@ from tinyllm.examples.example_manager import ExampleManager
 from tinyllm.llms.llm_store import LLMStore
 from tinyllm.memory.memory import Memory, BufferMemory
 from tinyllm.prompt_manager import PromptManager
-from tinyllm.util.ai_util import remove_spaces
 from tinyllm.util.helpers import get_openai_message
 from tinyllm.validator import Validator
 
@@ -54,7 +53,7 @@ class Agent(Function):
         super().__init__(
             input_validator=AgentInputValidator,
             **kwargs)
-        self.system_role = remove_spaces(system_role)
+        self.system_role = system_role.strip()
         self.llm = llm or llm_store.default_llm
         self.toolkit = toolkit
         self.example_manager = example_manager
@@ -62,7 +61,7 @@ class Agent(Function):
             system_role=self.system_role,
             example_manager=example_manager,
             memory=memory or BufferMemory(),
-            answer_formatting_prompt=remove_spaces(answer_formatting_prompt),
+            answer_formatting_prompt=answer_formatting_prompt,
         )
         self.tool_retries = tool_retries
         self.is_stuck = False

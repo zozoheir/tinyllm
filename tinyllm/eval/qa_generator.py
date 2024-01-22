@@ -93,7 +93,7 @@ class QASetGenerator(Function):
                 question_match = question_match.group(1).strip()
                 answer_match = answer_match.group(1).strip()
                 if question_match and answer_match:
-                    test_data_point.add_many({
+                    test_data_point.update({
                         "question": question_match,
                         "correct_answer": answer_match
                     })

@@ -26,4 +26,3 @@ def generate_raw_ngrams(text, n):
 
     return ngrams
 
-remove_spaces = lambda x: dedent(x).strip() if x else x

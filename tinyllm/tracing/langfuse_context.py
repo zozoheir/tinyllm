@@ -51,6 +51,7 @@ class ObservationDecoratorFactory:
                     args[0].observation = observation
                 # Set the current observation in the context for child functions to access
                 token = current_observation_context.set(observation)
+                result = {}
                 try:
                     async for result in func(*args, **function_input):
                         yield result
@@ -85,6 +86,7 @@ class ObservationDecoratorFactory:
                                                               name=name,
                                                               observation_input=observation_input)
                 token = current_observation_context.set(observation)
+                result = {}
                 if len(args) > 0:
                     args[0].observation = observation
                 try:

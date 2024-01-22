@@ -36,7 +36,7 @@ class ObservationUtil:
         if 'end' in dir(obs):
             obs.end(level='ERROR', status_message=str(traceback.format_exception(e)))
         elif 'update' in dir(obs):
-            obs.add_many(level='ERROR', status_message=str(traceback.format_exception(e)))
+            obs.update(level='ERROR', status_message=str(traceback.format_exception(e)))
         raise e
 
     @classmethod
@@ -80,7 +80,7 @@ class ObservationUtil:
             mapped_output = {'output': function_output}
         else:
             for langfuse_kwarg, function_kwarg in output_mapping.items():
-                mapped_output[langfuse_kwarg] = function_output[function_kwarg]
+                mapped_output[langfuse_kwarg] = function_output.get(function_kwarg, None)
 
         if observation_type == 'generation':
             prompt_tokens = count_tokens(function_input)

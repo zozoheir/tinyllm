@@ -21,7 +21,7 @@ class PromptManager:
         self.system_role = system_role
         self.example_manager = example_manager
         self.memory = memory
-        self.answer_formatting_prompt = answer_formatting_prompt
+        self.answer_formatting_prompt = answer_formatting_prompt.strip() if answer_formatting_prompt is not None else None
         self.is_time_aware = is_time_aware
 
     async def format_messages(self, message):

@@ -3,10 +3,7 @@ import traceback
 import uuid
 from typing import Any, Optional, Type
 
-import pytz
-
 from smartpy.utility.log_util import getLogger
-from smartpy.utility.py_util import get_exception_info
 from tinyllm.exceptions import InvalidStateTransition
 from tinyllm import langfuse_client, tinyllm_config
 from tinyllm.state import States, ALLOWED_TRANSITIONS
@@ -144,7 +141,7 @@ class Function:
             if type(e) in self.fallback_strategies:
                 raise e
             elif tinyllm_config['OPS']['DEBUG']:
-                exit()
+                raise e
             else:
                 return output_message
 
