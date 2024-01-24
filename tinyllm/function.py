@@ -75,6 +75,7 @@ class Function:
         self.processed_output_validator = processed_output_validator
         self.required = required
         self.state = None
+        self.previous_state = None
         # Need the init the above to run the transition
         self.transition(States.INIT)
         self.input = None
@@ -93,7 +94,7 @@ class Function:
         self.observation = None
 
     @observation('span')
-    @fallback_decorator
+    #@fallback_decorator
     async def __call__(self, **kwargs):
         try:
             # Validate input
@@ -137,13 +138,9 @@ class Function:
 
         except Exception as e:
             output_message = await self.handle_exception(e)
-            # Raise or return error
-            if type(e) in self.fallback_strategies:
-                raise e
-            elif tinyllm_config['OPS']['DEBUG']:
-                raise e
-            else:
-                return output_message
+            #if type(e) in self.fallback_strategies:
+            #    raise e
+            return output_message
 
 
     async def handle_exception(self,
@@ -156,11 +153,11 @@ class Function:
                           "message": detailed_error_msg}
 
         # Evaluate output if not already done
-        if self.state < States.OUTPUT_EVALUATION:
+        if self.previous_state < States.OUTPUT_EVALUATION:
             for evaluator in self.run_evaluators:
                 await evaluator(**output_message, observation=self.observation)
 
-        if self.state < States.PROCESSED_OUTPUT_EVALUATION:
+        if self.previous_state < States.PROCESSED_OUTPUT_EVALUATION:
             for evaluator in self.processed_output_evaluators:
                 await evaluator(**output_message, observation=self.observation)
 
@@ -171,18 +168,21 @@ class Function:
             raise InvalidStateTransition(
                 self, f"Invalid state transition from {self.state.name} to {new_state.name}"
             )
-        log_level = "error" if new_state == States.FAILED else "info"
-        if log_level == 'error':
-            self.log(
-                f"transition from {self.state.name} to: {new_state.name}" + (f" ({msg})" if msg is not None else ""),
-                level=log_level,
-            )
-        else:
-            self.log(
-                f"transition to: {new_state.name}" + (f" ({msg})" if msg is not None else ""),
-                level=log_level,
-            )
 
+        log_level = "error" if new_state == States.FAILED else "info"
+        if new_state.name in tinyllm_config['LOGS']['LOG_STATES']:
+            if log_level == 'error':
+                self.log(
+                    f"transition from {self.state.name} to: {new_state.name}" + (f" ({msg})" if msg is not None else ""),
+                    level=log_level,
+                )
+            else:
+                self.log(
+                    f"transition to: {new_state.name}" + (f" ({msg})" if msg is not None else ""),
+                    level=log_level,
+                )
+
+        self.previous_state = self.state
         self.state = new_state
 
     @property
@@ -193,7 +193,7 @@ class Function:
             return f"[{self.name}]"
 
     def log(self, message, level="info"):
-        if tinyllm_config['OPS']['LOGGING']:
+        if tinyllm_config['LOGS']['LOGGING']:
             if level == "error":
                 self.logger.error(self.log_prefix+' '+message)
             else:

@@ -62,7 +62,6 @@ class TestStreamingAgent(AsyncioTestCase):
 
         tiny_agent = AgentStream(
             name="Test: Agent Stream tools",
-            system_role="You are a helpful assistant",
             toolkit=tinyllm_toolkit(),
             user_id='test_user',
             session_id='test_session',

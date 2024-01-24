@@ -3,7 +3,7 @@ import unittest
 from tinyllm.agent.agent import Agent
 from tinyllm.agent.tool import tinyllm_toolkit
 from tinyllm.eval.evaluator import Evaluator
-from tinyllm.llms.llm_store import LLMStore
+from tinyllm.llms.lite_llm import LiteLLM
 from tinyllm.tests.base import AsyncioTestCase
 
 
@@ -21,8 +21,6 @@ class AnswerCorrectnessEvaluator(Evaluator):
         return evals
 
 
-llm_store = LLMStore()
-
 
 # Define the test class
 
@@ -30,8 +28,8 @@ class TestStreamingAgent(AsyncioTestCase):
 
     def test_wiki_tool(self):
         tiny_agent = Agent(
-            system_role="You are a helpful assistant",
-            llm=llm_store.default_llm,
+            name='Test: Agent Wiki Tool',
+            llm=LiteLLM(),
             toolkit=tinyllm_toolkit(),
             user_id='test_user',
             session_id='test_session',
@@ -43,8 +41,7 @@ class TestStreamingAgent(AsyncioTestCase):
 
     def test_fibonacci_code(self):
         tiny_agent = Agent(
-            system_role="You are a helpful assistant",
-            llm=llm_store.default_llm,
+            llm=LiteLLM(),
             toolkit=tinyllm_toolkit(),
             user_id='test_user',
             session_id='test_session',
@@ -59,8 +56,7 @@ class TestStreamingAgent(AsyncioTestCase):
     def test_multi_tool(self):
         tiny_agent = Agent(
             name="Test: Agent multi Tool",
-            system_role="You are a helpful assistant",
-            llm=llm_store.default_llm,
+            llm=LiteLLM(),
             toolkit=tinyllm_toolkit(),
             user_id='test_user',
             session_id='test_session',

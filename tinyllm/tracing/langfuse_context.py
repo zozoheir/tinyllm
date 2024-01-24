@@ -96,10 +96,12 @@ class ObservationDecoratorFactory:
                     return result
                 except Exception as e:
                     ObservationUtil.handle_exception(observation, e)
+                    raise e
                 finally:
                     current_observation_context.reset(token)
                     ObservationUtil.end_observation(observation, observation_input, result, output_mapping,
                                                     observation_type, function_input)
+                    langfuse_client.flush()
 
             return wrapper
 
