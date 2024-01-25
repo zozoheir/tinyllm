@@ -140,7 +140,7 @@ class Function:
             # Raise or return error
             if type(e) in self.fallback_strategies:
                 raise e
-            elif tinyllm_config['OPS']['DEBUG']:
+            elif tinyllm_config['LOGS']['DEBUG']:
                 raise e
             else:
                 return output_message
@@ -193,7 +193,7 @@ class Function:
             return f"[{self.name}]"
 
     def log(self, message, level="info"):
-        if tinyllm_config['OPS']['LOGGING']:
+        if tinyllm_config['LOGS']['LOGGING']:
             if level == "error":
                 self.logger.error(self.log_prefix+' '+message)
             else:

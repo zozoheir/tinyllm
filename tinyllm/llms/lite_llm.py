@@ -10,7 +10,7 @@ from tinyllm.tracing.langfuse_context import observation
 from tinyllm.util.helpers import *
 from tinyllm.validator import Validator
 
-DEFAULT_LLM_MODEL = 'gpt-3.5-turbo'
+DEFAULT_LLM_MODEL = 'gpt-3.5-turbo-1106'
 DEFAULT_CONTEXT_FALLBACK_DICT = {
     "gpt-3.5-turbo": "gpt-3.5-turbo-16k",
     "gpt-3.5-turbo-1106":"gpt-3.5-turbo-16k",
@@ -38,7 +38,6 @@ LLM_TOKEN_LIMITS = {
     "gpt-4-32k-0314": 32768,
     "anyscale/Open-Orca/Mistral-7B-OpenOrca": 8192,
     "anyscale/meta-llama/Llama-2-70b-chat-hf": 4096,
-
 }
 
 
@@ -79,24 +78,22 @@ class LiteLLM(Function):
     async def run(self, **kwargs):
         tools_args = {}
         if kwargs.get('tools', None) is not None:
-            tools_args = {}
-            if 'tools' in kwargs:
-                tools_args['tools'] = kwargs['tools']
-                tools_args['tool_choice'] = kwargs.get('tool_choice', 'auto')
-        try:
-            api_result = await acompletion(
-                messages=kwargs['messages'],
-                model=kwargs.get('model', DEFAULT_LLM_MODEL),
-                temperature=kwargs.get('temperature', 0),
-                n=kwargs.get('n', 1),
-                max_tokens=kwargs.get('max_tokens', 400),
-                context_window_fallback_dict=kwargs.get('context_window_fallback_dict',
-                                                        DEFAULT_CONTEXT_FALLBACK_DICT),
-                **tools_args
-            )
-        except openai.BadRequestError as e:
+            tools_args = {
+                'tools': kwargs['tools'],
+                'tool_choice': kwargs.get('tool_choice', 'auto')
+            }
 
-            print(e)
+        api_result = await acompletion(
+            messages=kwargs['messages'],
+            model=kwargs.get('model', DEFAULT_LLM_MODEL),
+            temperature=kwargs.get('temperature', 0),
+            n=kwargs.get('n', 1),
+            max_tokens=kwargs.get('max_tokens', 400),
+            context_window_fallback_dict=kwargs.get('context_window_fallback_dict',
+                                                    DEFAULT_CONTEXT_FALLBACK_DICT),
+            **tools_args
+            )
+
 
 
 

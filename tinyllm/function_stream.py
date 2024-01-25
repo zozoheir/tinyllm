@@ -73,7 +73,7 @@ class FunctionStream(Function):
         except Exception as e:
             output_message = await self.handle_exception(e)
             # Raise or return error
-            if tinyllm_config['OPS']['DEBUG']:
+            if tinyllm_config['LOGS']['DEBUG']:
                 raise e
             if type(e) in self.fallback_strategies:
                 raise e
