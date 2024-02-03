@@ -158,6 +158,7 @@ class ObservationUtil:
             # Pass the trace to the Function
             if len(args) > 0:
                 args[0].observation = observation
+                args[0].trace = observation
             observation_method = getattr(observation, observation_type)
             observation = observation_method(name=name, **observation_input)
         else:

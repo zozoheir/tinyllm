@@ -7,6 +7,7 @@ import re
 
 from tinyllm.util import os_util
 
+# I need a smart function that can detect the type of the input and then do the right thing
 
 
 def stringify_string_list(paragraphs: List[str],
@@ -171,26 +172,6 @@ def get_smallest_chunk(source, matches):
 def preprocess_text(text):
     # Convert to lower case and remove special characters
     return re.sub(r'[^a-zA-Z0-9\s]', '', text.lower())
-
-
-def split_relationship(input_text):
-    # Split the relationship into entities and relationships
-    elements = re.findall(r'x:([^\s]+)', input_text)
-    return elements
-
-
-def get_optimal_source_chunk(triplet, source):
-    elements = triplet.split(' ')
-    source = preprocess_text(source)
-    entity_start_end = [
-        find_closest_match_char_by_char(source, element) for element in [elements[0], elements[2]]
-    ]
-    relationship_start_end = find_closest_match_char_by_char(source, elements[1])
-    start = min(entity_start_end[0][0], relationship_start_end[0])
-    end = max(entity_start_end[1][1], relationship_start_end[1])
-    start = max(0, start - 50)
-    end = min(len(source), end + 50)
-    return start, end
 
 
 
