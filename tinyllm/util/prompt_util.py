@@ -180,7 +180,7 @@ class Section:
         self.text = text
         self.title = title.upper() if title else None
         if self.title:
-            return f"<{self.title}>\n{self.text}\n</{self.title}>"
+            return f"<{self.title}>\n{self.text}\n</{self.title}>\n\n"
         else:
             return self.text
 
