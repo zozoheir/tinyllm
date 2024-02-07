@@ -12,6 +12,7 @@ from tinyllm.validator import Validator
 
 DEFAULT_LLM_MODEL = 'gpt-3.5-turbo-1106'
 DEFAULT_CONTEXT_FALLBACK_DICT = {
+    "gpt-3.5-turbo-0125": "gpt-3.5-turbo-1106",
     "gpt-4-1106-preview": "gpt-4-1106-preview",
     "gpt-3.5-turbo": "gpt-3.5-turbo-16k",
     "gpt-3.5-turbo-1106":"gpt-3.5-turbo-16k",

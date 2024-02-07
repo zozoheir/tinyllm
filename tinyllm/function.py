@@ -1,7 +1,7 @@
 import datetime as dt
 import traceback
 import uuid
-from typing import Any, Optional, Type
+from typing import Any, Optional, Type, Union
 
 from smartpy.utility.log_util import getLogger
 from tinyllm.exceptions import InvalidStateTransition
@@ -22,8 +22,8 @@ def pretty_print(value):
 
 
 class FunctionInitValidator(Validator):
-    user_id: Optional[str]
-    session_id: Optional[str]
+    user_id: Optional[Union[str, int]]
+    session_id: Optional[Union[str, int]]
     input_validator: Optional[Type[Validator]]
     output_validator: Optional[Type[Validator]]
     processed_output_validator: Optional[Type[Validator]] = None
@@ -60,7 +60,7 @@ class Function:
             stream=stream,
         )
 
-        self.user_id = user_id # For tracing in langfuse
+        self.user_id = user_id
         self.session_id = session_id
         self.observation = None # For logging
 
