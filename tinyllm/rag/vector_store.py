@@ -69,9 +69,12 @@ class VectorStore(Function):
         return filter_clauses
 
     async def create_tables(self):
-        async with self._engine.begin() as conn:
-            await conn.execute(text('CREATE EXTENSION vector;'))
-            await conn.run_sync(Base.metadata.create_all)
+        try:
+            async with self._engine.begin() as conn:
+                await conn.execute(text('CREATE EXTENSION vector;'))
+                await conn.run_sync(Base.metadata.create_all)
+        except:
+            pass
 
     async def add_texts(self, texts, collection_name, metadatas=None):
         if metadatas is None:

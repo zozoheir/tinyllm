@@ -13,7 +13,6 @@ logging.basicConfig(level=logging.DEBUG)
 class AsyncioTestCase(unittest.TestCase):
     def setUp(self):
         # Tests are run in live mode
-        tinyllm_config['LOGS']['DEBUG'] = False
         stream_handler = logging.StreamHandler(sys.stdout)
         logger.addHandler(stream_handler)
         self.loop = asyncio.new_event_loop()

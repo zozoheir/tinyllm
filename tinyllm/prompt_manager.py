@@ -79,7 +79,7 @@ class PromptManager:
         model_token_limit = LLM_TOKEN_LIMITS[model]
         context_size_available = model_token_limit - input_size
 
-        max_tokens = max(500, input_size * prompt_to_completion_multiplier)
+        max_tokens = min(max(500, input_size * prompt_to_completion_multiplier), 4096)
         expected_total_size = input_size + max_tokens
         if expected_total_size/context_size_available > 0.9:
             model = DEFAULT_CONTEXT_FALLBACK_DICT[model]

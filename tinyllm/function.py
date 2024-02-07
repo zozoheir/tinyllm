@@ -1,7 +1,7 @@
 import datetime as dt
 import traceback
 import uuid
-from typing import Any, Optional, Type
+from typing import Any, Optional, Type, Union
 
 from smartpy.utility.log_util import getLogger
 from tinyllm.exceptions import InvalidStateTransition
@@ -22,8 +22,8 @@ def pretty_print(value):
 
 
 class FunctionInitValidator(Validator):
-    user_id: Optional[str]
-    session_id: Optional[str]
+    user_id: Optional[Union[str, int]]
+    session_id: Optional[Union[str, int]]
     input_validator: Optional[Type[Validator]]
     output_validator: Optional[Type[Validator]]
     processed_output_validator: Optional[Type[Validator]] = None
@@ -60,7 +60,7 @@ class Function:
             stream=stream,
         )
 
-        self.user_id = user_id # For tracing in langfuse
+        self.user_id = user_id
         self.session_id = session_id
         self.observation = None # For logging
 
@@ -88,6 +88,7 @@ class Function:
 
         self.cache = {}
         self.generation = None
+        self.trace = None
         self.fallback_strategies = fallback_strategies
         self.stream = stream
         self.observation = None
@@ -140,10 +141,7 @@ class Function:
             # Raise or return error
             if type(e) in self.fallback_strategies:
                 raise e
-            elif tinyllm_config['LOGS']['DEBUG']:
-                raise e
-            else:
-                return output_message
+            return output_message
 
 
     async def handle_exception(self,
@@ -187,8 +185,8 @@ class Function:
 
     @property
     def log_prefix(self):
-        if self.observation:
-            return f"[{self.observation.id}][{self.name}]"
+        if getattr(self,'trace', None) is not None:
+            return f"[{self.trace.id}][{self.name}]"
         else:
             return f"[{self.name}]"
 

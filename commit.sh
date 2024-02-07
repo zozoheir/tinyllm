@@ -1,13 +1,13 @@
 #!/bin/bash
-
-PYTHONPATH="$PYTHONPATH:/Users/othmanezoheir/PycharmProjects/openagents/smartpy"
-PYTHONPATH="$PYTHONPATH:/Users/othmanezoheir/PycharmProjects/openagents/rumorz-backend"
-PYTHONPATH="$PYTHONPATH:/Users/othmanezoheir/PycharmProjects/openagents/rumorz-env"
-PYTHONPATH="$PYTHONPATH:/Users/othmanezoheir/PycharmProjects/openagents/rumorz-jobs"
-PYTHONPATH="$PYTHONPATH:/Users/othmanezoheir/PycharmProjects/openagents/rumorz-models"
-PYTHONPATH="$PYTHONPATH:/Users/othmanezoheir/PycharmProjects/openagents/rumorz-pyenv"
-PYTHONPATH="$PYTHONPATH:/Users/othmanezoheir/PycharmProjects/openagents/rumorz-llms"
-PYTHONPATH="$PYTHONPATH:/Users/othmanezoheir/PycharmProjects/openagents/langdt"
+export TINYLLM_CONFIG_PATH = '/Users/othmanezoheir/PycharmProjects/openagents/tinyllm/tinyllm/config/config.json'
+PYTHONPATH="$PYTHONPATH:/Users/othmanezoheir/PycharmProjects/personal/smartpy"
+PYTHONPATH="$PYTHONPATH:/Users/othmanezoheir/PycharmProjects/rumorz-io/rumorz-backend"
+PYTHONPATH="$PYTHONPATH:/Users/othmanezoheir/PycharmProjects/rumorz-io/rumorz-env"
+PYTHONPATH="$PYTHONPATH:/Users/othmanezoheir/PycharmProjects/rumorz-io/rumorz-jobs"
+PYTHONPATH="$PYTHONPATH:/Users/othmanezoheir/PycharmProjects/rumorz-io/rumorz-models"
+PYTHONPATH="$PYTHONPATH:/Users/othmanezoheir/PycharmProjects/rumorz-io/rumorz-pyenv"
+PYTHONPATH="$PYTHONPATH:/Users/othmanezoheir/PycharmProjects/rumorz-io/rumorz-llms"
+PYTHONPATH="$PYTHONPATH:/Users/othmanezoheir/PycharmProjects/personal/langdt"
 
 export PYTHONPATH
 

@@ -19,7 +19,6 @@ def load_yaml_config(yaml_file_path: str) -> dict:
     config = None
     yaml_path = Path(yaml_file_path)
     if yaml_path.is_file():
-        logger.info(f"Tinyllm: config found at {yaml_path}")
         with open(yaml_path, 'r') as stream:
             try:
                 config = yaml.safe_load(stream)
@@ -66,7 +65,10 @@ def find_yaml_config(yaml_file_name: str, directories: list) -> dict:
 
 
 # Directories to look for the config file, in order of priority
-env_variable_path = os.environ.get('TINYLLM_CONFIG_PATH', '').strip()
+tinyllm_config_file_path = os.environ.get('TINYLLM_CONFIG_PATH', '').strip()
+if tinyllm_config_file_path == '':
+    logger.info(f"Tinyllm: no config file path provided")
+
 directories = [
     Path.cwd() if Path.cwd().name != 'tinyllm' else None,
     Path.home(),
@@ -74,12 +76,12 @@ directories = [
 ]
 
 if langfuse_client is None and tinyllm_config is None:
-
-    if os_util.isFilePath(env_variable_path):
-        set_config(env_variable_path)
+    if os_util.isFilePath(tinyllm_config_file_path):
+        logger.info(f"Tinyllm: using config file at {tinyllm_config_file_path}")
+        set_config(tinyllm_config_file_path)
     else:
+        logger.info(f"Tinyllm: no config file path provided, searching for config file")
         found_config_path = find_yaml_config('tinyllm.yaml', directories)
         if found_config_path is None:
             raise FileNotFoundError(f"Please provide a config file for tinyllm")
         set_config(found_config_path)
-
