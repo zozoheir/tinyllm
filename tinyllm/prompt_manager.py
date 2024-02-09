@@ -1,7 +1,7 @@
 import os
 
 from tinyllm.examples.example_manager import ExampleManager
-from tinyllm.llms.lite_llm import DEFAULT_LLM_MODEL, LLM_TOKEN_LIMITS, DEFAULT_CONTEXT_FALLBACK_DICT, MODEL_API_KEY_ENV
+from tinyllm.llms.lite_llm import DEFAULT_LLM_MODEL, LLM_TOKEN_LIMITS, DEFAULT_CONTEXT_FALLBACK_DICT
 from tinyllm.memory.memory import Memory
 from tinyllm.util.helpers import get_openai_message, count_tokens, OPENAI_MODELS_CONTEXT_SIZES
 import datetime as dt
@@ -86,5 +86,4 @@ class PromptManager:
         if expected_total_size/context_size_available > 0.9:
             model = DEFAULT_CONTEXT_FALLBACK_DICT[model]
 
-        api_key = os.environ[MODEL_API_KEY_ENV[model]]
         return int(max_tokens), model

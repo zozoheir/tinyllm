@@ -26,5 +26,5 @@ setup(name='tinyllm',
           'fuzzywuzzy'
       ],
       author='Othmane Zoheir',
-      author_email='zozoheir@umich.edu',
+      author_email='othmane@rumorz.io',
       url='')
