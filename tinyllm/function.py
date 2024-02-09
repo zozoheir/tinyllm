@@ -1,7 +1,7 @@
 import datetime as dt
 import traceback
 import uuid
-from typing import Any, Optional, Type
+from typing import Any, Optional, Type, Union
 
 from smartpy.utility.log_util import getLogger
 from tinyllm.exceptions import InvalidStateTransition
@@ -22,8 +22,8 @@ def pretty_print(value):
 
 
 class FunctionInitValidator(Validator):
-    user_id: Optional[str]
-    session_id: Optional[str]
+    user_id: Optional[Union[str, int]]
+    session_id: Optional[Union[str, int]]
     input_validator: Optional[Type[Validator]]
     output_validator: Optional[Type[Validator]]
     processed_output_validator: Optional[Type[Validator]] = None
@@ -60,7 +60,7 @@ class Function:
             stream=stream,
         )
 
-        self.user_id = user_id # For tracing in langfuse
+        self.user_id = user_id
         self.session_id = session_id
         self.observation = None # For logging
 
@@ -75,7 +75,6 @@ class Function:
         self.processed_output_validator = processed_output_validator
         self.required = required
         self.state = None
-        self.previous_state = None
         # Need the init the above to run the transition
         self.transition(States.INIT)
         self.input = None
@@ -89,12 +88,13 @@ class Function:
 
         self.cache = {}
         self.generation = None
+        self.trace = None
         self.fallback_strategies = fallback_strategies
         self.stream = stream
         self.observation = None
 
     @observation('span')
-    #@fallback_decorator
+    @fallback_decorator
     async def __call__(self, **kwargs):
         try:
             # Validate input
@@ -138,8 +138,9 @@ class Function:
 
         except Exception as e:
             output_message = await self.handle_exception(e)
-            #if type(e) in self.fallback_strategies:
-            #    raise e
+            # Raise or return error
+            if type(e) in self.fallback_strategies:
+                raise e
             return output_message
 
 
@@ -153,11 +154,11 @@ class Function:
                           "message": detailed_error_msg}
 
         # Evaluate output if not already done
-        if self.previous_state < States.OUTPUT_EVALUATION:
+        if self.state < States.OUTPUT_EVALUATION:
             for evaluator in self.run_evaluators:
                 await evaluator(**output_message, observation=self.observation)
 
-        if self.previous_state < States.PROCESSED_OUTPUT_EVALUATION:
+        if self.state < States.PROCESSED_OUTPUT_EVALUATION:
             for evaluator in self.processed_output_evaluators:
                 await evaluator(**output_message, observation=self.observation)
 
@@ -168,27 +169,24 @@ class Function:
             raise InvalidStateTransition(
                 self, f"Invalid state transition from {self.state.name} to {new_state.name}"
             )
-
         log_level = "error" if new_state == States.FAILED else "info"
-        if new_state.name in tinyllm_config['LOGS']['LOG_STATES']:
-            if log_level == 'error':
-                self.log(
-                    f"transition from {self.state.name} to: {new_state.name}" + (f" ({msg})" if msg is not None else ""),
-                    level=log_level,
-                )
-            else:
-                self.log(
-                    f"transition to: {new_state.name}" + (f" ({msg})" if msg is not None else ""),
-                    level=log_level,
-                )
+        if log_level == 'error':
+            self.log(
+                f"transition from {self.state.name} to: {new_state.name}" + (f" ({msg})" if msg is not None else ""),
+                level=log_level,
+            )
+        else:
+            self.log(
+                f"transition to: {new_state.name}" + (f" ({msg})" if msg is not None else ""),
+                level=log_level,
+            )
 
-        self.previous_state = self.state
         self.state = new_state
 
     @property
     def log_prefix(self):
-        if self.observation:
-            return f"[{self.observation.id}][{self.name}]"
+        if getattr(self,'trace', None) is not None:
+            return f"[{self.trace.id}][{self.name}]"
         else:
             return f"[{self.name}]"
 

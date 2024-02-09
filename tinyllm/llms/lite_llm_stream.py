@@ -3,7 +3,7 @@ from litellm import acompletion
 from openai import OpenAIError
 from tenacity import stop_after_attempt, wait_random_exponential, retry_if_exception_type, retry
 
-from tinyllm.llms.lite_llm import LiteLLM, DEFAULT_CONTEXT_FALLBACK_DICT
+from tinyllm.llms.lite_llm import LiteLLM, DEFAULT_CONTEXT_FALLBACK_DICT, DEFAULT_LLM_MODEL
 from tinyllm.function_stream import FunctionStream
 from tinyllm.tracing.langfuse_context import observation
 from tinyllm.util.helpers import get_openai_message
@@ -24,7 +24,7 @@ class LiteLLMStream(LiteLLM, FunctionStream):
                           'tool_choice': kwargs.get('tool_choice', 'auto')}
 
         response = await acompletion(
-            model=kwargs.get('model', 'gpt-3.5-turbo'),
+            model=kwargs.get('model', DEFAULT_LLM_MODEL),
             temperature=kwargs.get('temperature', 0),
             n=kwargs.get('n', 1),
             max_tokens=kwargs.get('max_tokens', 400),

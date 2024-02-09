@@ -64,7 +64,8 @@ class TestStreamingAgent(AsyncioTestCase):
         # Run the asynchronous test
         query = """Plan then execute this task for me: I need to multiply the population of Morocco by the population of
          Senegal, then square that number by Elon Musk's age"""
-        result = self.loop.run_until_complete(tiny_agent(user_input=query))
+        result = self.loop.run_until_complete(tiny_agent(user_input=query,
+                                                         model='gpt-3.5-turbo')) # Parallel call is not handled yet
         self.assertTrue(result['status'] == 'success')
 
 
