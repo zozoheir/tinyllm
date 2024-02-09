@@ -41,7 +41,6 @@ class TestStreamingAgent(AsyncioTestCase):
 
     def test_fibonacci_code(self):
         tiny_agent = Agent(
-            llm=LiteLLM(),
             toolkit=tinyllm_toolkit(),
             user_id='test_user',
             session_id='test_session',
@@ -56,7 +55,6 @@ class TestStreamingAgent(AsyncioTestCase):
     def test_multi_tool(self):
         tiny_agent = Agent(
             name="Test: Agent multi Tool",
-            llm=LiteLLM(),
             toolkit=tinyllm_toolkit(),
             user_id='test_user',
             session_id='test_session',

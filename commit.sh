@@ -1,5 +1,5 @@
 #!/bin/bash
-export TINYLLM_CONFIG_PATH = '/Users/othmanezoheir/PycharmProjects/openagents/tinyllm/tinyllm/config/config.json'
+export TINYLLM_CONFIG_PATH='/Users/othmanezoheir/PycharmProjects/zoheir-consulting/context-ai-env/tinyllm.yaml'
 PYTHONPATH="$PYTHONPATH:/Users/othmanezoheir/PycharmProjects/personal/smartpy"
 PYTHONPATH="$PYTHONPATH:/Users/othmanezoheir/PycharmProjects/rumorz-io/rumorz-backend"
 PYTHONPATH="$PYTHONPATH:/Users/othmanezoheir/PycharmProjects/rumorz-io/rumorz-env"

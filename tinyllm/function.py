@@ -46,8 +46,6 @@ class Function:
             processed_output_evaluators=[],
             required=True,
             stream=False,
-            fallback_strategies={},
-
     ):
         FunctionInitValidator(
             user_id=user_id,
@@ -89,7 +87,6 @@ class Function:
         self.cache = {}
         self.generation = None
         self.trace = None
-        self.fallback_strategies = fallback_strategies
         self.stream = stream
         self.observation = None
 
@@ -139,8 +136,6 @@ class Function:
         except Exception as e:
             output_message = await self.handle_exception(e)
             # Raise or return error
-            if type(e) in self.fallback_strategies:
-                raise e
             return output_message
 
 

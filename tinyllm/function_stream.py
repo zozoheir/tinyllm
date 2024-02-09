@@ -73,7 +73,4 @@ class FunctionStream(Function):
         except Exception as e:
             output_message = await self.handle_exception(e)
             # Raise or return error
-            if type(e) in self.fallback_strategies:
-                raise e
-            else:
-                yield output_message
+            yield output_message

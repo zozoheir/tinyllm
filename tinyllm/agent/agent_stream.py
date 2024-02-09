@@ -7,6 +7,7 @@ from tinyllm.agent.tool import Toolkit
 
 from tinyllm.examples.example_manager import ExampleManager
 from tinyllm.function_stream import FunctionStream
+from tinyllm.llms.lite_llm_stream import LiteLLMStream
 from tinyllm.llms.llm_store import LLMStore
 from tinyllm.memory.memory import BufferMemory, Memory
 from tinyllm.prompt_manager import PromptManager
@@ -19,7 +20,7 @@ llm_store = LLMStore()
 class AgentStream(FunctionStream):
 
     def __init__(self,
-                 system_role: str,
+                 system_role:  str = 'You are a helpful assistant',
                  example_manager: Optional[ExampleManager] = None,
                  llm: FunctionStream = None,
                  memory: Memory = None,
@@ -39,8 +40,7 @@ class AgentStream(FunctionStream):
             input_validator=AgentInputValidator,
             **kwargs)
         self.system_role = system_role
-        self.llm = llm
-        self.llm = llm or llm_store.default_llm_stream
+        self.llm = llm or LiteLLMStream()
         self.toolkit = toolkit
         self.example_manager = example_manager
         self.prompt_manager = PromptManager(

@@ -6,6 +6,7 @@ from tinyllm.agent.tool import Toolkit
 from tinyllm.function import Function
 
 from tinyllm.examples.example_manager import ExampleManager
+from tinyllm.llms.lite_llm import LiteLLM
 from tinyllm.llms.llm_store import LLMStore
 from tinyllm.memory.memory import Memory, BufferMemory
 from tinyllm.prompt_manager import PromptManager
@@ -35,7 +36,7 @@ llm_store = LLMStore()
 class Agent(Function):
 
     def __init__(self,
-                 system_role: str,
+                 system_role: str = 'You are a helpful assistant',
                  example_manager: Optional[ExampleManager] = None,
                  llm: Function = None,
                  memory: Memory = None,
@@ -54,7 +55,7 @@ class Agent(Function):
             input_validator=AgentInputValidator,
             **kwargs)
         self.system_role = system_role.strip()
-        self.llm = llm or llm_store.default_llm
+        self.llm = llm or LiteLLM()
         self.toolkit = toolkit
         self.example_manager = example_manager
         self.prompt_manager = PromptManager(
