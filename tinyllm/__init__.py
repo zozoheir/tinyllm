@@ -65,9 +65,6 @@ def find_yaml_config(yaml_file_name: str, directories: list) -> dict:
 
 
 # Directories to look for the config file, in order of priority
-tinyllm_config_file_path = os.environ.get('TINYLLM_CONFIG_PATH', '').strip()
-if tinyllm_config_file_path == '':
-    logger.info(f"Tinyllm: no config file path provided")
 
 directories = [
     Path.cwd() if Path.cwd().name != 'tinyllm' else None,
@@ -76,7 +73,9 @@ directories = [
 ]
 
 if langfuse_client is None and tinyllm_config is None:
-    if os_util.isFilePath(tinyllm_config_file_path):
+    tinyllm_config_file_path = os.environ.get('TINYLLM_CONFIG_PATH', None)
+    logger.info(f"Tinyllm: config file path from env: {tinyllm_config_file_path}")
+    if tinyllm_config_file_path is not None and tinyllm_config_file_path != '':
         logger.info(f"Tinyllm: using config file at {tinyllm_config_file_path}")
         set_config(tinyllm_config_file_path)
     else:
