@@ -17,7 +17,7 @@ langfuse_client = None
 
 def load_yaml_config(yaml_file_path: str) -> dict:
     config = None
-    yaml_path = Path(yaml_file_path)
+    yaml_path = Path(yaml_file_path.strip())
     if yaml_path.is_file():
         with open(yaml_path, 'r') as stream:
             try:
