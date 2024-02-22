@@ -1,5 +1,5 @@
 import json
-from typing import Optional
+from typing import Optional, Union
 
 from smartpy.utility.log_util import getLogger
 from tinyllm.agent.tool import Toolkit
@@ -27,7 +27,7 @@ class AgentInitValidator(Validator):
 
 
 class AgentInputValidator(Validator):
-    user_input: str
+    content: Union[str, list]
 
 
 llm_store = LLMStore()
@@ -78,9 +78,10 @@ class Agent(Function):
     async def run(self,
                   **kwargs):
 
-        input_msg = get_openai_message(role='user',
-                                       content=kwargs['user_input'])
-
+        input_msg = get_openai_message(
+            role='user',
+            content=kwargs['content']
+        )
         session_tool_results = []
 
         while True:

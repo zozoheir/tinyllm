@@ -16,6 +16,7 @@ class TestVectorStore(AsyncioTestCase):
 
         # Environment Variables for DB
         self.vector_store = VectorStore(embedding_function=embedding_function)
+        self.vector_store.create_tables()
         self.test_texts = ["Hello, world!", "Hi there!", "How are you?"]
         self.collection_name = 'test_collection'
         self.metadatas = [{"type": "test"}] * len(self.test_texts)

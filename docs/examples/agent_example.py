@@ -72,7 +72,7 @@ async def run_agent():
                            AnswerCorrectnessEvaluator(),
                        ])
 
-    result = await tiny_agent(user_input="What is the user's birthday?")
+    result = await tiny_agent(content="What is the user's birthday?")
     print(result)
 
 result = loop.run_until_complete(run_agent())

@@ -52,11 +52,12 @@ class AgentStream(FunctionStream):
         self.tool_retries = tool_retries
 
     async def run(self,
-                  user_input,
                   **kwargs):
 
-        input_msg = get_openai_message(role='user',
-                                       content=user_input)
+        input_msg = get_openai_message(
+            role='user',
+            content=kwargs['content']
+        )
 
         while True:
             kwargs = await self.prompt_manager.prepare_llm_request(message=input_msg,

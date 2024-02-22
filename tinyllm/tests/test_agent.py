@@ -24,7 +24,7 @@ class AnswerCorrectnessEvaluator(Evaluator):
 
 # Define the test class
 
-class TestStreamingAgent(AsyncioTestCase):
+class TestAgent(AsyncioTestCase):
 
     def test_wiki_tool(self):
         tiny_agent = Agent(
@@ -35,7 +35,7 @@ class TestStreamingAgent(AsyncioTestCase):
             session_id='test_session',
         )
         # Run the asynchronous test
-        result = self.loop.run_until_complete(tiny_agent(user_input="What does wiki say about Morocco"))
+        result = self.loop.run_until_complete(tiny_agent(content="What does wiki say about Morocco"))
         self.assertTrue(result['status'] == 'success')
 
 
@@ -46,7 +46,7 @@ class TestStreamingAgent(AsyncioTestCase):
             session_id='test_session',
         )
         # Run the asynchronous test
-        result = self.loop.run_until_complete(tiny_agent(user_input="Use python to give me the 5th fibonacci number"))
+        result = self.loop.run_until_complete(tiny_agent(content="Use python to give me the 5th fibonacci number"))
         self.assertTrue(result['status'] == 'success')
         if result['status'] == 'success':
             msg_content = result['output']['response']['choices'][0]['message']['content']
@@ -54,16 +54,14 @@ class TestStreamingAgent(AsyncioTestCase):
 
     def test_multi_tool(self):
         tiny_agent = Agent(
-            name="Test: Agent multi Tool",
+            name="Test: Agent Multi Tool",
             toolkit=tinyllm_toolkit(),
-            user_id='test_user',
-            session_id='test_session',
         )
         # Run the asynchronous test
         query = """Plan then execute this task for me: I need to multiply the population of Morocco by the population of
          Senegal, then square that number by Elon Musk's age"""
-        result = self.loop.run_until_complete(tiny_agent(user_input=query,
-                                                         model='gpt-3.5-turbo')) # Parallel call is not handled yet
+        result = self.loop.run_until_complete(tiny_agent(content=query,
+                                                         model='gpt-4')) # Parallel call is not handled yet
         self.assertTrue(result['status'] == 'success')
 
 

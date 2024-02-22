@@ -7,13 +7,8 @@ from tinyllm.agent.tool.tool import Tool
 
 
 def code_interpreter(code: str):
-    """
-    A function to execute python code, and return the stdout and stderr.
-    This version modifies the code to ensure the last expression's output is printed.
-    """
     modified_code = modify_code_to_print_last_expression(code)
     result = run_code(modified_code)
-
     if result.stdout == b'' and result.stderr == b'':
         return "The code did not return anything. Did you forget to print?"
 

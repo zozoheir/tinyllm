@@ -7,6 +7,7 @@ from tinyllm.agent.tool import Toolkit, tinyllm_toolkit
 from tinyllm.eval.evaluator import Evaluator
 from tinyllm.llms.llm_store import LLMStore, LLMs
 from tinyllm.memory.memory import BufferMemory
+from tinyllm.util.helpers import get_openai_message
 
 
 class AnswerCorrectnessEvaluator(Evaluator):
@@ -74,7 +75,7 @@ class TestStreamingAgent(AsyncioTestCase):
 
         async def async_test():
             msgs = []
-            async for message in tiny_agent(user_input="What is the 5th Fibonacci number?"):
+            async for message in tiny_agent(content="What is the 5th Fibonacci number?"):
                 msgs.append(message)
             return msgs
 

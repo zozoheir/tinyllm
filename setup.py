@@ -6,6 +6,7 @@ setup(name='tinyllm',
       packages=find_packages(),
       install_requires=[
           'astor',
+          'asyncpg',
           'click',
           'tenacity',
           'langfuse',

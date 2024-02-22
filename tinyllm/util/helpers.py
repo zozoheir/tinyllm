@@ -53,13 +53,13 @@ def get_assistant_message(content):
             'content': content}
 
 def get_openai_message(role,
-                       content,
+                       content: Union[List, str],
                        **kwargs):
     if role not in ['user', 'system', 'function','tool', 'assistant']:
         raise ValueError(f"Invalid role {role}.")
 
     msg = {'role': role,
-           'content': str(content)}
+           'content': content}
     msg.update(kwargs)
     return msg
 

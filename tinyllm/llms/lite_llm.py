@@ -90,9 +90,10 @@ class LiteLLM(Function):
             model=kwargs.get('model', DEFAULT_LLM_MODEL),
             temperature=kwargs.get('temperature', 0),
             n=kwargs.get('n', 1),
-            max_tokens=kwargs.get('max_tokens', 400),
+            max_tokens=kwargs.get('max_tokens', 600),
             context_window_fallback_dict=kwargs.get('context_window_fallback_dict',
                                                     DEFAULT_CONTEXT_FALLBACK_DICT),
+            response_format=kwargs.get('response_format', None),
             **tools_args
             )
 

@@ -75,7 +75,7 @@ async def run_agent_stream():
                              ])
 
     msgs = []
-    async for message in tiny_agent(user_input="What is the user's birthday?"):
+    async for message in tiny_agent(content="What is the user's birthday?"):
         msgs.append(message)
     return msgs
 
