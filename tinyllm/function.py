@@ -1,10 +1,6 @@
-import datetime as dt
-import logging
 import traceback
-import uuid
 from typing import Any, Optional, Type, Union
 
-from smartpy.utility.log_util import getLogger
 from tinyllm.exceptions import InvalidStateTransition
 from tinyllm import langfuse_client, tinyllm_config, tinyllm_logger
 from tinyllm.state import States, ALLOWED_TRANSITIONS
@@ -154,16 +150,17 @@ class Function:
                 self, f"Invalid state transition from {self.state.name} to {new_state.name}"
             )
         log_level = "error" if new_state == States.FAILED else "info"
-        if log_level == 'error':
-            self.log(
-                f"transition from {self.state.name} to: {new_state.name}" + (f" ({msg})" if msg is not None else ""),
-                level=log_level,
-            )
-        else:
-            self.log(
-                f"transition to: {new_state.name}" + (f" ({msg})" if msg is not None else ""),
-                level=log_level,
-            )
+        if new_state.name in tinyllm_config['LOGS']['LOG_STATES']:
+            if log_level == 'error':
+                self.log(
+                    f"transition from {self.state.name} to: {new_state.name}" + (f" ({msg})" if msg is not None else ""),
+                    level=log_level,
+                )
+            else:
+                self.log(
+                    f"transition to: {new_state.name}" + (f" ({msg})" if msg is not None else ""),
+                    level=log_level,
+                )
 
         self.state = new_state
 

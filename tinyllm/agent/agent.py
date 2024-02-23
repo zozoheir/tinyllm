@@ -1,7 +1,6 @@
 import json
 from typing import Optional, Union
 
-from smartpy.utility.log_util import getLogger
 from tinyllm.agent.tool import Toolkit
 from tinyllm.function import Function
 

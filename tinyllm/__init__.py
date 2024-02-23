@@ -5,15 +5,18 @@ from pathlib import Path
 
 from langfuse import Langfuse
 
+import logging
+from logging import StreamHandler, Formatter
+from pathlib import Path
 
 tinyllm_logger = logging.getLogger('tinyllm')
-tinyllm_logger.setLevel(logging.DEBUG)  # Set the logging level you desire (DEBUG, INFO, WARNING, ERROR, CRITICAL)
-formatter = logging.Formatter('%(levelname)s | %(name)s | %(asctime)s : %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
-ch = logging.StreamHandler()
+tinyllm_logger.propagate = False
+tinyllm_logger.setLevel(logging.DEBUG)
+formatter = Formatter('%(levelname)s | %(name)s | %(asctime)s : %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+ch = StreamHandler()
 ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 tinyllm_logger.addHandler(ch)
-
 
 
 

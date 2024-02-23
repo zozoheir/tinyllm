@@ -1,7 +1,6 @@
 import json
 from typing import Optional
 
-from smartpy.utility.log_util import getLogger
 from tinyllm.agent.agent import AgentInitValidator, AgentInputValidator
 from tinyllm.agent.tool import Toolkit
 
