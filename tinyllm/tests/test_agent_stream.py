@@ -5,7 +5,6 @@ from tinyllm.tests.base import AsyncioTestCase
 from tinyllm.agent.agent_stream import AgentStream
 from tinyllm.agent.tool import Toolkit, tinyllm_toolkit
 from tinyllm.eval.evaluator import Evaluator
-from tinyllm.llms.llm_store import LLMStore, LLMs
 from tinyllm.memory.memory import BufferMemory
 from tinyllm.util.helpers import get_openai_message
 
@@ -53,7 +52,6 @@ toolkit = Toolkit(
     tools=tools
 )
 
-llm_store = LLMStore()
 
 
 # Define the test class

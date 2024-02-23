@@ -8,13 +8,11 @@ from tinyllm.agent.tool import Toolkit
 from tinyllm.examples.example_manager import ExampleManager
 from tinyllm.function_stream import FunctionStream
 from tinyllm.llms.lite_llm_stream import LiteLLMStream
-from tinyllm.llms.llm_store import LLMStore
 from tinyllm.memory.memory import BufferMemory, Memory
 from tinyllm.prompt_manager import PromptManager
 from tinyllm.util.helpers import get_openai_message
 
 logger = getLogger(__name__)
-llm_store = LLMStore()
 
 
 class AgentStream(FunctionStream):

@@ -7,10 +7,9 @@ https://us.cloud.langfuse.com/project/cloz2bp020000l008kg9ujywd/traces/39a332ed-
 import asyncio
 
 from tinyllm.agent.agent_stream import AgentStream
-from tinyllm.agent.tools.tool import Tool
 from tinyllm.agent.tool import Toolkit
+from tinyllm.agent.tool.tool import Tool
 from tinyllm.eval.evaluator import Evaluator
-from tinyllm.llms.llm_store import LLMStore, LLMs
 
 loop = asyncio.get_event_loop()
 
@@ -56,16 +55,11 @@ toolkit = Toolkit(
     tools=tools
 )
 
-llm_store = LLMStore()
 
 async def run_agent_stream():
 
-    llm_stream = llm_store.get_llm(
-        llm_library=LLMs.LITE_LLM_STREAM,
-    )
 
     tiny_agent = AgentStream(system_role="You are a helpful agent that can answer questions about the user's profile using available tools.",
-                             llm=llm_stream,
                              toolkit=toolkit,
                              run_evaluators=[
                                  AnswerCorrectnessEvaluator(

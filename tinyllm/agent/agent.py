@@ -7,7 +7,6 @@ from tinyllm.function import Function
 
 from tinyllm.examples.example_manager import ExampleManager
 from tinyllm.llms.lite_llm import LiteLLM
-from tinyllm.llms.llm_store import LLMStore
 from tinyllm.memory.memory import Memory, BufferMemory
 from tinyllm.prompt_manager import PromptManager
 from tinyllm.util.helpers import get_openai_message
@@ -29,8 +28,6 @@ class AgentInitValidator(Validator):
 class AgentInputValidator(Validator):
     content: Union[str, list]
 
-
-llm_store = LLMStore()
 
 
 class Agent(Function):

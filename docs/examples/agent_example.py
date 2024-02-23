@@ -10,7 +10,7 @@ from tinyllm.agent.agent import Agent
 from tinyllm.agent.tools.tool import Tool
 from tinyllm.agent.tool import Toolkit
 from tinyllm.eval.evaluator import Evaluator
-from tinyllm.llms.llm_store import LLMStore, LLMs
+from tinyllm.llms.llm_store import LLMs
 from tinyllm.memory.memory import BufferMemory
 
 loop = asyncio.get_event_loop()
@@ -58,14 +58,9 @@ toolkit = Toolkit(
     name='Toolkit',
     tools=tools,
 )
-llm_store = LLMStore()
 
 async def run_agent():
-    llm = llm_store.get_llm(
-        llm_library=LLMs.LITE_LLM,
-    )
     tiny_agent = Agent(system_role="You are a helpful agent that can answer questions about the user's profile using available tools.",
-                       llm=llm,
                        toolkit=toolkit,
                        memory=BufferMemory(),
                        run_evaluators=[
