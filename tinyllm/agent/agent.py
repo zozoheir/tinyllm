@@ -12,8 +12,6 @@ from tinyllm.prompt_manager import PromptManager
 from tinyllm.util.helpers import get_openai_message
 from tinyllm.validator import Validator
 
-logger = getLogger(__name__)
-
 
 class AgentInitValidator(Validator):
     system_role: str

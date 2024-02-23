@@ -1,24 +1,15 @@
 import datetime as dt
+import logging
 import traceback
 import uuid
 from typing import Any, Optional, Type, Union
 
 from smartpy.utility.log_util import getLogger
 from tinyllm.exceptions import InvalidStateTransition
-from tinyllm import langfuse_client, tinyllm_config
+from tinyllm import langfuse_client, tinyllm_config, tinyllm_logger
 from tinyllm.state import States, ALLOWED_TRANSITIONS
 from tinyllm.tracing.langfuse_context import observation
 from tinyllm.validator import Validator
-from tinyllm.util.fallback_strategy import fallback_decorator
-
-
-def pretty_print(value):
-    if isinstance(value, dict):
-        return {key: pretty_print(val) for key, val in value.items()}
-    elif isinstance(value, list):
-        return [pretty_print(val) for val in value]
-    else:
-        return value
 
 
 class FunctionInitValidator(Validator):
@@ -66,7 +57,6 @@ class Function:
             self.name = self.__class__.__name__
         else:
             self.name = name
-        self.logger = getLogger(self.name)
 
         self.input_validator = input_validator
         self.output_validator = output_validator
@@ -91,7 +81,6 @@ class Function:
         self.observation = None
 
     @observation('span')
-    @fallback_decorator
     async def __call__(self, **kwargs):
         try:
             # Validate input
@@ -188,9 +177,9 @@ class Function:
     def log(self, message, level="info"):
         if tinyllm_config['LOGS']['LOGGING']:
             if level == "error":
-                self.logger.error(self.log_prefix+' '+message)
+                tinyllm_logger.error(self.log_prefix+' '+message)
             else:
-                self.logger.info(self.log_prefix+' '+message)
+                tinyllm_logger.info(self.log_prefix+' '+message)
 
     def validate_input(self, **kwargs):
         return self.input_validator(**kwargs).dict()

@@ -108,7 +108,6 @@ class ObservationDecoratorFactory:
         return decorator
 
 
-# Decorator utility function for easy use
 def observation(observation_type='span', input_mapping=None, output_mapping=None, evaluators=None, stream=False):
     input_mapping, output_mapping = ObservationUtil.conditional_args(observation_type,
                                                                      input_mapping,

@@ -12,7 +12,6 @@ from tinyllm.memory.memory import BufferMemory, Memory
 from tinyllm.prompt_manager import PromptManager
 from tinyllm.util.helpers import get_openai_message
 
-logger = getLogger(__name__)
 
 
 class AgentStream(FunctionStream):

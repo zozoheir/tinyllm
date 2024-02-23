@@ -1,13 +1,21 @@
 import yaml
 import os
+import logging
+from pathlib import Path
 
-from pathlib import Path, PosixPath
-
-from smartpy.utility import os_util
-from smartpy.utility.log_util import getLogger
 from langfuse import Langfuse
 
-logger = getLogger(__name__)
+
+tinyllm_logger = logging.getLogger('tinyllm')
+tinyllm_logger.setLevel(logging.DEBUG)  # Set the logging level you desire (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+formatter = logging.Formatter('%(levelname)s | %(name)s | %(asctime)s : %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+ch.setFormatter(formatter)
+tinyllm_logger.addHandler(ch)
+
+
+
 
 global tinyllm_config
 global langfuse_client
@@ -23,10 +31,10 @@ def load_yaml_config(yaml_file_path: str) -> dict:
             try:
                 config = yaml.safe_load(stream)
             except yaml.YAMLError as exc:
-                logger.error(f"Error loading YAML file: {exc}")
+                tinyllm_logger.error(f"Error loading YAML file: {exc}")
                 raise exc
     else:
-        logger.error(f"Config file not found at {yaml_path}")
+        tinyllm_logger.error(f"Config file not found at {yaml_path}")
         raise FileNotFoundError(f"No config file at {yaml_path}")
     return config
 
@@ -60,7 +68,7 @@ def find_yaml_config(yaml_file_name: str, directories: list) -> dict:
             continue
         yaml_path = Path(directory) / yaml_file_name
         if yaml_path.is_file():
-            logger.info(f"Tinyllm: config found at {yaml_path}")
+            tinyllm_logger.info(f"Tinyllm: config found at {yaml_path}")
             return yaml_path
 
 
@@ -74,12 +82,12 @@ directories = [
 
 if langfuse_client is None and tinyllm_config is None:
     tinyllm_config_file_path = os.environ.get('TINYLLM_CONFIG_PATH', None)
-    logger.info(f"Tinyllm: config file path from env: {tinyllm_config_file_path}")
+    tinyllm_logger.info(f"Tinyllm: config file path from env: {tinyllm_config_file_path}")
     if tinyllm_config_file_path is not None and tinyllm_config_file_path != '':
-        logger.info(f"Tinyllm: using config file at {tinyllm_config_file_path}")
+        tinyllm_logger.info(f"Tinyllm: using config file at {tinyllm_config_file_path}")
         set_config(tinyllm_config_file_path)
     else:
-        logger.info(f"Tinyllm: no config file path provided, searching for config file")
+        tinyllm_logger.info(f"Tinyllm: no config file path provided, searching for config file")
         found_config_path = find_yaml_config('tinyllm.yaml', directories)
         if found_config_path is None:
             raise FileNotFoundError(f"Please provide a config file for tinyllm")
