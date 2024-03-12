@@ -27,7 +27,7 @@ class PromptManager:
         self.is_time_aware = is_time_aware
 
     async def format_messages(self, message):
-        system_content = self.system_role if self.is_time_aware is False else self.system_role+'\n\n\n<Current time: '+str(dt.datetime.utcnow()).split('.')[0]
+        system_content = self.system_role if self.is_time_aware is False else self.system_role+'\n\n\n<Current time: '+str(dt.datetime.utcnow()).split('.')[0]+'>'
         system_role = get_openai_message(role='system',
                                          content=system_content)
         memories = [] if self.memory is None else await self.memory.get_memories()
