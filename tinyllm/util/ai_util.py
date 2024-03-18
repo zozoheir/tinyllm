@@ -8,10 +8,10 @@ def get_cosine_similarity(a, b):
     b = np.array(b)
     return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
 
-def get_top_n_similar_vectors_index(input_vector, vectors, k=5):
+def get_top_n_similar_vectors_index(input_vector, vectors, k=5, similarity_threshold=0.5):
     similarities = [get_cosine_similarity(input_vector, vector) for vector in vectors]
     top_similarities_indices = np.argsort(similarities)[-k:][::-1]
-    return [int(index) for index in top_similarities_indices]
+    return [int(index) for index in top_similarities_indices if similarities[index] > similarity_threshold]
 
 def get_openai_embedding(text, model="text-embedding-ada-002"):
     embedding = openai.Embedding.create(input=[text], model=model)['data'][0]['embedding']

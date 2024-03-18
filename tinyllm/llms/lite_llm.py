@@ -1,7 +1,7 @@
 from typing import Optional, Any
 
 import openai
-from litellm import  acompletion
+from litellm import acompletion
 from openai import OpenAIError
 from tenacity import retry, stop_after_attempt, wait_random_exponential, retry_if_exception_type
 
@@ -15,10 +15,12 @@ DEFAULT_CONTEXT_FALLBACK_DICT = {
     "gpt-3.5-turbo-0125": "gpt-3.5-turbo-1106",
     "gpt-4-1106-preview": "gpt-4-1106-preview",
     "gpt-3.5-turbo": "gpt-3.5-turbo-16k",
-    "gpt-3.5-turbo-1106":"gpt-3.5-turbo-16k",
+    "gpt-3.5-turbo-1106": "gpt-3.5-turbo-16k",
     "anyscale/Open-Orca/Mistral-7B-OpenOrca": "gpt-3.5-turbo-16k",
     "anyscale/meta-llama/Llama-2-70b-chat-hf": "gpt-3.5-turbo-16k",
+    "azure/gpt-35-turbo": "azure/gpt-35-turbo-16k",
 }
+
 LLM_TOKEN_LIMITS = {
     "gpt-3.5-turbo-1106": 16385,
     "gpt-3.5-turbo": 4096,
@@ -42,6 +44,9 @@ LLM_TOKEN_LIMITS = {
     "gpt-4-32k-0314": 32768,
     "anyscale/Open-Orca/Mistral-7B-OpenOrca": 8192,
     "anyscale/meta-llama/Llama-2-70b-chat-hf": 4096,
+    "azure/gpt-35-turbo": 4096,
+    "azure/gpt-35-turbo-16k": 16385,
+
 }
 
 
@@ -97,10 +102,7 @@ class LiteLLM(Function):
                                                     DEFAULT_CONTEXT_FALLBACK_DICT),
             response_format=kwargs.get('response_format', None),
             **tools_args
-            )
-
-
-
+        )
 
         model_dump = api_result.model_dump()
         msg_type = 'tool' if model_dump['choices'][0]['finish_reason'] == 'tool_calls' else 'completion'

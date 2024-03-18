@@ -126,7 +126,7 @@ class Function:
 
     async def handle_exception(self,
                                e):
-        detailed_error_msg = str(traceback.format_exception(e))
+        detailed_error_msg = str(traceback.format_exception_only(e))
         self.transition(States.FAILED, msg=detailed_error_msg)
         self.log(detailed_error_msg, level="error")
         langfuse_client.flush()

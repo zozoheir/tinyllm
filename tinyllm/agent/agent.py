@@ -26,7 +26,6 @@ class AgentInputValidator(Validator):
     content: Union[str, list]
 
 
-
 class Agent(Function):
 
     def __init__(self,

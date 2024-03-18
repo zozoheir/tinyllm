@@ -1,0 +1,45 @@
+from pydantic import BaseModel
+
+from tinyllm.llms.tiny_function import tiny_function
+from tinyllm.tests.base import AsyncioTestCase
+
+# Mock response to simulate Agent's response
+mock_success_response = {
+    "status": "success",
+    "output": {
+        "response": {
+            "choices": [{
+                "message": {
+                    "content": "```json\n{\"name\": \"Elon\", \"age\": 50, \"occupation\": \"CEO\"}\n```"
+                }
+            }]
+        }
+    }
+}
+
+mock_fail_response = {"status": "error", "response": {"message": "Failed to process request"}}
+
+
+
+class TestTinyFunctionDecorator(AsyncioTestCase):
+
+    def test_tiny_function_success(self):
+        class CharacterInfo(BaseModel):
+            name: str = 'John'
+            age: int = 30
+            occupation: str = 'Fisherman'
+
+        @tiny_function(output_model=CharacterInfo)
+        async def get_character_info(content: str):
+            """Extract character information from the content"""
+            pass
+
+        # Test the decorated function
+        content = "Elon Musk is a 50 years old CEO"
+        result = self.loop.run_until_complete(get_character_info(content=content))
+
+        # Assertions
+        self.assertIsInstance(result, CharacterInfo)
+        self.assertTrue("Elon" in result.name)
+        self.assertTrue(result.age, 50)
+        self.assertTrue("CEO" in result.occupation)
