@@ -3,26 +3,85 @@ import functools
 import json
 from textwrap import dedent
 
-from pydantic import BaseModel
-from typing import Type
+from pydantic import BaseModel, create_model
+from typing import Type, Dict, Any
 
 
-def model_to_code(model) -> str:
+def model_to_string(model) -> str:
     fields = model.__fields__
     field_defs = []
     for field_name, field in fields.items():
-        field_type = field.annotation
+        field_type = field.annotation.__name__
+        description = getattr(field, 'description', None)
+        description = f" | Description: {field.description}" if description else ""
         field_defs.append(
-            f"    {field_name}: {field_type}" + f" - Desc: {field.description}" if field.description else "")
-    model_code = "Model:\n" + "\n".join(field_defs)
-    return model_code
+            f"    {field_name}: {field_type}" + description)
+    model_prompt = "Model:\n" + "\n".join(field_defs) if field_defs else ""
+    return model_prompt
 
 
 class MissingBlockException(Exception):
     pass
 
 
-def tiny_function(output_model: Type[BaseModel], example_output: dict = 'your extracted output here'):
+def create_pydantic_model_from_dict(data: Dict[str, Any]) -> BaseModel:
+    fields = {key: (type(value), ...) for key, value in data.items()}
+    JSONOutput = create_model('JSONOutput', **fields)
+    model_instance = JSONOutput(**data)
+
+    return model_instance
+
+
+def model_to_string(model) -> str:
+    fields = model.__fields__
+    field_defs = []
+    for field_name, field in fields.items():
+        field_type = field.annotation.__name__
+        description = getattr(field, 'description', None)
+        description = f" | Description: {field.description}" if description else ""
+        field_defs.append(
+            f"    {field_name}: {field_type}" + description)
+    model_prompt = "Model:\n" + "\n".join(field_defs) if field_defs else ""
+    return model_prompt
+
+
+def get_function_prompt(func,
+                        example_output,
+                        output_model) -> str:
+
+    system_prompt = func.__doc__.strip() + '\n\n' + dedent("""
+    OUTPUT FORMAT
+    Your output must be in JSON
+
+    {data_model}
+
+    {example}
+
+    You must respect all the requirements above.
+    """)
+
+    example_output_prompt = dedent(f"""
+    EXAMPLE
+    Here is an example of the expected output:
+    {json.dumps(example_output)}
+    """) if example_output else ""
+
+    pydantic_model = model_to_string(output_model) if output_model else None
+
+    data_model_prompt = dedent(f"""
+    DATA MODEL
+    Your output must respect the following pydantic model:
+    {pydantic_model}
+    """) if pydantic_model else ""
+
+    final_prompt = system_prompt.format(pydantic_model=pydantic_model,
+                                        example=example_output_prompt,
+                                        data_model=data_model_prompt)
+    return final_prompt
+
+
+def tiny_function(output_model: Type[BaseModel] = None,
+                  example_output=None):
     def decorator(func):
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
@@ -33,23 +92,9 @@ def tiny_function(output_model: Type[BaseModel], example_output: dict = 'your ex
                     "message": "Input content must be a string"
                 }
 
-            # Extract system_role from the docstring of the decorated function
-            model_code = model_to_code(output_model)
-            system_role = func.__doc__.strip()
-            system_role = system_role + "\n" + dedent(f"""
-DATA MODEL
-Your output must respect the following pydantic model:
-{model_code}
-
-OUTPUT FORMAT
-Your output must be in JSON
-
-EXAMPLE
-Here is an example of the expected output:
-{json.dumps(example_output)}
-
-You must respect all the requirements above.
-""")
+            system_role = get_function_prompt(func=func,
+                                              output_model=output_model,
+                                              example_output=example_output)
 
             # Prepare the agent with necessary parameters
             from tinyllm.agent.agent import Agent
@@ -74,9 +119,13 @@ You must respect all the requirements above.
                 msg_content = result['output']['response']['choices'][0]['message']['content']
                 try:
                     parsed_output = json.loads(msg_content)
+                    if output_model is None:
+                        function_output_model = create_pydantic_model_from_dict(parsed_output)
+                    else:
+                        function_output_model = output_model(**parsed_output)
                     return {
                         'status': 'success',
-                        'output': output_model(**parsed_output)
+                        'output': function_output_model
                     }
                 except (ValueError, json.JSONDecodeError) as e:
                     return {"message": "Parsing error", "details": str(e),

@@ -25,9 +25,9 @@ class TestTinyFunctionDecorator(AsyncioTestCase):
 
     def test_tiny_function_success(self):
         class CharacterInfo(BaseModel):
-            name: str = 'John'
-            age: int = 30
-            occupation: str = 'Fisherman'
+            name: str
+            age: int
+            occupation: str
 
         @tiny_function(output_model=CharacterInfo)
         async def get_character_info(content: str):
@@ -39,7 +39,20 @@ class TestTinyFunctionDecorator(AsyncioTestCase):
         result = self.loop.run_until_complete(get_character_info(content=content))
 
         # Assertions
-        self.assertIsInstance(result, CharacterInfo)
-        self.assertTrue("Elon" in result.name)
-        self.assertTrue(result.age, 50)
-        self.assertTrue("CEO" in result.occupation)
+        self.assertIsInstance(result['output'], CharacterInfo)
+        self.assertTrue("Elon" in result['output'].name)
+        self.assertTrue(result['output'].age, 50)
+        self.assertTrue("CEO" in result['output'].occupation)
+
+
+    def test_no_model(self):
+        @tiny_function()
+        async def get_character_info(content: str):
+            """Extract character information from the content"""
+            pass
+
+        # Test the decorated function
+        content = "Elon Musk is a 50 years old CEO"
+        result = self.loop.run_until_complete(get_character_info(content=content))
+        self.assertEqual(result['status'], 'success')
+

@@ -8,13 +8,14 @@ class DocumentTypes(Enum):
     TEXT = 'text'
     DICTIONARY = 'dictionary'
     TABLE = 'table'
+    IMAGE = 'image'
 
 
 class Document:
 
     def __init__(self,
-                 content,
-                 metadata: dict,
+                 content=None,
+                 metadata: dict = {},
                  type=DocumentTypes.TEXT,
                  header='[doc]',
                  include_keys=['content']):
@@ -29,7 +30,6 @@ class Document:
         content = self.to_string()
         return count_tokens(content)
 
-
     def to_dict(self):
         if self.type == DocumentTypes.TEXT:
             metacopy = self.metadata.copy()
@@ -37,7 +37,6 @@ class Document:
             return metacopy
         elif self.type == DocumentTypes.DICTIONARY:
             return self.content
-
 
     def to_string(self):
         if self.type == DocumentTypes.TEXT:
