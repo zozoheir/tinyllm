@@ -8,7 +8,26 @@ from tenacity import retry, stop_after_attempt, wait_random_exponential, retry_i
 from tinyllm.function import Function
 from tinyllm.tracing.langfuse_context import observation
 from tinyllm.util.helpers import *
+from tinyllm.util.message import Content, Message
 from tinyllm.validator import Validator
+
+model_parameters = [
+    "messages",
+    "model",
+    "frequency_penalty",
+    "logit_bias",
+    "logprobs",
+    "top_logprobs",
+    "max_tokens",
+    "n",
+    "presence_penalty",
+    "response_format",
+    "seed",
+    "stop",
+    "stream",
+    "temperature",
+    "top_p"
+]
 
 DEFAULT_LLM_MODEL = 'gpt-3.5-turbo'
 DEFAULT_CONTEXT_FALLBACK_DICT = {
@@ -56,12 +75,12 @@ class LiteLLMChatInitValidator(Validator):
 
 
 class LiteLLMChatInputValidator(Validator):
-    messages: List[Dict]
+    messages: List[Union[Dict, Message]]
     model: Optional[str] = 'gpt-3.5-turbo'
     temperature: Optional[float] = 0
     max_tokens: Optional[int] = 400
     n: Optional[int] = 1
-    stream: Optional[bool] = True
+    stream: Optional[bool] = False
     context_window_fallback_dict: Optional[Dict] = DEFAULT_CONTEXT_FALLBACK_DICT
 
 
@@ -77,6 +96,20 @@ class LiteLLM(Function):
                          **kwargs)
         self.generation = None
 
+    def _validate_tool_args(self, **kwargs):
+        tools_args = {}
+        if kwargs.get('tools', None) is not None:
+            tools_args = {
+                'tools': kwargs['tools'],
+                'tool_choice': kwargs.get('tool_choice', 'auto')
+            }
+        return tools_args
+
+    def _parse_mesages(self, messages):
+        if isinstance(messages[0], Message):
+            messages = [message.dict() for message in messages]
+        return messages
+
     @observation(observation_type='generation', input_mapping={'input': 'messages'},
                  output_mapping={'output': 'response'})
     @retry(
@@ -85,23 +118,12 @@ class LiteLLM(Function):
         retry=retry_if_exception_type((OpenAIError, openai.InternalServerError))
     )
     async def run(self, **kwargs):
-        tools_args = {}
-        if kwargs.get('tools', None) is not None:
-            tools_args = {
-                'tools': kwargs['tools'],
-                'tool_choice': kwargs.get('tool_choice', 'auto')
-            }
-
+        kwargs['messages'] = self._parse_mesages(kwargs['messages'])
+        tools_args = self._validate_tool_args(**kwargs)
+        completion_args = {arg: kwargs[arg] for arg in kwargs if arg in model_parameters}
+        completion_args.update(tools_args)
         api_result = await acompletion(
-            messages=kwargs['messages'],
-            model=kwargs.get('model', DEFAULT_LLM_MODEL),
-            temperature=kwargs.get('temperature', 0),
-            n=kwargs.get('n', 1),
-            max_tokens=kwargs.get('max_tokens', 600),
-            context_window_fallback_dict=kwargs.get('context_window_fallback_dict',
-                                                    DEFAULT_CONTEXT_FALLBACK_DICT),
-            response_format=kwargs.get('response_format', None),
-            **tools_args
+            **completion_args,
         )
 
         model_dump = api_result.model_dump()

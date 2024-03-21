@@ -83,10 +83,10 @@ class Function:
             self.input = kwargs
             self.transition(States.INPUT_VALIDATION)
             validated_input = self.validate_input(**kwargs)
-
+            kwargs.update(validated_input)
             # Run
             self.transition(States.RUNNING)
-            self.output = await self.run(**validated_input)
+            self.output = await self.run(**kwargs)
 
             # Validate output
             self.transition(States.OUTPUT_VALIDATION)
@@ -104,7 +104,8 @@ class Function:
             self.transition(States.PROCESSED_OUTPUT_VALIDATION)
 
             if self.processed_output_validator:
-                self.validate_processed_output(**self.processed_output)
+                validated_processed_output = self.validate_processed_output(**self.processed_output)
+                self.processed_output.update(validated_processed_output)
 
             # Evaluate processed output
             for evaluator in self.processed_output_evaluators:
@@ -126,9 +127,8 @@ class Function:
 
     async def handle_exception(self,
                                e):
-        detailed_error_msg = str(traceback.format_exception_only(e))
+        detailed_error_msg = traceback.format_exc()
         self.transition(States.FAILED, msg=detailed_error_msg)
-        self.log(detailed_error_msg, level="error")
         langfuse_client.flush()
         output_message = {"status": "error",
                           "message": detailed_error_msg}

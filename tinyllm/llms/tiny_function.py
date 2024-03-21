@@ -4,7 +4,10 @@ import json
 from textwrap import dedent
 
 from pydantic import BaseModel, create_model
-from typing import Type, Dict, Any
+from typing import Type, Dict, Any, Union, List
+
+from tinyllm.util.message import Content
+from tinyllm.validator import Validator
 
 
 def model_to_string(model) -> str:
@@ -48,7 +51,6 @@ def model_to_string(model) -> str:
 def get_function_prompt(func,
                         example_output,
                         output_model) -> str:
-
     system_prompt = func.__doc__.strip() + '\n\n' + dedent("""
     OUTPUT FORMAT
     Your output must be in JSON
@@ -80,17 +82,16 @@ def get_function_prompt(func,
     return final_prompt
 
 
+class TinyFunctionInputValidator(Validator):
+    content: Union[str, List[Content]]
+
+
 def tiny_function(output_model: Type[BaseModel] = None,
                   example_output=None):
     def decorator(func):
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
-            # Validate that input is provided as a string
-            if not isinstance(kwargs.get('content', ''), str):
-                return {
-                    'status': 'error',
-                    "message": "Input content must be a string"
-                }
+            TinyFunctionInputValidator(**kwargs)
 
             system_role = get_function_prompt(func=func,
                                               output_model=output_model,
@@ -110,11 +111,8 @@ def tiny_function(output_model: Type[BaseModel] = None,
                 llm=LiteLLM(),
                 # example_manager=ExampleManager(constant_examples=)
             )
-
-            loop = asyncio.get_event_loop()
-
-            result = loop.run_until_complete(agent(content=kwargs['content'],
-                                                   resopnse_format={"type": "json_object"}))
+            result = await agent(content=kwargs['content'],
+                                 response_format={"type": "json_object"})
             if result['status'] == 'success':
                 msg_content = result['output']['response']['choices'][0]['message']['content']
                 try:

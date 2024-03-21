@@ -2,6 +2,7 @@ from pydantic import BaseModel
 
 from tinyllm.llms.tiny_function import tiny_function
 from tinyllm.tests.base import AsyncioTestCase
+from tinyllm.util.message import Text
 
 # Mock response to simulate Agent's response
 mock_success_response = {

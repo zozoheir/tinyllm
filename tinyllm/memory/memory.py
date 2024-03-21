@@ -1,15 +1,19 @@
 from abc import abstractmethod
+from typing import Union
 
 from tinyllm.function import Function
 from tinyllm.util.helpers import count_tokens
+from tinyllm.util.message import Message
 from tinyllm.validator import Validator
 
 
 class MemoryOutputValidator(Validator):
     memories: list
 
+
 class MemoryInputValidator(Validator):
-    message: dict
+    message: Message
+
 
 class Memory(Function):
     def __init__(self,
@@ -40,6 +44,7 @@ class Memory(Function):
 class BufferMemoryInitValidator(Validator):
     buffer_size: int
 
+
 class BufferMemory(Memory):
 
     def __init__(self,
@@ -51,12 +56,13 @@ class BufferMemory(Memory):
         self.memories = []
 
     async def get_memories(self):
+
         memories_to_return = []
         msg_count = 0
         # Make sure we keep complete tool calls msgs
         for memory in self.memories[::-1]:
             memories_to_return.append(memory)
-            if 'tool_calls' in memory or memory['role'] == 'tool':
+            if 'tool_calls' in memory.dict() or memory.role == 'tool':
                 continue
             else:
                 msg_count += 1

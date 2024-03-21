@@ -2,6 +2,7 @@ from typing import Union, List, Dict
 
 import tiktoken
 
+from tinyllm.util.message import Message
 from tinyllm.util.prompt_util import stringify_dict
 
 OPENAI_MODELS_CONTEXT_SIZES = {
@@ -30,27 +31,6 @@ OPENAI_MODELS_CONTEXT_SIZES = {
     "code-cushman-002": 2048,
     "code-cushman-001": 2048,
 }
-
-
-def get_user_message(content):
-    return {'role': 'user',
-            'content': content}
-
-
-def get_system_message(content):
-    return {'role': 'system',
-            'content': content}
-
-
-def get_function_message(content, name):
-    return {'role': 'function',
-            'name': name,
-            'content': content}
-
-
-def get_assistant_message(content):
-    return {'role': 'assistant',
-            'content': content}
 
 def get_openai_message(role,
                        content: Union[List, str],
@@ -100,7 +80,11 @@ def count_tokens(input: Union[List[Dict], Dict, str],
             return sum([num_tokens_from_string(string) for string in input])
         elif isinstance(input[0], dict):
             return sum([count_tokens(input_dict) for input_dict in input])
+        elif isinstance(input[0], Message):
+            return sum([count_tokens(msg.dict()) for msg in input])
+
         return sum([count_tokens(input_dict, **kwargs) for input_dict in input])
+
     elif isinstance(input, str):
         return num_tokens_from_string(input)
     elif isinstance(input, dict):
@@ -108,6 +92,8 @@ def count_tokens(input: Union[List[Dict], Dict, str],
                                      dict=input,
                                      include_keys=kwargs.get('include_keys', []))
         return num_tokens_from_string(dict_string)
+    elif isinstance(input, Message):
+        return count_tokens(input.dict())
 
     else:
         raise NotImplementedError("count_tokens() is not implemented for this input type.")

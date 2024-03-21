@@ -1,5 +1,5 @@
 import json
-from typing import Optional, Union
+from typing import Optional, Union, List
 
 from tinyllm.agent.tool import Toolkit
 from tinyllm.function import Function
@@ -9,6 +9,7 @@ from tinyllm.llms.lite_llm import LiteLLM
 from tinyllm.memory.memory import Memory, BufferMemory
 from tinyllm.prompt_manager import PromptManager
 from tinyllm.util.helpers import get_openai_message
+from tinyllm.util.message import Content, UserMessage, ToolMessage, AssistantMessage
 from tinyllm.validator import Validator
 
 
@@ -23,7 +24,7 @@ class AgentInitValidator(Validator):
 
 
 class AgentInputValidator(Validator):
-    content: Union[str, list]
+    content: Union[str, list, Content, List[Content]]
 
 
 class Agent(Function):
@@ -71,10 +72,7 @@ class Agent(Function):
     async def run(self,
                   **kwargs):
 
-        input_msg = get_openai_message(
-            role='user',
-            content=kwargs['content']
-        )
+        input_msg = UserMessage(kwargs['content'])
         session_tool_results = []
 
         while True:
@@ -91,16 +89,15 @@ class Agent(Function):
 
                 if is_tool_call:
                     # Agent decides to call a tool
-                    # TODO When ready, implement parallel function calls
 
                     # Memorize tool call
                     tool_call_msg = response_msg['output']['response']['choices'][0]['message']
-                    tool_call_msg['content'] = ''
-                    tool_calls = tool_call_msg['tool_calls']
-                    await self.prompt_manager.add_memory(message=tool_call_msg)
+                    await self.prompt_manager.add_memory(message=AssistantMessage(content='',
+                                                                                  tool_calls=tool_call_msg['tool_calls']))
 
                     # Memorize tool result
-                    tool_call = tool_calls[0]
+                    # TODO When ready, implement parallel function calls
+                    tool_call = tool_call_msg['tool_calls'][0]
                     tool_results = await self.toolkit(
                         tool_calls=[{
                             'name': tool_call['function']['name'],
@@ -111,12 +108,9 @@ class Agent(Function):
                     self.is_stuck = self.is_tool_stuck(session_tool_results)
 
                     tool_result = tool_results['output']['tool_results'][0]
-                    function_call_msg = get_openai_message(
-                        name=tool_result['name'],
-                        role='tool',
-                        content=tool_result['content'],
-                        tool_call_id=tool_call['id']
-                    )
+                    function_call_msg = ToolMessage(name=tool_result['name'],
+                                                    content=tool_result['content'],
+                                                    tool_call_id=tool_call['id'])
 
                     # Set next input
                     input_msg = function_call_msg
@@ -125,7 +119,7 @@ class Agent(Function):
                     # Agent decides to respond
                     msg_content = response_msg['output']['response']['choices'][0]['message']['content']
                     await self.prompt_manager.add_memory(
-                        message=get_openai_message(role='assistant', content=msg_content)
+                        message=AssistantMessage(msg_content)
                     )
                     return {'response': response_msg['output']['response']}
             else:

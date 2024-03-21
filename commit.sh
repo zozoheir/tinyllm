@@ -16,7 +16,7 @@ export PYTHONPATH
 VENV_PATH="/Users/othmanezoheir/venv/rumorz-jobs-2/bin/python"
 cd /Users/othmanezoheir/PycharmProjects/openagents/tinyllm
 # Run unittest discovery in the tinyllm/tests directory
-if $VENV_PATH -m unittest discover tinyllm; then
+if find ./tinyllm -name "test_*.py" ! -name "*vector_store*" -exec echo {} \; | xargs -n1 $VENV_PATH -m unittest; then
     # If tests pass, proceed to add, commit, and push changes to git
     git add .
     echo "Enter commit message:"

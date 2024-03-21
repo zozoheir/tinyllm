@@ -3,23 +3,6 @@ from tinyllm.tracing.helpers import *
 
 current_observation_context = ContextVar('current_observation_context', default=None)
 
-model_parameters = [
-    "model",
-    "frequency_penalty",
-    "logit_bias",
-    "logprobs",
-    "top_logprobs",
-    "max_tokens",
-    "n",
-    "presence_penalty",
-    "response_format",
-    "seed",
-    "stop",
-    "stream",
-    "temperature",
-    "top_p"
-]
-
 
 class ObservationDecoratorFactory:
 
@@ -34,7 +17,6 @@ class ObservationDecoratorFactory:
             async def wrapper(*args, **function_input):
                 parent_observation = current_observation_context.get()
 
-                # Determine the name of the function
                 name = ObservationUtil.get_obs_name(*args, func=func)
 
                 # Prepare the input for the observation
