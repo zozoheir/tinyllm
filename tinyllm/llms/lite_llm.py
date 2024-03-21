@@ -6,6 +6,7 @@ from openai import OpenAIError
 from tenacity import retry, stop_after_attempt, wait_random_exponential, retry_if_exception_type
 
 from tinyllm.function import Function
+from tinyllm.tracing.helpers import model_parameters
 from tinyllm.tracing.langfuse_context import observation
 from tinyllm.util.helpers import *
 from tinyllm.validator import Validator
@@ -61,7 +62,7 @@ class LiteLLMChatInputValidator(Validator):
     temperature: Optional[float] = 0
     max_tokens: Optional[int] = 400
     n: Optional[int] = 1
-    stream: Optional[bool] = True
+    stream: Optional[bool] = False
     context_window_fallback_dict: Optional[Dict] = DEFAULT_CONTEXT_FALLBACK_DICT
 
 
@@ -77,6 +78,15 @@ class LiteLLM(Function):
                          **kwargs)
         self.generation = None
 
+    def _validate_tool_args(self, **kwargs):
+        tools_args = {}
+        if kwargs.get('tools', None) is not None:
+            tools_args = {
+                'tools': kwargs['tools'],
+                'tool_choice': kwargs.get('tool_choice', 'auto')
+            }
+        return tools_args
+
     @observation(observation_type='generation', input_mapping={'input': 'messages'},
                  output_mapping={'output': 'response'})
     @retry(
@@ -85,23 +95,11 @@ class LiteLLM(Function):
         retry=retry_if_exception_type((OpenAIError, openai.InternalServerError))
     )
     async def run(self, **kwargs):
-        tools_args = {}
-        if kwargs.get('tools', None) is not None:
-            tools_args = {
-                'tools': kwargs['tools'],
-                'tool_choice': kwargs.get('tool_choice', 'auto')
-            }
-
+        tools_args = self._validate_tool_args(**kwargs)
+        completion_args = {arg: kwargs[arg] for arg in kwargs if arg in model_parameters}
+        completion_args.update(tools_args)
         api_result = await acompletion(
-            messages=kwargs['messages'],
-            model=kwargs.get('model', DEFAULT_LLM_MODEL),
-            temperature=kwargs.get('temperature', 0),
-            n=kwargs.get('n', 1),
-            max_tokens=kwargs.get('max_tokens', 600),
-            context_window_fallback_dict=kwargs.get('context_window_fallback_dict',
-                                                    DEFAULT_CONTEXT_FALLBACK_DICT),
-            response_format=kwargs.get('response_format', None),
-            **tools_args
+            **completion_args,
         )
 
         model_dump = api_result.model_dump()

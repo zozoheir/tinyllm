@@ -31,27 +31,6 @@ OPENAI_MODELS_CONTEXT_SIZES = {
     "code-cushman-001": 2048,
 }
 
-
-def get_user_message(content):
-    return {'role': 'user',
-            'content': content}
-
-
-def get_system_message(content):
-    return {'role': 'system',
-            'content': content}
-
-
-def get_function_message(content, name):
-    return {'role': 'function',
-            'name': name,
-            'content': content}
-
-
-def get_assistant_message(content):
-    return {'role': 'assistant',
-            'content': content}
-
 def get_openai_message(role,
                        content: Union[List, str],
                        **kwargs):

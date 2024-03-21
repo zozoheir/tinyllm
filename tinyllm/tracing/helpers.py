@@ -34,9 +34,9 @@ class ObservationUtil:
     @classmethod
     def handle_exception(cls, obs, e):
         if 'end' in dir(obs):
-            obs.end(level='ERROR', status_message=str(traceback.format_exception_only(e)))
+            obs.end(level='ERROR', status_message=str(traceback.format_exc()))
         elif 'update' in dir(obs):
-            obs.update(level='ERROR', status_message=str(traceback.format_exception_only(e)))
+            obs.update(level='ERROR', status_message=str(traceback.format_exc()))
 
     @classmethod
     def prepare_observation_input(cls, input_mapping, kwargs):
