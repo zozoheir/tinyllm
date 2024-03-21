@@ -10,13 +10,13 @@ from tinyllm.llms.lite_llm_stream import LiteLLMStream
 from tinyllm.memory.memory import BufferMemory, Memory
 from tinyllm.prompt_manager import PromptManager
 from tinyllm.util.helpers import get_openai_message
-
+from tinyllm.util.message import UserMessage, AssistantMessage, ToolMessage
 
 
 class AgentStream(FunctionStream):
 
     def __init__(self,
-                 system_role:  str = 'You are a helpful assistant',
+                 system_role: str = 'You are a helpful assistant',
                  example_manager: Optional[ExampleManager] = None,
                  llm: FunctionStream = None,
                  memory: Memory = None,
@@ -50,10 +50,7 @@ class AgentStream(FunctionStream):
     async def run(self,
                   **kwargs):
 
-        input_msg = get_openai_message(
-            role='user',
-            content=kwargs['content']
-        )
+        input_msg = UserMessage(kwargs['content'])
 
         while True:
             kwargs = await self.prompt_manager.prepare_llm_request(message=input_msg,
@@ -64,6 +61,7 @@ class AgentStream(FunctionStream):
                 yield msg
 
             await self.prompt_manager.add_memory(message=input_msg)
+
             # Process the last message
             if msg['status'] == 'success':
                 msg_output = msg['output']
@@ -71,7 +69,8 @@ class AgentStream(FunctionStream):
                 # Agent decides to call a tool
                 if msg_output['type'] == 'tool':
                     tool_call_result_msg = await self.handle_tool_call(msg_output)
-                    input_msg = tool_call_result_msg
+                    tool_call_result_msg.pop('role')
+                    input_msg = ToolMessage(**tool_call_result_msg)
                 elif msg_output['type'] == 'assistant':
                     break
 
@@ -90,7 +89,8 @@ class AgentStream(FunctionStream):
         }
         api_tool_call['function'] = json_tool_call
         msg_output['last_completion_delta']['content'] = ''
-        await self.prompt_manager.add_memory(message=msg_output['last_completion_delta'])
+        await self.prompt_manager.add_memory(message=AssistantMessage(content='',
+                                                                      tool_calls=msg_output['last_completion_delta']['tool_calls']))
 
         # Memorize tool result
         tool_results = await self.toolkit(

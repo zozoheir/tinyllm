@@ -5,6 +5,7 @@ from tinyllm.agent.tool import tinyllm_toolkit
 from tinyllm.eval.evaluator import Evaluator
 from tinyllm.llms.lite_llm import LiteLLM
 from tinyllm.tests.base import AsyncioTestCase
+from tinyllm.util.message import Text
 
 
 class AnswerCorrectnessEvaluator(Evaluator):

@@ -35,7 +35,7 @@ class FunctionStream(Function):
             # Validate input
             self.transition(States.INPUT_VALIDATION)
             validated_input = self.validate_input(**kwargs)
-
+            kwargs.update(validated_input)
             # Run
             self.transition(States.RUNNING)
             async for message in self.run(**validated_input):

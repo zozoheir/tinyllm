@@ -9,6 +9,7 @@ import numpy as np
 from tinyllm import langfuse_client
 from tinyllm.util.helpers import count_tokens
 
+
 model_parameters = [
     "model",
     "frequency_penalty",
@@ -25,7 +26,6 @@ model_parameters = [
     "temperature",
     "top_p"
 ]
-
 
 ## I want you to implement an ObservationWrapper class that implements all of the above functions as class methods
 
@@ -90,7 +90,7 @@ class ObservationUtil:
                 end_time=dt.datetime.now(),
                 model=function_kwargs.get('model', None),
                 model_parameters={k: v for k, v in function_kwargs.items() if
-                                  k in model_parameters},
+                                  k in model_parameters and k not in ['messages']},
                 usage={
                     'promptTokens': prompt_tokens,
                     'completionTokens': completion_tokens,

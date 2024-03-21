@@ -9,7 +9,7 @@ from smartpy.utility import os_util
 from tinyllm import tinyllm_config
 from tinyllm.llms.tiny_function import tiny_function
 from tinyllm.rag.document.document import Document, DocumentTypes
-from tinyllm.util.message import UserMessage, Text, ImageUrl, Content
+from tinyllm.util.message import UserMessage, Text, Image, Content
 
 
 class Loader:
@@ -92,7 +92,7 @@ class ImageLoader(Loader):
         img_url = self.store_image()
         content = [
             Text("Use the provided img and its content to extract the relevant structured data and sections"),
-            ImageUrl(img_url)
+            Image(img_url)
         ]
         parsing_output = await parse_image(content=content)
         image_doc = Document(

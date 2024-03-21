@@ -83,7 +83,7 @@ def get_function_prompt(func,
 
 
 class TinyFunctionInputValidator(Validator):
-    content: Union[Content, List[Content]]
+    content: Union[str, List[Content]]
 
 
 def tiny_function(output_model: Type[BaseModel] = None,
@@ -111,9 +111,8 @@ def tiny_function(output_model: Type[BaseModel] = None,
                 llm=LiteLLM(),
                 # example_manager=ExampleManager(constant_examples=)
             )
-            loop = asyncio.get_event_loop()
-            result = loop.run_until_complete(agent(content=kwargs['content'],
-                                                   response_format={"type": "json_object"}))
+            result = await agent(content=kwargs['content'],
+                                 response_format={"type": "json_object"})
             if result['status'] == 'success':
                 msg_content = result['output']['response']['choices'][0]['message']['content']
                 try:

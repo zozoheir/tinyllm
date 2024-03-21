@@ -3,7 +3,7 @@ from litellm import acompletion
 from openai import OpenAIError
 from tenacity import stop_after_attempt, wait_random_exponential, retry_if_exception_type, retry
 
-from tinyllm.llms.lite_llm import LiteLLM, DEFAULT_CONTEXT_FALLBACK_DICT, DEFAULT_LLM_MODEL
+from tinyllm.llms.lite_llm import LiteLLM, DEFAULT_CONTEXT_FALLBACK_DICT, DEFAULT_LLM_MODEL, model_parameters
 from tinyllm.function_stream import FunctionStream
 from tinyllm.tracing.langfuse_context import observation
 from tinyllm.util.helpers import get_openai_message
@@ -18,22 +18,14 @@ class LiteLLMStream(LiteLLM, FunctionStream):
     )
     @observation(observation_type='generation', stream=True)
     async def run(self, **kwargs):
-        tools_args = {}
-        if kwargs.get('tools', None) is not None:
-            tools_args = {'tools': kwargs.get('tools', None),
-                          'tool_choice': kwargs.get('tool_choice', 'auto')}
+        kwargs['messages'] = self._parse_mesages(kwargs['messages'])
+        tools_args = self._validate_tool_args(**kwargs)
+        completion_args = {arg: kwargs[arg] for arg in kwargs if arg in model_parameters}
+        completion_args.update(tools_args)
+        completion_args['stream'] = True
 
         response = await acompletion(
-            model=kwargs.get('model', DEFAULT_LLM_MODEL),
-            temperature=kwargs.get('temperature', 0),
-            n=kwargs.get('n', 1),
-            max_tokens=kwargs.get('max_tokens', 400),
-            messages=kwargs['messages'],
-            stream=True,
-            **tools_args,
-            num_retries=kwargs.get('num_retries', 3),
-            context_window_fallback_dict=kwargs.get('context_window_fallback_dict',
-                                                    DEFAULT_CONTEXT_FALLBACK_DICT)
+            **completion_args,
         )
 
         # We need to track 2 things: the response delta and the function_call

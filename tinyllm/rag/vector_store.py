@@ -13,6 +13,7 @@ from sqlalchemy.orm import sessionmaker
 from tinyllm.function import Function
 from tinyllm.rag.document.document import Document, DocumentTypes
 from tinyllm.tracing.langfuse_context import observation
+from sqlalchemy import text as sql_text
 
 Base = declarative_base()
 
@@ -32,6 +33,8 @@ class Embeddings(Base):
     __table_args__ = (UniqueConstraint('text', 'collection_name', name='uq_text_collection_name'),)
 
     id = Column(Integer, primary_key=True)
+    created_at = Column(postgresql.TIMESTAMP, server_default=text('now()'), nullable=False)
+
     collection_name = Column(String, nullable=False)
     embedding = Column(Vector(dim=384))
     text = Column(String)
@@ -69,24 +72,23 @@ class VectorStore(Function):
         return filter_clauses
 
     async def create_tables(self):
-        try:
-            async with self._engine.begin() as conn:
-                await conn.execute(text('CREATE EXTENSION vector;'))
-                await conn.run_sync(Base.metadata.create_all)
-        except:
-            pass
+        async with self._engine.begin() as conn:
+            await conn.execute(text("ALTER DATABASE defaultdb SET SEARCH_PATH TO postgres_schema;"))
+            await conn.execute(text("""CREATE EXTENSION vector"""))
+        async with self._engine.begin() as conn:
+            await conn.run_sync(lambda conn_sync: Base.metadata.create_all(conn_sync))
+
 
     async def add_texts(self, texts, collection_name, metadatas=None):
         if metadatas is None:
             metadatas = [None] * len(texts)
 
-
         embeddings = await self.embedding_function(texts)
-
         async with self._Session() as session:
             async with session.begin():
                 for text, embedding, metadata in zip(texts, embeddings, metadatas):
                     stmt = insert(Embeddings).values(
+                        created_at=sql_text('now()'),
                         text=text,
                         embedding=embedding,
                         emetadata=metadata,
