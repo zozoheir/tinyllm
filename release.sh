@@ -40,7 +40,7 @@ python setup.py sdist bdist_wheel
 
 if [ $? -eq 0 ]; then
     echo "Package built successfully."
-else
+elseO
     echo "Failed to build package, release process aborted."
     exit 1
 fi

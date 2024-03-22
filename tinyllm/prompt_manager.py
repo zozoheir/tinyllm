@@ -44,7 +44,7 @@ class PromptManager:
                     examples.append(UserMessage(good_example['user']))
                     examples.append(AssistantMessage(good_example['assistant']))
 
-        answer_format_msg = [UserMessage(self.answer_formatting_prompt).dict()] if self.answer_formatting_prompt is not None else []
+        answer_format_msg = [UserMessage(self.answer_formatting_prompt).to_dict()] if self.answer_formatting_prompt is not None else []
 
         messages = [system_msg] + memories + examples + answer_format_msg + [message]
         return messages

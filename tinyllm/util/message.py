@@ -25,12 +25,12 @@ class Message:
                  role: str,
                  content: Union[List[Content], str]):
         self.role = role
+        self.raw_content = content
         if type(content) == str:
-            content = [Text(content)]
-        self.content = content
+            self.content = [Text(content)]
 
-    def dict(self) -> Dict:
-        return {"role": self.role, "content": [c.dict() for c in self.content]}
+    def to_dict(self) -> Dict:
+        return {"role": self.role, "content": self.raw_content if type(self.raw_content) == str else [c.dict() for c in self.content]}
 
 
 class UserMessage(Message):
@@ -59,8 +59,8 @@ class ToolMessage(Message):
         self.tool_call_id = tool_call_id
         super().__init__("tool", content)
 
-    def dict(self) -> Dict:
-        message = super().dict()
+    def to_dict(self) -> Dict:
+        message = super().to_dict()
         if self.tool_call_id:
             message['tool_call_id'] = self.tool_call_id
         return message
@@ -73,8 +73,8 @@ class AssistantMessage(Message):
         self.tool_calls = tool_calls
         super().__init__("assistant", content)
 
-    def dict(self) -> Dict:
-        message = super().dict()
+    def to_dict(self) -> Dict:
+        message = super().to_dict()
         if self.tool_calls:
             message['tool_calls'] = self.tool_calls
         return message

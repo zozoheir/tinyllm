@@ -81,7 +81,7 @@ def count_tokens(input: Union[List[Dict], Dict, str],
         elif isinstance(input[0], dict):
             return sum([count_tokens(input_dict) for input_dict in input])
         elif isinstance(input[0], Message):
-            return sum([count_tokens(msg.dict()) for msg in input])
+            return sum([count_tokens(msg.to_dict()) for msg in input])
 
         return sum([count_tokens(input_dict, **kwargs) for input_dict in input])
 
@@ -93,7 +93,7 @@ def count_tokens(input: Union[List[Dict], Dict, str],
                                      include_keys=kwargs.get('include_keys', []))
         return num_tokens_from_string(dict_string)
     elif isinstance(input, Message):
-        return count_tokens(input.dict())
+        return count_tokens(input.to_dict())
 
     else:
         raise NotImplementedError("count_tokens() is not implemented for this input type.")

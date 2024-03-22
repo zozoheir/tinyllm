@@ -8,7 +8,7 @@ import numpy as np
 
 from tinyllm import langfuse_client
 from tinyllm.util.helpers import count_tokens
-
+from tinyllm.util.message import Message
 
 model_parameters = [
     "model",
@@ -39,13 +39,13 @@ class ObservationUtil:
             obs.update(level='ERROR', status_message=str(traceback.format_exc()))
 
     @classmethod
-    def prepare_observation_input(cls, input_mapping, kwargs):
+    def prepare_observation_input(cls, input_mapping, function_input):
         if not input_mapping:
             # stringify values  
-            kwargs = cls.keep_accepted_types(kwargs)
-            return {'input': kwargs}
+            function_input = cls.keep_accepted_types(function_input)
+            return {'input': function_input}
 
-        return {langfuse_kwarg: kwargs[function_kwarg] for langfuse_kwarg, function_kwarg in input_mapping.items()}
+        return {langfuse_kwarg: function_input[function_kwarg] for langfuse_kwarg, function_kwarg in input_mapping.items()}
 
     @classmethod
     def keep_accepted_types(self, d):
@@ -160,10 +160,16 @@ class ObservationUtil:
                 args[0].observation = observation
                 args[0].trace = observation
             observation_method = getattr(observation, observation_type)
+            if observation_type == 'generation':
+                observation_input['input'] = [i.to_dict() for i in observation_input['input']]
+
             observation = observation_method(name=name, **observation_input)
         else:
             # Create child observations based on the type
             observation_method = getattr(parent_observation, observation_type)
+            if observation_type == 'generation':
+                observation_input['input'] = [i.to_dict() for i in observation_input['input']]
+
             observation = observation_method(name=name, **observation_input)
             # Pass the parent trace to this function
             args[0].observation = parent_observation

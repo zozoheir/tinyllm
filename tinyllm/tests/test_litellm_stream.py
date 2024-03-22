@@ -5,6 +5,7 @@ from tinyllm.llms.lite_llm import LiteLLM
 from tinyllm.llms.lite_llm_stream import LiteLLMStream
 from tinyllm.util.helpers import get_openai_message
 from tinyllm.tests.base import AsyncioTestCase
+from tinyllm.util.message import UserMessage
 
 
 class TestlitellmChat(AsyncioTestCase):
@@ -16,8 +17,7 @@ class TestlitellmChat(AsyncioTestCase):
         litellmstream_chat = LiteLLMStream(name='Test: LiteLLM Stream')
 
         async def get_stream():
-            message = get_openai_message(role='user',
-                                         content="Hi")
+            message = UserMessage('Hi')
             msgs = []
             async for msg in litellmstream_chat(messages=[message]):
                 i = 0

@@ -1,4 +1,3 @@
-import asyncio
 import functools
 import json
 from textwrap import dedent
@@ -6,8 +5,9 @@ from textwrap import dedent
 from pydantic import BaseModel, create_model
 from typing import Type, Dict, Any, Union, List
 
-from tinyllm.util.message import Content
-from tinyllm.validator import Validator
+from tinyllm.agent.agent import Agent
+from tinyllm.llms.lite_llm import json_mode_models
+from tinyllm.util.parse_util import *
 
 
 def model_to_string(model) -> str:
@@ -48,16 +48,20 @@ def model_to_string(model) -> str:
     return model_prompt
 
 
-def get_function_prompt(func,
-                        example_output,
-                        output_model) -> str:
-    system_prompt = func.__doc__.strip() + '\n\n' + dedent("""
+def get_system_role(func,
+                    example_output,
+                    output_model,
+                    model) -> str:
+    system_tag = extract_html(func.__doc__.strip(), tag='system')
+    system_prompt = system_tag[0] + '\n\n' + dedent("""
     OUTPUT FORMAT
     Your output must be in JSON
 
     {data_model}
 
     {example}
+    
+    {enclosing_requirement}
 
     You must respect all the requirements above.
     """)
@@ -65,8 +69,12 @@ def get_function_prompt(func,
     example_output_prompt = dedent(f"""
     EXAMPLE
     Here is an example of the expected output:
+    ```json
     {json.dumps(example_output)}
+    ```
     """) if example_output else ""
+
+    enclosing_requirement = "Your output must be a JSON object enclosed by ```json\n{...}\n```" if model not in json_mode_models else ""
 
     pydantic_model = model_to_string(output_model) if output_model else None
 
@@ -78,45 +86,50 @@ def get_function_prompt(func,
 
     final_prompt = system_prompt.format(pydantic_model=pydantic_model,
                                         example=example_output_prompt,
+                                        enclosing_requirement=enclosing_requirement,
                                         data_model=data_model_prompt)
     return final_prompt
 
 
-class TinyFunctionInputValidator(Validator):
-    content: Union[str, List[Content]]
+default_model_params = {'model': 'gpt-3.5-turbo'}
 
 
 def tiny_function(output_model: Type[BaseModel] = None,
-                  example_output=None):
+                  example_output=None,
+                  model_params={'model': 'gpt-3.5-turbo'}):
     def decorator(func):
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
-            TinyFunctionInputValidator(**kwargs)
+            if model_params['model'] in json_mode_models:
+                kwargs['response_format'] = {"type": "json_object"}
 
-            system_role = get_function_prompt(func=func,
-                                              output_model=output_model,
-                                              example_output=example_output)
+            system_role = get_system_role(func=func,
+                                          output_model=output_model,
+                                          example_output=example_output,
+                                          model=model_params['model'])
 
-            # Prepare the agent with necessary parameters
-            from tinyllm.agent.agent import Agent
-            from tinyllm.llms.lite_llm import LiteLLM
+            prompt = extract_html(func.__doc__.strip(), tag='prompt')
+            if len(prompt) == 0:
+                prompt = "<prompt>{content}</prompt>"
+            else:
+                prompt= prompt[0]
 
-            # examples = [
-            #    get_openai_message(role='user', content=EXAMPLE_INPUT),
-            #    get_openai_message(role='assistant', content=example_output)
-            # ]
+            agent_input_content = prompt.format(**kwargs)
             agent = Agent(
                 name=func.__name__,
                 system_role=system_role,
-                llm=LiteLLM(),
-                # example_manager=ExampleManager(constant_examples=)
             )
-            result = await agent(content=kwargs['content'],
-                                 response_format={"type": "json_object"})
+            result = await agent(content=agent_input_content,
+                                 **model_params)
             if result['status'] == 'success':
                 msg_content = result['output']['response']['choices'][0]['message']['content']
                 try:
-                    parsed_output = json.loads(msg_content)
+                    if model_params['model'] in json_mode_models:
+                        parsed_output = json.loads(msg_content)
+                    else:
+                        blocks = extract_block(msg_content, 'json')
+                        parsed_output = blocks[0]
+
                     if output_model is None:
                         function_output_model = create_pydantic_model_from_dict(parsed_output)
                     else:

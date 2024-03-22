@@ -31,13 +31,22 @@ class TestTinyFunctionDecorator(AsyncioTestCase):
             occupation: str
 
         @tiny_function(output_model=CharacterInfo)
-        async def get_character_info(content: str):
-            """Extract character information from the content"""
+        async def get_character_info(doc1, doc2):
+            """
+            <system>
+            Extract character information from the provided documents
+            </system>
+
+            <prompt>
+            {doc1}
+            {doc2}
+            </prompt>
+            """
             pass
 
         # Test the decorated function
         content = "Elon Musk is a 50 years old CEO"
-        result = self.loop.run_until_complete(get_character_info(content=content))
+        result = self.loop.run_until_complete(get_character_info(doc1=content, doc2=content))
 
         # Assertions
         self.assertIsInstance(result['output'], CharacterInfo)
@@ -49,7 +58,11 @@ class TestTinyFunctionDecorator(AsyncioTestCase):
     def test_no_model(self):
         @tiny_function()
         async def get_character_info(content: str):
-            """Extract character information from the content"""
+            """
+            <system>
+            Extract character information from the content
+            </system>
+            """
             pass
 
         # Test the decorated function

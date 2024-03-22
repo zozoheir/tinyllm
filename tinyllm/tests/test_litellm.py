@@ -32,8 +32,7 @@ class TestlitellmChat(AsyncioTestCase):
         litellm_chat = LiteLLM(name='Test: LiteLLMChat evaluation',
                                run_evaluators=[SuccessFullRunEvaluator()],
                                processed_output_evaluators=[SuccessFullRunEvaluator()])
-        message = get_openai_message(role='user',
-                                     content="Hi")
+        message = UserMessage('hi')
         result = self.loop.run_until_complete(litellm_chat(messages=[message]))
         self.assertEqual(result['status'], 'success')
 

@@ -28,6 +28,7 @@ model_parameters = [
     "temperature",
     "top_p"
 ]
+json_mode_models = ['gpt-3.5-turbo-1106','gpt-4-1106-preview']
 
 DEFAULT_LLM_MODEL = 'gpt-3.5-turbo'
 DEFAULT_CONTEXT_FALLBACK_DICT = {
@@ -107,7 +108,7 @@ class LiteLLM(Function):
 
     def _parse_mesages(self, messages):
         if isinstance(messages[0], Message):
-            messages = [message.dict() for message in messages]
+            messages = [message.to_dict() for message in messages]
         return messages
 
     @observation(observation_type='generation', input_mapping={'input': 'messages'},
@@ -125,7 +126,6 @@ class LiteLLM(Function):
         api_result = await acompletion(
             **completion_args,
         )
-
         model_dump = api_result.model_dump()
         msg_type = 'tool' if model_dump['choices'][0]['finish_reason'] == 'tool_calls' else 'completion'
         message = model_dump['choices'][0]['message']

@@ -62,7 +62,7 @@ class BufferMemory(Memory):
         # Make sure we keep complete tool calls msgs
         for memory in self.memories[::-1]:
             memories_to_return.append(memory)
-            if 'tool_calls' in memory.dict() or memory.role == 'tool':
+            if 'tool_calls' in memory.to_dict() or memory.role == 'tool':
                 continue
             else:
                 msg_count += 1

@@ -40,8 +40,8 @@ class ExcelLoader(Loader):
         pass
 
 
-@tiny_function()
-def parse_image(content: Union[Content,List[Content]]):
+@tiny_function(model_params={'model':'gpt-4-vision-preview'})
+async def parse_image(content: Union[Content,List[Content]]):
     """
     ROLE:
     You are an Image document parser. You will be provided an image and/or text content from a single document. Your goal is to extract
@@ -80,9 +80,10 @@ class ImageLoader(Loader):
                 secret_access_key=tinyllm_config['CLOUD_PROVIDERS']['DO']['SECRET']
             )
             self.img_url = do.upload_file(
+                project_name=tinyllm_config['CLOUD_PROVIDERS']['DO']['PROJECT_NAME'],
                 space_name="tinyllm",
                 file_src=self.img_local_path,
-                is_public=False
+                is_public=True
             )
 
         return self.img_url
@@ -96,9 +97,9 @@ class ImageLoader(Loader):
         ]
         parsing_output = await parse_image(content=content)
         image_doc = Document(
-            content=parsing_output,
+            content=parsing_output['output'].model_dump(),
             metadata={'img_url': img_url},
-            type=DocumentTypes.DICTIONARY)
+            type=DocumentTypes.IMAGE)
         return image_doc
 
 
@@ -123,8 +124,15 @@ class PDFFormLoader(Loader):
                                          content=form_content,
                                          storage_source=ImageStorageSources.DO) for image_path in
                              screenshot_paths]
-            img_docs = [await img_loader.async_load() for img_loader in image_loaders]
-        final_doc = Document(content=form_content,
+            img_docs = [await img_loader.async_load() for img_loader in image_loaders[:1]]
+
+        import json
+        content = "Doc parsing method 1: Below is the PDF content extracted using the PDF file in python:\n\n"
+        content += form_content+'\n\n'
+        content += "Doc parsing method 2: The content below was extracted from the PDF form using OCR\n\n"
+        content += '\n\n'.join([json.dumps(img_doc.content) for img_doc in img_docs])
+        final_doc = Document(content=content,
+                             type=DocumentTypes.TEXT,
                              metadata={'img_urls': [img_doc.metadata['img_url'] for img_doc in img_docs]})
         return final_doc
 
@@ -146,8 +154,7 @@ class PDFFormLoader(Loader):
 async def main():
     loader = PDFFormLoader(
         file_path='/Users/othmanezoheir/PycharmProjects/zoheir-consulting/lendmarq-ai/docs/Loan Application.pdf')
-    form_content = await loader.async_load(images=True)
-
+    doc = await loader.async_load(images=True)
 
 if __name__ == '__main__':
     import asyncio

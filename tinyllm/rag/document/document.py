@@ -30,21 +30,14 @@ class Document:
         content = self.to_string()
         return count_tokens(content)
 
-    def to_dict(self):
-        if self.type == DocumentTypes.TEXT:
-            metacopy = self.metadata.copy()
-            metacopy.update({'content': self.content})
-            return metacopy
-        elif self.type == DocumentTypes.DICTIONARY:
-            return self.content
-
     def to_string(self):
-        if self.type == DocumentTypes.TEXT:
-            dic = self.to_dict()
-            return stringify_dict(header=self.header,
-                                  dict=dic,
-                                  include_keys=self.include_keys)
-        elif self.type == DocumentTypes.DICTIONARY:
-            return stringify_dict(header=self.header,
-                                  dict=self.content,
-                                  include_keys=self.include_keys)
+        return stringify_dict(header=self.header,
+                              dict=self.__dict__,
+                              include_keys=self.include_keys)
+
+
+class ImageDocument(Document):
+
+    def __init__(self, img_url, **kwargs):
+        super().__init__(type=DocumentTypes.IMAGE, **kwargs)
+        self.img_url = img_url
