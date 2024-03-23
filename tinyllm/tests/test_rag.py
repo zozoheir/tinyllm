@@ -14,8 +14,9 @@ class TestRAG(AsyncioTestCase):
 
     def test_doc(self):
         doc = Document(content='Hello World')
-        doc.to_string()
-        #self.assertEqual(result[-1]['status'], 'success', "The last message status should be 'success'")
+        doc.to_string(header="[doc]",
+                      include_keys=['content', 'metadata'])
+        # self.assertEqual(result[-1]['status'], 'success', "The last message status should be 'success'")
 
 
 # This allows the test to be run standalone

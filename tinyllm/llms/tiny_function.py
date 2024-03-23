@@ -96,11 +96,12 @@ def tiny_function(output_model: Type[BaseModel] = None,
             if model_params['model'] in json_mode_models:
                 kwargs['response_format'] = {"type": "json_object"}
             else:
-                if len(example_manager.constant_examples)>0:
-                    for message in [i.assistant_message for i in example_manager.constant_examples]:
-                        for content in message.content:
-                            if type(content) == Text:
-                                content.text = f"```json{content.text}```"
+                if example_manager:
+                    if len(example_manager.constant_examples)>0:
+                        for message in [i.assistant_message for i in example_manager.constant_examples]:
+                            for content in message.content:
+                                if type(content) == Text:
+                                    content.text = f"```json{content.text}```"
 
             system_role = get_system_role(func=func,
                                           output_model=output_model,

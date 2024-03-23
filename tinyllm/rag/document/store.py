@@ -80,6 +80,8 @@ class DocumentStore:
             i += 1
 
     def to_string(self,
+                  doc_header: str = '[doc]',
+                  include_keys: List[str] = ['content', 'metadata'],
                   start_string: str = '-----SUPPORTING DOCS-----',
                   end_string: str = '-----END OF SUPPORTING DOCS-----',
                   context_size: int = None,
@@ -93,7 +95,8 @@ class DocumentStore:
         fitted_context_string = ''
         for section_name, docs in self.store.items():
             fitted_context_string += section_name + '\n'
-            fitted_context_string += f'/n '.join([doc.to_string() for doc in docs])
+            fitted_context_string += f'/n '.join([doc.to_string(include_keys=include_keys,
+                                                                header=doc_header) for doc in docs])
 
         # Format the final context
         formatted_context = start_string + "\n" + fitted_context_string + "\n" + end_string

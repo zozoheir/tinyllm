@@ -30,9 +30,7 @@ class TestDocsStore(unittest.TestCase):
             {"content": "2 Third document text.",
              "metadata": {}}
         ]
-        self.docs_2 = [Document(**doc,
-                                header="[doc]",
-                                include_keys=['content','metadata']) for doc in self.docs_2]
+        self.docs_2 = [Document(**doc) for doc in self.docs_2]
         self.document_store.add_docs(
             name='test_section_2',
             docs=self.docs_2
