@@ -5,6 +5,8 @@ from textwrap import dedent
 from pydantic import BaseModel, create_model
 from typing import Type, Dict, Any, Union, List
 
+from tenacity import retry, stop_after_attempt, wait_random_exponential, retry_if_exception_type
+
 from tinyllm.agent.agent import Agent
 from tinyllm.llms.lite_llm import json_mode_models
 from tinyllm.util.parse_util import *
@@ -53,7 +55,7 @@ def get_system_role(func,
                     output_model,
                     model) -> str:
     system_tag = extract_html(func.__doc__.strip(), tag='system')
-    system_prompt = system_tag[0] + '\n\n' + dedent("""
+    system_prompt = dedent(system_tag[0]) + '\n\n' + dedent("""
     OUTPUT FORMAT
     Your output must be in JSON
 
@@ -99,6 +101,11 @@ def tiny_function(output_model: Type[BaseModel] = None,
                   model_params={'model': 'gpt-3.5-turbo'}):
     def decorator(func):
         @functools.wraps(func)
+        @retry(
+            stop=stop_after_attempt(3),
+            wait=wait_random_exponential(min=1, max=5),
+            retry=retry_if_exception_type((MissingBlockException, json.JSONDecodeError))
+        )
         async def wrapper(*args, **kwargs):
             if model_params['model'] in json_mode_models:
                 kwargs['response_format'] = {"type": "json_object"}
@@ -110,11 +117,12 @@ def tiny_function(output_model: Type[BaseModel] = None,
 
             prompt = extract_html(func.__doc__.strip(), tag='prompt')
             if len(prompt) == 0:
-                prompt = "<prompt>{content}</prompt>"
+                assert 'content' in kwargs, "tinyllm_function takes content kwargs by default"
+                agent_input_content = kwargs['content']
             else:
-                prompt= prompt[0]
+                prompt = prompt[0]
+                agent_input_content = prompt.format(**kwargs)
 
-            agent_input_content = prompt.format(**kwargs)
             agent = Agent(
                 name=func.__name__,
                 system_role=system_role,
@@ -128,7 +136,13 @@ def tiny_function(output_model: Type[BaseModel] = None,
                         parsed_output = json.loads(msg_content)
                     else:
                         blocks = extract_block(msg_content, 'json')
-                        parsed_output = blocks[0]
+                        if not blocks:
+                            try:
+                                parsed_output = json.loads(msg_content)
+                            except json.JSONDecodeError:
+                                raise MissingBlockException("Missing JSON block")
+                        else:
+                            parsed_output = blocks[0]
 
                     if output_model is None:
                         function_output_model = create_pydantic_model_from_dict(parsed_output)

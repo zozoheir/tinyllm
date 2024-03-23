@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 
 from tinyllm.function import Function
-from tinyllm.rag.document.document import Document, DocumentTypes
+from tinyllm.rag.document.document import Document
 from tinyllm.tracing.langfuse_context import observation
 from sqlalchemy import text as sql_text
 
@@ -102,7 +102,7 @@ class VectorStore(Function):
             "documents": [
                 {
                     "document": Document(content=text,
-                                         type=DocumentTypes.TEXT,
+                                         type=ContentTypes.TEXT,
                                          metadata=metadata),
                     "embedding": embedding
 
@@ -148,7 +148,7 @@ class VectorStore(Function):
             docs = [
                 {
                     'document': Document(content=row.text,
-                                         type=DocumentTypes.TEXT,
+                                         type=ContentTypes.TEXT,
                                          metadata=row.emetadata),
                     'distance': row.distance,
                 } for row in rows

@@ -41,4 +41,4 @@ if __name__ == "__main__":
              os.getcwd()+'/tinyllm/llms/tiny_function.py']
     files_content = get_files_content(files, formats=['.py'])
     example = asyncio.run(generate_example(files_content=files_content))
-    with open('example.py', 'w') as f: f.write(example['output'].example_python)
+    with open('credit_risk_example.py', 'w') as f: f.write(example['output'].example_python)

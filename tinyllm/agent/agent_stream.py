@@ -68,16 +68,14 @@ class AgentStream(FunctionStream):
 
                 # Agent decides to call a tool
                 if msg_output['type'] == 'tool':
-                    tool_call_result_msg = await self.handle_tool_call(msg_output)
-                    tool_call_result_msg.pop('role')
-                    input_msg = ToolMessage(**tool_call_result_msg)
+                    input_msg = await self.get_tool_message(msg_output)
                 elif msg_output['type'] == 'assistant':
                     break
 
             else:
                 raise Exception(msg['message'])
 
-    async def handle_tool_call(self,
+    async def get_tool_message(self,
                                msg_output):
         api_tool_call = msg_output['last_completion_delta']['tool_calls'][0]
         msg_output['last_completion_delta'].pop('function_call')
@@ -105,4 +103,7 @@ class AgentStream(FunctionStream):
             content=tool_result['content'],
             tool_call_id=api_tool_call['id']
         )
-        return tool_call_result_msg
+
+        tool_call_result_msg.pop('role')
+
+        return ToolMessage(**tool_call_result_msg)

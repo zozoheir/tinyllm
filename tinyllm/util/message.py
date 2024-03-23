@@ -25,12 +25,14 @@ class Message:
                  role: str,
                  content: Union[List[Content], str]):
         self.role = role
+        self.content = content
         self.raw_content = content
         if type(content) == str:
             self.content = [Text(content)]
 
     def to_dict(self) -> Dict:
-        return {"role": self.role, "content": self.raw_content if type(self.raw_content) == str else [c.dict() for c in self.content]}
+        return {"role": self.role,
+                "content": self.raw_content if type(self.raw_content) == str else [c.dict() for c in self.content]}
 
 
 class UserMessage(Message):
