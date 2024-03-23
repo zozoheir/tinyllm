@@ -37,14 +37,18 @@ class PromptManager:
         examples = []
 
         if self.example_manager is not None:
-            examples += self.example_manager.constant_examples
+            for example in self.example_manager.constant_examples:
+                examples.append(example.user_message)
+                examples.append(example.assistant_message)
+
             if self.example_manager.example_selector is not None and message['role'] == 'user':
                 best_examples = await self.example_manager.example_selector(input=message['content'])
                 for good_example in best_examples['output']['best_examples']:
                     examples.append(UserMessage(good_example['user']))
                     examples.append(AssistantMessage(good_example['assistant']))
 
-        answer_format_msg = [UserMessage(self.answer_formatting_prompt)] if self.answer_formatting_prompt is not None else []
+        answer_format_msg = [
+            UserMessage(self.answer_formatting_prompt)] if self.answer_formatting_prompt is not None else []
 
         messages = [system_msg] + memories + examples + answer_format_msg + [message]
         return messages

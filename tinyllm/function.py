@@ -128,8 +128,6 @@ class Function:
     async def handle_exception(self,
                                e):
         detailed_error_msg = traceback.format_exc()
-        self.transition(States.FAILED, msg=detailed_error_msg)
-        langfuse_client.flush()
         output_message = {"status": "error",
                           "message": detailed_error_msg}
 
@@ -141,6 +139,11 @@ class Function:
         if self.state < States.PROCESSED_OUTPUT_EVALUATION:
             for evaluator in self.processed_output_evaluators:
                 await evaluator(**output_message, observation=self.observation)
+
+
+
+        self.transition(States.FAILED, msg=detailed_error_msg)
+        langfuse_client.flush()
 
         return output_message
 
