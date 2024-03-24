@@ -55,7 +55,7 @@ class Agent(Function):
         self.prompt_manager = PromptManager(
             system_role=self.system_role,
             example_manager=example_manager,
-            memory=memory or BufferMemory(),
+            memory=memory or BufferMemory() if toolkit else None,
             answer_formatting_prompt=answer_formatting_prompt,
         )
         self.tool_retries = tool_retries
