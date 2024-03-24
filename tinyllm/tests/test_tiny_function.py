@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from tinyllm.llms.tiny_function import tiny_function
 from tinyllm.tests.base import AsyncioTestCase
@@ -26,9 +26,9 @@ class TestTinyFunctionDecorator(AsyncioTestCase):
 
     def test_tiny_function_success(self):
         class CharacterInfo(BaseModel):
-            name: str
-            age: int
-            occupation: str
+            name: str = Field(..., description="Name")
+            age: int = Field(..., description="Age")
+            occupation: str = Field(..., description="occupation")
 
         @tiny_function(output_model=CharacterInfo)
         async def get_character_info(doc1, doc2):
