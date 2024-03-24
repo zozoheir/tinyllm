@@ -66,7 +66,6 @@ LLM_TOKEN_LIMITS = {
     "anyscale/meta-llama/Llama-2-70b-chat-hf": 4096,
     "azure/gpt35turbo": 4096,
     "azure/gpt35turbo16k": 16385,
-
 }
 
 

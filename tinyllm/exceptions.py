@@ -3,3 +3,6 @@ class InvalidStateTransition(Exception):
 
 class MissingBlockException(Exception):
     pass
+
+class JsonOutputValidationException(Exception):
+    pass

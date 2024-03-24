@@ -4,10 +4,10 @@ from textwrap import dedent
 from pydantic import BaseModel, create_model
 from typing import Type, Dict, Any, Union, List
 
-from tenacity import retry, stop_after_attempt, wait_random_exponential, retry_if_exception_type
+from tenacity import retry, stop_after_attempt, wait_random_exponential, retry_if_exception_type, wait_fixed
 
 from tinyllm.agent.agent import Agent
-from tinyllm.exceptions import MissingBlockException
+from tinyllm.exceptions import MissingBlockException, JsonOutputValidationException
 from tinyllm.llms.lite_llm import json_mode_models, DEFAULT_LLM_MODEL
 from tinyllm.util.message import AssistantMessage, Text
 from tinyllm.util.parse_util import *
@@ -21,7 +21,7 @@ def model_to_string(model) -> str:
         description = getattr(field, 'description', None)
         description = f" | Description: {field.description}" if description else ""
         field_defs.append(
-            f"    {field_name}: {field_type}" + description)
+            f"    - {field_name}: {field_type}" + description)
     model_prompt = "Model:\n" + "\n".join(field_defs) if field_defs else ""
     return model_prompt
 
@@ -30,7 +30,6 @@ def create_pydantic_model_from_dict(data: Dict[str, Any]) -> BaseModel:
     fields = {key: (type(value), ...) for key, value in data.items()}
     JSONOutput = create_model('JSONOutput', **fields)
     model_instance = JSONOutput(**data)
-
     return model_instance
 
 
@@ -69,6 +68,7 @@ def get_system_role(func,
     data_model_prompt = dedent(f"""
     DATA MODEL
     Your output must respect the following pydantic model:
+    
     {pydantic_model}
     """) if pydantic_model else ""
 
@@ -87,9 +87,10 @@ def tiny_function(output_model: Type[BaseModel] = None,
     def decorator(func):
         @functools.wraps(func)
         @retry(
+            reraise=True,
             stop=stop_after_attempt(3),
-            wait=wait_random_exponential(min=1, max=5),
-            retry=retry_if_exception_type((json.JSONDecodeError))
+            wait=wait_fixed(1),
+            retry=retry_if_exception_type((MissingBlockException, JsonOutputValidationException))
         )
         async def wrapper(*args, **kwargs):
 
@@ -97,7 +98,7 @@ def tiny_function(output_model: Type[BaseModel] = None,
                 kwargs['response_format'] = {"type": "json_object"}
             else:
                 if example_manager:
-                    if len(example_manager.constant_examples)>0:
+                    if len(example_manager.constant_examples) > 0:
                         for message in [i.assistant_message for i in example_manager.constant_examples]:
                             for content in message.content:
                                 if type(content) == Text:
@@ -131,17 +132,19 @@ def tiny_function(output_model: Type[BaseModel] = None,
                     else:
                         blocks = extract_block(msg_content, 'json')
                         if not blocks:
-                            try:
-                                parsed_output = json.loads(msg_content)
-                            except json.JSONDecodeError:
-                                raise MissingBlockException("Missing JSON block")
+                            parsed_output = json.loads(msg_content)
                         else:
                             parsed_output = blocks[0]
 
                     if output_model is None:
                         function_output_model = create_pydantic_model_from_dict(parsed_output)
                     else:
-                        function_output_model = output_model(**parsed_output)
+                        try:
+                            function_output_model = output_model(**parsed_output)
+                        except:
+                            raise JsonOutputValidationException(
+                                f"Output does not match the expected model: {output_model}")
+
                     return {
                         'status': 'success',
                         'output': function_output_model
