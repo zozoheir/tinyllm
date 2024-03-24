@@ -23,7 +23,7 @@ setup(name='tinyllm',
           'python-Levenshtein',
           'sqlalchemy',
           'tiktoken',
-          'typing-extensions==4.5.0',
+          'typing-extensions',
           'uuid',
           'fuzzywuzzy'
       ],
