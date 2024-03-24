@@ -2,18 +2,15 @@ import functools
 from textwrap import dedent
 
 from pydantic import BaseModel, create_model
-from typing import Type, Dict, Any, Union, List
+from typing import Type
 
-from pydantic.fields import ModelField
-from tenacity import retry, stop_after_attempt, wait_random_exponential, retry_if_exception_type, wait_fixed
+from tenacity import retry, stop_after_attempt, retry_if_exception_type, wait_fixed
 
 from tinyllm.agent.agent import Agent
 from tinyllm.exceptions import MissingBlockException, JsonOutputValidationException
 from tinyllm.llms.lite_llm import json_mode_models, DEFAULT_LLM_MODEL
 from tinyllm.util.message import AssistantMessage, Text
 from tinyllm.util.parse_util import *
-
-
 
 
 def create_pydantic_model_from_dict(data: Dict[str, Any]) -> BaseModel:
@@ -28,8 +25,8 @@ def model_to_string(model) -> str:
     field_defs = []
     for field_name, field in fields.items():
         field_type = field.annotation.__name__
-        description = getattr(field.field_info, 'description', None)
-        description = f" | Description: {field.field_info}" if description else ""
+        description = field.description
+        description = f" | Description: {description}" if description else ""
         field_defs.append(
             f"    {field_name}: {field_type}" + description)
     model_prompt = "Model:\n" + "\n".join(field_defs) if field_defs else ""
