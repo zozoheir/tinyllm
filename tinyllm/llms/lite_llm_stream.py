@@ -42,7 +42,7 @@ class LiteLLMStream(LiteLLM, FunctionStream):
         # tool argument tokens are sent in chunks after so need to keep track of them
 
         async for chunk in response:
-            chunk_dict = chunk.model_dump()
+            chunk_dict = chunk.dict()
             status = self.get_streaming_status(chunk_dict)
             chunk_role = self.get_chunk_type(chunk_dict)
             delta = chunk_dict['choices'][0]['delta']

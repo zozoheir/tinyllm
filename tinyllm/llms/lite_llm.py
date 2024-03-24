@@ -125,7 +125,7 @@ class LiteLLM(Function):
         api_result = await acompletion(
             **completion_args,
         )
-        model_dump = api_result.model_dump()
+        model_dump = api_result.dict()
         msg_type = 'tool' if model_dump['choices'][0]['finish_reason'] == 'tool_calls' else 'completion'
         message = model_dump['choices'][0]['message']
         return {
