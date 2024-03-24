@@ -1,15 +1,29 @@
+from enum import Enum
+
 from tinyllm.util.helpers import count_tokens
 from tinyllm.util.prompt_util import stringify_dict
+
+
+class DocumentTypes(Enum):
+    TEXT = 'text'
+    DICTIONARY = 'dictionary'
+    TABLE = 'table'
+    IMAGE = 'image'
 
 
 class Document:
 
     def __init__(self,
-                 content=None,
-                 metadata: dict = {}):
+                 content,
+                 metadata: dict={},
+                 type=DocumentTypes.TEXT,
+                 header='[doc]',
+                 include_keys=['content']):
         self.content = content
         self.metadata = metadata
         self.type = type
+        self.header = header
+        self.include_keys = include_keys
 
     @property
     def size(self):
@@ -17,15 +31,13 @@ class Document:
         return count_tokens(content)
 
     def to_string(self,
-                  header,
-                  include_keys):
-        if type(self.content) == dict:
-            content = stringify_dict(header=header,
-                                     dict=self.content,
-                                     include_keys=include_keys)
-        else:
-            content = self.content
-        return content
+                  **kwargs):
+        full_dict = self.metadata.copy()
+        full_dict.update({'content': self.content})
+        return stringify_dict(header=kwargs.get('header', self.header),
+                              dict=full_dict,
+                              include_keys=kwargs.get('include_keys', self.include_keys))
+
 
 class ImageDocument(Document):
 
