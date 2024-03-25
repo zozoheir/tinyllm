@@ -68,9 +68,13 @@ def get_system_role(func,
 default_model_params = {'model': 'gpt-3.5-turbo'}
 
 
+class JsonParsingException(Exception):
+    pass
+
+
 def tiny_function(output_model: Type[BaseModel] = None,
                   example_manager=None,
-                  model_params={'model': DEFAULT_LLM_MODEL}):
+                  model_kwargs={}):
     def decorator(func):
         @functools.wraps(func)
         @retry(
@@ -81,7 +85,7 @@ def tiny_function(output_model: Type[BaseModel] = None,
         )
         async def wrapper(*args, **kwargs):
 
-            if model_params['model'] in json_mode_models:
+            if model_kwargs.get('model',DEFAULT_LLM_MODEL) in json_mode_models:
                 kwargs['response_format'] = {"type": "json_object"}
             else:
                 if example_manager:
@@ -93,11 +97,11 @@ def tiny_function(output_model: Type[BaseModel] = None,
 
             system_role = get_system_role(func=func,
                                           output_model=output_model,
-                                          model=model_params['model'])
+                                          model=model_kwargs.get('model',DEFAULT_LLM_MODEL))
 
             prompt = extract_html(func.__doc__.strip(), tag='prompt')
             if len(prompt) == 0:
-                assert 'content' in kwargs, "tinyllm_function takes content kwargs by default"
+                assert 'content' in kwargs, "tinyllm_function takes content kwarg by default"
                 agent_input_content = kwargs['content']
             else:
                 prompt = prompt[0]
@@ -110,11 +114,11 @@ def tiny_function(output_model: Type[BaseModel] = None,
             )
 
             result = await agent(content=agent_input_content,
-                                 **model_params)
+                                 **model_kwargs)
             if result['status'] == 'success':
                 msg_content = result['output']['response']['choices'][0]['message']['content']
                 try:
-                    if model_params['model'] in json_mode_models:
+                    if model_kwargs.get('model', DEFAULT_LLM_MODEL) in json_mode_models:
                         parsed_output = json.loads(msg_content)
                     else:
                         blocks = extract_block(msg_content, 'json')
@@ -137,7 +141,7 @@ def tiny_function(output_model: Type[BaseModel] = None,
                         'output': function_output_model
                     }
                 except (ValueError, json.JSONDecodeError) as e:
-                    return {"message": "Parsing error", "details": str(e),
+                    return {"message": f"Parsing error : {str(e)}",
                             'status': 'error'}
             else:
                 return {

@@ -40,7 +40,7 @@ class ExcelLoader(Loader):
         pass
 
 
-@tiny_function(model_params={'model': 'gpt-4-vision-preview'})
+@tiny_function(model_kwargs={'model': 'gpt-4-vision-preview'})
 async def parse_image(content: Union[Content, List[Content]]):
     """
     <system>

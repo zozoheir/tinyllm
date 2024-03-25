@@ -85,7 +85,7 @@ class PromptManager:
 
         max_tokens = min(max(500, input_size * prompt_to_completion_multiplier), 4096)
         expected_total_size = input_size + max_tokens
-        if expected_total_size / context_size_available > 0.9:
+        if expected_total_size / context_size_available > 0.9 or context_size_available < 0:
             model = DEFAULT_CONTEXT_FALLBACK_DICT[model]
 
         return int(max_tokens), model

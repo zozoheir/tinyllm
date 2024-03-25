@@ -6,7 +6,7 @@ from tinyllm.validator import Validator
 class ExampleModel(Validator):
     example_python: str
 
-@tiny_function(output_model=ExampleModel, model_params={'model':'gpt-4-turbo-preview'})
+@tiny_function(output_model=ExampleModel, model_kwargs={'model': 'gpt-4-turbo-preview'})
 async def generate_example(files_content: str):
     """
     <system>
