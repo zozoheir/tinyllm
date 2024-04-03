@@ -16,6 +16,7 @@ class Document:
     def __init__(self,
                  content,
                  metadata: dict={},
+                 embeddings = None,
                  type=DocumentTypes.TEXT,
                  header='[doc]',
                  include_keys=['content']):
@@ -24,6 +25,7 @@ class Document:
         self.type = type
         self.header = header
         self.include_keys = include_keys
+        self.embeddings = embeddings
 
     @property
     def size(self):

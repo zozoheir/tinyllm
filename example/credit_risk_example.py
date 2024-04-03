@@ -29,7 +29,8 @@ employment_history = 'Employed for ' + str(random.randint(0, 30)) + ' years in '
 # Run the async function
 def main():
     loop = asyncio.get_event_loop()
-    result = loop.run_until_complete(calculate_risk_score(bank_account_history=bank_account_history, employment_history=employment_history))
+    result = loop.run_until_complete(calculate_risk_score(bank_account_history=bank_account_history,
+                                                          employment_history=employment_history))
     print('Risk Score:', result['output'].risk_score)
 
 if __name__ == '__main__':

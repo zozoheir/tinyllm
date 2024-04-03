@@ -39,6 +39,7 @@ DEFAULT_CONTEXT_FALLBACK_DICT = {
     "anyscale/Open-Orca/Mistral-7B-OpenOrca": "gpt-3.5-turbo-16k",
     "anyscale/meta-llama/Llama-2-70b-chat-hf": "gpt-3.5-turbo-16k",
     "azure/gpt35turbo": "azure/gpt35turbo16k",
+    "azure/gpt4turbo": "azure/gpt432k",
 }
 
 LLM_TOKEN_LIMITS = {
@@ -66,6 +67,8 @@ LLM_TOKEN_LIMITS = {
     "anyscale/meta-llama/Llama-2-70b-chat-hf": 4096,
     "azure/gpt35turbo": 4096,
     "azure/gpt35turbo16k": 16385,
+    "azure/gpt4turbo": 8192,
+    "azure/gpt432k": 32768,
 }
 
 

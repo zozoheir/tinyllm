@@ -36,7 +36,7 @@ class Function:
     ):
         FunctionInitValidator(
             user_id=user_id,
-            session_id=session_id,
+            session_id=str(session_id),
             input_validator=input_validator,
             output_validator=output_validator,
             processed_output_validator=processed_output_validator,
@@ -46,7 +46,7 @@ class Function:
         )
 
         self.user_id = user_id
-        self.session_id = session_id
+        self.session_id = str(session_id)
         self.observation = None # For logging
 
         if name is None:
