@@ -89,13 +89,14 @@ class Agent(Function):
                 all_contents.append(response_content)
 
                 if response_msg['output']['response']['choices'][0]['finish_reason'] == 'length':
-                    request_kwargs['max_tokens'] = request_kwargs['max_tokens'] * 1.1
+                    request_kwargs['max_tokens'] = int(request_kwargs['max_tokens'] * 1.1)
                     request_kwargs['messages'].append(AssistantMessage(content=response_content))
+                    request_kwargs['messages'].append(UserMessage(content='Continue the previous message without interruption.'))
                 else:
                     break
 
                 if trials == 5:
-                    raise Exception('LLM is stuck despite increasing max_tokens.')
+                    raise Exception("LLM doesn't have enough tokens to respond")
 
             response_msg['output']['response']['choices'][0]['message']['content'] = ''.join(all_contents)
 

@@ -7,7 +7,7 @@ import langfuse
 import numpy as np
 
 from tinyllm import langfuse_client
-from tinyllm.util.helpers import count_tokens
+from tinyllm.util.helpers import count_tokens, num_tokens_from_string
 from tinyllm.util.message import Message
 
 model_parameters = [
@@ -82,8 +82,9 @@ class ObservationUtil:
                 mapped_output[langfuse_kwarg] = function_output.get(function_kwarg, None)
 
         if observation_type == 'generation':
+
             prompt_tokens = count_tokens(function_input)
-            completion_tokens = count_tokens(function_output)
+            completion_tokens = count_tokens(function_output['message']['content'])
             total_tokens = prompt_tokens + completion_tokens
 
             obs.end(

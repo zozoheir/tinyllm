@@ -5,7 +5,7 @@ from tinyllm.agent.tool import tinyllm_toolkit
 from tinyllm.eval.evaluator import Evaluator
 from tinyllm.llms.lite_llm import LiteLLM
 from tinyllm.tests.base import AsyncioTestCase
-from tinyllm.util.message import Text
+from tinyllm.util.message import Text, UserMessage
 
 
 class AnswerCorrectnessEvaluator(Evaluator):
@@ -20,7 +20,6 @@ class AnswerCorrectnessEvaluator(Evaluator):
         }
 
         return evals
-
 
 
 # Define the test class
@@ -38,7 +37,6 @@ class TestAgent(AsyncioTestCase):
         # Run the asynchronous test
         result = self.loop.run_until_complete(tiny_agent(content="What does wiki say about Morocco"))
         self.assertTrue(result['status'] == 'success')
-
 
     def test_fibonacci_code(self):
         tiny_agent = Agent(
@@ -62,8 +60,14 @@ class TestAgent(AsyncioTestCase):
         query = """Plan then execute this task for me: I need to multiply the population of Morocco by the population of
          Senegal, then square that number by Elon Musk's age"""
         result = self.loop.run_until_complete(tiny_agent(content=query,
-                                                         model='gpt-4')) # Parallel call is not handled yet
+                                                         model='gpt-4'))  # Parallel call is not handled yet
         self.assertTrue(result['status'] == 'success')
+
+    def test_agent_repeat_robustness(self):
+        tiny_agent = Agent(name='Test: Agent repeat robustness')
+        result = self.loop.run_until_complete(tiny_agent(content="Give me the history of Morocco since the year 1000",
+                                                         max_tokens=50))
+        self.assertEqual(result['status'], 'success')
 
 
 # This allows the test to be run standalone

@@ -31,12 +31,11 @@ class PromptManager:
 
     async def format_messages(self, message):
 
-        complete_message_note = "Notes:\n- if the last message is yours and looks incomplete, finish it"
         current_time = '\n\n\n<Current time: ' + \
                        str(dt.datetime.utcnow()).split('.')[
                            0] + '>'
 
-        system_content = self.system_role + '\n\n' + complete_message_note + current_time
+        system_content = self.system_role + '\n\n' + current_time
         system_msg = SystemMessage(system_content)
         memories = [] if self.memory is None else await self.memory.get_memories()
         examples = []
