@@ -1,4 +1,5 @@
 import os
+from textwrap import dedent
 
 from tinyllm.examples.example_manager import ExampleManager
 from tinyllm.llms.lite_llm import DEFAULT_LLM_MODEL, LLM_TOKEN_LIMITS, DEFAULT_CONTEXT_FALLBACK_DICT
@@ -29,9 +30,13 @@ class PromptManager:
         self.is_time_aware = is_time_aware
 
     async def format_messages(self, message):
-        system_content = self.system_role if self.is_time_aware is False else self.system_role + '\n\n\n<Current time: ' + \
-                                                                              str(dt.datetime.utcnow()).split('.')[
-                                                                                  0] + '>'
+
+        complete_message_note = "Notes:\n- if the last message is yours and looks incomplete, finish it"
+        current_time = '\n\n\n<Current time: ' + \
+                       str(dt.datetime.utcnow()).split('.')[
+                           0] + '>'
+
+        system_content = self.system_role + '\n\n' + complete_message_note + current_time
         system_msg = SystemMessage(system_content)
         memories = [] if self.memory is None else await self.memory.get_memories()
         examples = []
@@ -58,15 +63,18 @@ class PromptManager:
                                   **kwargs):
 
         messages = await self.format_messages(message)
-        prompt_to_completion_multiplier = kwargs.pop('prompt_to_completion_multiplier', 1)
-        input_size = count_tokens(messages)
-        max_tokens, model = self.get_run_config(model=kwargs.get('model', DEFAULT_LLM_MODEL),
-                                                prompt_to_completion_multiplier=prompt_to_completion_multiplier,
-                                                input_size=input_size)
+        if 'expected_io_ratio' in kwargs:
+            expected_io_ratio = kwargs.pop('expected_io_ratio', 1)
+            max_tokens, model = self.get_run_config(model=kwargs.get('model', DEFAULT_LLM_MODEL),
+                                                    expected_io_ratio=expected_io_ratio,
+                                                    messages=messages)
+            kwargs['max_tokens'] = max_tokens
+            kwargs['model'] = model
+        else:
+            kwargs['model'] = kwargs.get('model', DEFAULT_LLM_MODEL)
+            kwargs['max_tokens'] = kwargs.get('max_tokens', 600)
 
         kwargs['messages'] = messages
-        kwargs['max_tokens'] = max_tokens
-        kwargs['model'] = model
         return kwargs
 
     async def add_memory(self,
@@ -79,13 +87,16 @@ class PromptManager:
         messages = await self.prepare_llm_request(message=get_openai_message(role='user', content=''))
         return count_tokens(messages)
 
-    def get_run_config(self, input_size, prompt_to_completion_multiplier, model):
-        model_token_limit = LLM_TOKEN_LIMITS[model]
-        context_size_available = model_token_limit - input_size
+    def get_run_config(self, messages, expected_io_ratio, model):
 
-        max_tokens = min(max(500, input_size * prompt_to_completion_multiplier), 4096)
-        expected_total_size = input_size + max_tokens
-        if expected_total_size / context_size_available > 0.9 or context_size_available < 0:
+        user_msg = messages[-1]
+        user_msg_size = count_tokens(user_msg)
+        all_msg_size = count_tokens(messages)
+        model_token_limit = LLM_TOKEN_LIMITS[model]
+
+        max_tokens = min(max(600, user_msg_size * expected_io_ratio), 4096)
+        expected_total_size = all_msg_size + max_tokens
+        if expected_total_size / model_token_limit > 1:
             model = DEFAULT_CONTEXT_FALLBACK_DICT[model]
 
         return int(max_tokens), model

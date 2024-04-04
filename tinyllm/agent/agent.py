@@ -79,9 +79,26 @@ class Agent(Function):
 
             request_kwargs = await self.prompt_manager.prepare_llm_request(message=input_msg,
                                                                            **kwargs)
+            all_contents = []
+            trials = 0
+            while True:
+                response_msg = await self.llm(tools=self.tools,
+                                              **request_kwargs)
+                trials += 1
+                response_content = response_msg['output']['response']['choices'][0]['message']['content']
+                all_contents.append(response_content)
 
-            response_msg = await self.llm(tools=self.tools,
-                                          **request_kwargs)
+                if response_msg['output']['response']['choices'][0]['finish_reason'] == 'length':
+                    request_kwargs['max_tokens'] = request_kwargs['max_tokens'] * 1.1
+                    request_kwargs['messages'].append(AssistantMessage(content=response_content))
+                else:
+                    break
+
+                if trials == 5:
+                    raise Exception('LLM is stuck despite increasing max_tokens.')
+
+            response_msg['output']['response']['choices'][0]['message']['content'] = ''.join(all_contents)
+
             await self.prompt_manager.add_memory(message=input_msg)
 
             if response_msg['status'] == 'success':
