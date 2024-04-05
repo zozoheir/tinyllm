@@ -48,10 +48,10 @@ class TestTinyFunctionDecorator(AsyncioTestCase):
         result = self.loop.run_until_complete(get_character_info(doc1=content, doc2=content))
 
         # Assertions
-        self.assertIsInstance(result['output'], CharacterInfo)
-        self.assertTrue("Elon" in result['output'].name)
-        self.assertTrue(result['output'].age, 50)
-        self.assertTrue("CEO" in result['output'].occupation)
+        self.assertIsInstance(result['output'], dict)
+        self.assertTrue("Elon" in result['output']['name'])
+        self.assertTrue(result['output']['age'], 50)
+        self.assertTrue("CEO" in result['output']['occupation'])
 
     def test_no_model(self):
         @tiny_function()
