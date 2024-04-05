@@ -1,3 +1,4 @@
+import inspect
 import traceback
 from typing import Any, Optional, Type, Union
 
@@ -114,6 +115,8 @@ class Function:
             final_output = {"status": "success",
                             "output": self.processed_output}
 
+            await self.close(**final_output)
+
             # Complete
             self.transition(States.COMPLETE)
             langfuse_client.flush()
@@ -199,3 +202,7 @@ class Function:
 
     async def process_output(self, **kwargs):
         return kwargs
+
+    async def close(self,
+                    **kwargs):
+        pass

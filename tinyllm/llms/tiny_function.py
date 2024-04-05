@@ -8,7 +8,7 @@ from typing import Type
 from tenacity import retry, stop_after_attempt, retry_if_exception_type, wait_fixed
 
 from tinyllm.agent.agent import Agent
-from tinyllm.exceptions import MissingBlockException, JsonOutputValidationError
+from tinyllm.exceptions import MissingBlockException, LLMJsonValidationError
 from tinyllm.llms.lite_llm import json_mode_models, DEFAULT_LLM_MODEL
 from tinyllm.tracing.langfuse_context import observation
 from tinyllm.util.message import AssistantMessage, Text
@@ -77,7 +77,7 @@ def tiny_function(output_model: Type[BaseModel] = None,
             reraise=True,
             stop=stop_after_attempt(3),
             wait=wait_fixed(1),
-            retry=retry_if_exception_type((MissingBlockException, JsonOutputValidationError))
+            retry=retry_if_exception_type((MissingBlockException, LLMJsonValidationError))
         )
         async def wrapper(*args, **kwargs):
 
@@ -115,7 +115,7 @@ def tiny_function(output_model: Type[BaseModel] = None,
                             try:
                                 function_output_model = output_model(**parsed_output)
                             except:
-                                raise JsonOutputValidationError(
+                                raise LLMJsonValidationError(
                                     f"Output does not match the expected model: {output_model}")
 
                         return {
