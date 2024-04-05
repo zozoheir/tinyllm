@@ -1,4 +1,5 @@
 import os
+from enum import Enum
 from textwrap import dedent
 
 from tinyllm.examples.example_manager import ExampleManager
@@ -8,6 +9,11 @@ from tinyllm.util.helpers import get_openai_message, count_tokens, OPENAI_MODELS
 import datetime as dt
 
 from tinyllm.util.message import SystemMessage, UserMessage, Text, AssistantMessage
+
+
+class MaxTokensStrategy(Enum):
+    MAX = 'max_context'
+    EXPECTED_RATIO = 'max_user_context_examples'
 
 
 class PromptManager:
@@ -62,11 +68,9 @@ class PromptManager:
                                   **kwargs):
 
         messages = await self.format_messages(message)
-        if 'expected_io_ratio' in kwargs:
-            expected_io_ratio = kwargs.pop('expected_io_ratio', 1)
-            max_tokens, model = self.get_run_config(model=kwargs.get('model', DEFAULT_LLM_MODEL),
-                                                    expected_io_ratio=expected_io_ratio,
-                                                    messages=messages)
+
+        if kwargs['max_tokens_strategy']:
+            max_tokens, model = self.get_run_config(messages=messages, **kwargs)
             kwargs['max_tokens'] = max_tokens
             kwargs['model'] = model
         else:
@@ -86,16 +90,23 @@ class PromptManager:
         messages = await self.prepare_llm_request(message=get_openai_message(role='user', content=''))
         return count_tokens(messages)
 
-    def get_run_config(self, messages, expected_io_ratio, model):
+    def get_run_config(self, messages, **kwargs):
 
         user_msg = messages[-1]
         user_msg_size = count_tokens(user_msg)
         all_msg_size = count_tokens(messages)
+        model = kwargs.get('model', DEFAULT_LLM_MODEL)
         model_token_limit = LLM_TOKEN_LIMITS[model]
 
-        max_tokens = min(max(600, user_msg_size * expected_io_ratio), 4096)
-        expected_total_size = all_msg_size + max_tokens
-        if expected_total_size / model_token_limit > 1:
-            model = DEFAULT_CONTEXT_FALLBACK_DICT[model]
+        if 'max_tokens' in kwargs:
+            max_tokens = kwargs['max_tokens']
+        elif kwargs['max_tokens_strategy'] == MaxTokensStrategy.MAX:
+            leftover_to_use = model_token_limit - all_msg_size
+            max_tokens = min(kwargs.get('allowed_max_tokens', 4096), leftover_to_use)
+        elif kwargs['max_tokens_strategy'] == MaxTokensStrategy.EXPECTED_RATIO:
+            max_tokens = min(max(600, user_msg_size * kwargs['expected_io_ratio']), 4096)
+            expected_total_size = all_msg_size + max_tokens
+            if expected_total_size / model_token_limit > 1:
+                model = DEFAULT_CONTEXT_FALLBACK_DICT[kwargs['model']]
 
         return int(max_tokens), model

@@ -7,7 +7,7 @@ import langfuse
 import numpy as np
 
 from tinyllm import langfuse_client
-from tinyllm.constants import MODELS_COSTS_1K_TOKENS
+from tinyllm.constants import LLM_MODEL_INFO
 from tinyllm.util.helpers import count_tokens, num_tokens_from_string
 from tinyllm.util.message import Message
 
@@ -98,7 +98,7 @@ class ObservationUtil:
             }
 
             model = function_kwargs.get('model', None)
-            pricing = MODELS_COSTS_1K_TOKENS.get(model, None)
+            pricing = LLM_MODEL_INFO.get(model, None)
             cost = {}
             if pricing:
                 input_cost = pricing['input'] * (prompt_tokens / 1000)
