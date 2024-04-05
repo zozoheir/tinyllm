@@ -99,7 +99,7 @@ class ImageLoader(Loader):
             Image(self.url)
         ]
         parsing_output = await parse_image(content=content)
-        return parsing_output['output'].dict()
+        return parsing_output['output']
 
     async def async_load(self, parse=False) -> Document:
         self.store_image()

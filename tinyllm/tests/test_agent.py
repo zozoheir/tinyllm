@@ -65,8 +65,9 @@ class TestAgent(AsyncioTestCase):
 
     def test_agent_repeat_robustness(self):
         tiny_agent = Agent(name='Test: Agent repeat robustness')
-        result = self.loop.run_until_complete(tiny_agent(content="Give me the history of Morocco since the year 1000",
-                                                         max_tokens=50))
+        result = self.loop.run_until_complete(tiny_agent(
+            content="Give me the history of Morocco since the year 1000 in JSON format like ```json {'history': 'text here'} ```",
+            max_tokens=50))
         self.assertEqual(result['status'], 'success')
 
 

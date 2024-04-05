@@ -11,7 +11,7 @@ mock_success_response = {
         "response": {
             "choices": [{
                 "message": {
-                    "content": "```json\n{\"name\": \"Elon\", \"age\": 50, \"occupation\": \"CEO\"}\n```"
+                    "content": "{\"name\": \"Elon\", \"age\": 50, \"occupation\": \"CEO\"}"
                 }
             }]
         }
@@ -19,7 +19,6 @@ mock_success_response = {
 }
 
 mock_fail_response = {"status": "error", "response": {"message": "Failed to process request"}}
-
 
 
 class TestTinyFunctionDecorator(AsyncioTestCase):
@@ -49,11 +48,10 @@ class TestTinyFunctionDecorator(AsyncioTestCase):
         result = self.loop.run_until_complete(get_character_info(doc1=content, doc2=content))
 
         # Assertions
-        self.assertIsInstance(result['output'], CharacterInfo)
-        self.assertTrue("Elon" in result['output'].name)
-        self.assertTrue(result['output'].age, 50)
-        self.assertTrue("CEO" in result['output'].occupation)
-
+        self.assertIsInstance(result['output'], dict)
+        self.assertTrue("Elon" in result['output']['name'])
+        self.assertTrue(result['output']['age'], 50)
+        self.assertTrue("CEO" in result['output']['occupation'])
 
     def test_no_model(self):
         @tiny_function()
@@ -70,3 +68,23 @@ class TestTinyFunctionDecorator(AsyncioTestCase):
         result = self.loop.run_until_complete(get_character_info(content=content))
         self.assertEqual(result['status'], 'success')
 
+    def test_not_enough_tokens(self):
+        class CharacterInfo(BaseModel):
+            name: str = Field(..., description="Name")
+            age: int = Field(..., description="Age")
+            occupation: str = Field(..., description="occupation")
+
+        @tiny_function(model_kwargs={'max_tokens': 8}, output_model=CharacterInfo)
+        async def get_character_info(content: str):
+            """
+            <system>
+            Extract character information from the content
+            </system>
+            """
+            pass
+
+        # Test the decorated function
+        content = "Elon Musk is a 50 years old CEO"
+        result = self.loop.run_until_complete(get_character_info(content=content))
+        print(result)
+        self.assertEqual(result['status'], 'success')

@@ -1,4 +1,7 @@
 from contextvars import ContextVar
+
+from pydantic import BaseModel
+
 from tinyllm.tracing.helpers import *
 
 current_observation_context = ContextVar('current_observation_context', default=None)
@@ -53,19 +56,24 @@ class ObservationDecoratorFactory:
     @classmethod
     def get_decorator(self,
                       observation_type,
+                      name=None,
                       input_mapping=None,
                       output_mapping=None,
                       evaluators=None):
         def decorator(func):
+
             @wraps(func)
             async def wrapper(*args, **function_input):
                 parent_observation = current_observation_context.get()
-                name = ObservationUtil.get_obs_name(*args, func=func)
+                if name is None:
+                    obs_name = ObservationUtil.get_obs_name(*args, func=func)
+                else:
+                    obs_name = name
                 observation_input = ObservationUtil.prepare_observation_input(input_mapping, function_input)
                 observation = ObservationUtil.get_current_obs(*args,
                                                               parent_observation=parent_observation,
                                                               observation_type=observation_type,
-                                                              name=name,
+                                                              name=obs_name,
                                                               observation_input=observation_input)
                 token = current_observation_context.set(observation)
                 result = {}
@@ -73,7 +81,11 @@ class ObservationDecoratorFactory:
                     args[0].observation = observation
                 try:
                     result = await func(*args, **function_input)
-                    if type(result)!=dict: result = {'result': result}
+                    # convert pydantic models to dict
+                    for key, value in result.items():
+                        if isinstance(value, BaseModel):
+                            result[key] = value.dict()
+                    if type(result) != dict: result = {'result': result}
                     await ObservationUtil.perform_evaluations(observation, result, evaluators)
                     return result
                 except Exception as e:
@@ -90,11 +102,12 @@ class ObservationDecoratorFactory:
         return decorator
 
 
-def observation(observation_type='span', input_mapping=None, output_mapping=None, evaluators=None, stream=False):
+def observation(observation_type='span',name=None, input_mapping=None, output_mapping=None, evaluators=None, stream=False):
     input_mapping, output_mapping = ObservationUtil.conditional_args(observation_type,
                                                                      input_mapping,
                                                                      output_mapping)
     if stream:
-        return ObservationDecoratorFactory.get_streaming_decorator(observation_type, input_mapping, output_mapping,evaluators)
+        return ObservationDecoratorFactory.get_streaming_decorator(observation_type, input_mapping, output_mapping,
+                                                                   evaluators)
     else:
-        return ObservationDecoratorFactory.get_decorator(observation_type, input_mapping, output_mapping,evaluators)
+        return ObservationDecoratorFactory.get_decorator(observation_type, name, input_mapping, output_mapping, evaluators)

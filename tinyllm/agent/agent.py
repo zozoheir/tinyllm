@@ -1,4 +1,6 @@
+import inspect
 import json
+from enum import Enum
 from typing import Optional, Union, List
 
 from tinyllm.agent.tool import Toolkit
@@ -7,8 +9,7 @@ from tinyllm.function import Function
 from tinyllm.examples.example_manager import ExampleManager
 from tinyllm.llms.lite_llm import LiteLLM
 from tinyllm.memory.memory import Memory, BufferMemory
-from tinyllm.prompt_manager import PromptManager
-from tinyllm.util.helpers import get_openai_message
+from tinyllm.prompt_manager import PromptManager, MaxTokensStrategy
 from tinyllm.util.message import Content, UserMessage, ToolMessage, AssistantMessage
 from tinyllm.validator import Validator
 
@@ -25,7 +26,9 @@ class AgentInitValidator(Validator):
 
 class AgentInputValidator(Validator):
     content: Union[str, list, Content, List[Content]]
-
+    max_tokens_strategy: Optional[MaxTokensStrategy] = None # Strategy to set max token dynamically
+    allowed_max_tokens: Optional[int] = 4096*0.25 # Max tokens allowed for the response =
+    expects_block: Optional[str] = None
 
 class Agent(Function):
 
@@ -75,32 +78,54 @@ class Agent(Function):
         input_msg = UserMessage(kwargs['content'])
         session_tool_results = []
 
-        while True:
+        while True: # Loop until agent decides to respond
 
             request_kwargs = await self.prompt_manager.prepare_llm_request(message=input_msg,
                                                                            **kwargs)
             all_contents = []
             trials = 0
-            while True:
+            while True: # Loop until finish_reason is not 'length'
                 response_msg = await self.llm(tools=self.tools,
                                               **request_kwargs)
                 trials += 1
                 response_content = response_msg['output']['response']['choices'][0]['message']['content']
-                all_contents.append(response_content)
 
                 if response_msg['output']['response']['choices'][0]['finish_reason'] == 'length':
-                    request_kwargs['max_tokens'] = int(request_kwargs['max_tokens'] * 1.1)
+                    expects_block = kwargs.get('expects_block', None)
+                    if expects_block:
+                        cleanedup_response = response_content.replace(f"```{expects_block}", '').replace('```', '')
+                        all_contents.append(cleanedup_response)
+                    else:
+                        all_contents.append(response_content)
+
+                    request_kwargs['max_tokens'] = int(request_kwargs['max_tokens'] * 1.3)
                     request_kwargs['messages'].append(AssistantMessage(content=response_content))
-                    request_kwargs['messages'].append(UserMessage(content='Continue the previous message without interruption.'))
+                    request_kwargs['messages'].append(UserMessage(content='Your last answer has been cutoff. You must continue your answer EXACTLY from where you left off.'))
                 else:
+
+                    if len(all_contents) > 0:
+                        expects_block = kwargs.get('expects_block', None)
+                        if expects_block:
+                            cleanedup_response = response_content.replace(f"```{expects_block}", '').replace('```', '')
+                            all_contents.append(cleanedup_response)
+                        else:
+                            all_contents.append(response_content)
+
+
+                        final_response = ''.join(all_contents)
+                        if kwargs.get('expects_block', None):
+                            final_response = f"```{expects_block}\n{final_response}\n```"
+                        response_msg['output']['response']['choices'][0]['message']['content'] = final_response
+
                     break
 
                 if trials == 5:
                     raise Exception("LLM doesn't have enough tokens to respond")
 
-            response_msg['output']['response']['choices'][0]['message']['content'] = ''.join(all_contents)
 
             await self.prompt_manager.add_memory(message=input_msg)
+
+
 
             if response_msg['status'] == 'success':
                 is_tool_call = response_msg['output']['response']['choices'][0]['finish_reason'] == 'tool_calls'
