@@ -1,4 +1,5 @@
 import functools
+import traceback
 from textwrap import dedent
 
 from pydantic import BaseModel, create_model
@@ -7,8 +8,9 @@ from typing import Type
 from tenacity import retry, stop_after_attempt, retry_if_exception_type, wait_fixed
 
 from tinyllm.agent.agent import Agent
-from tinyllm.exceptions import MissingBlockException, JsonOutputValidationException
+from tinyllm.exceptions import MissingBlockException, JsonOutputValidationError
 from tinyllm.llms.lite_llm import json_mode_models, DEFAULT_LLM_MODEL
+from tinyllm.tracing.langfuse_context import observation
 from tinyllm.util.message import AssistantMessage, Text
 from tinyllm.util.parse_util import *
 
@@ -34,34 +36,28 @@ def model_to_string(model) -> str:
 
 
 def get_system_role(func,
-                    output_model,
-                    model) -> str:
+                    output_model) -> str:
     system_tag = extract_html(func.__doc__.strip(), tag='system')
-    system_prompt = dedent(system_tag[0]) + '\n\n' + dedent("""
+    system_prompt = dedent(system_tag[0]) + '\n' + dedent("""
     OUTPUT FORMAT
     Your output must be in JSON
-
+    
     {data_model}
 
-    {enclosing_requirement}
-
     You must respect all the requirements above.
-    """)
+""")
 
-    enclosing_requirement = "Your output must be a JSON object enclosed by ```json\n{...}\n```" if model not in json_mode_models else ""
 
     pydantic_model = model_to_string(output_model) if output_model else None
 
-    data_model_prompt = dedent(f"""
-    DATA MODEL
+    data_model = dedent(f"""DATA MODEL
     Your output must respect the following pydantic model:
-    
-    {pydantic_model}
-    """) if pydantic_model else ""
+    {pydantic_model}""") if pydantic_model else ""
 
     final_prompt = system_prompt.format(pydantic_model=pydantic_model,
-                                        enclosing_requirement=enclosing_requirement,
-                                        data_model=data_model_prompt)
+                                        data_model=data_model)
+
+
     return final_prompt
 
 
@@ -81,72 +77,62 @@ def tiny_function(output_model: Type[BaseModel] = None,
             reraise=True,
             stop=stop_after_attempt(3),
             wait=wait_fixed(1),
-            retry=retry_if_exception_type((MissingBlockException, JsonOutputValidationException))
+            retry=retry_if_exception_type((MissingBlockException, JsonOutputValidationError))
         )
         async def wrapper(*args, **kwargs):
 
-            if model_kwargs.get('model',DEFAULT_LLM_MODEL) in json_mode_models:
-                kwargs['response_format'] = {"type": "json_object"}
-            else:
-                if example_manager:
-                    if len(example_manager.constant_examples) > 0:
-                        for message in [i.assistant_message for i in example_manager.constant_examples]:
-                            for content in message.content:
-                                if type(content) == Text:
-                                    content.text = f"```json{content.text}```"
+            @observation(observation_type='span', name=func.__name__)
+            async def traced_call(func, *args, **kwargs):
+                if model_kwargs.get('model', DEFAULT_LLM_MODEL) in json_mode_models:
+                    kwargs['response_format'] = {"type": "json_object"}
 
-            system_role = get_system_role(func=func,
-                                          output_model=output_model,
-                                          model=model_kwargs.get('model',DEFAULT_LLM_MODEL))
+                system_role = get_system_role(func=func,
+                                              output_model=output_model)
 
-            prompt = extract_html(func.__doc__.strip(), tag='prompt')
-            if len(prompt) == 0:
-                assert 'content' in kwargs, "tinyllm_function takes content kwarg by default"
-                agent_input_content = kwargs['content']
-            else:
-                prompt = prompt[0]
-                agent_input_content = prompt.format(**kwargs)
+                prompt = extract_html(func.__doc__.strip(), tag='prompt')
+                if len(prompt) == 0:
+                    assert 'content' in kwargs, "tinyllm_function takes content kwarg by default"
+                    agent_input_content = kwargs['content']
+                else:
+                    prompt = prompt[0]
+                    agent_input_content = prompt.format(**kwargs)
 
-            agent = Agent(
-                name=func.__name__,
-                system_role=system_role,
-                example_manager=example_manager
-            )
+                agent = Agent(
+                    name=func.__name__,
+                    system_role=system_role,
+                    example_manager=example_manager
+                )
 
-            result = await agent(content=agent_input_content,
-                                 **model_kwargs)
-            if result['status'] == 'success':
-                msg_content = result['output']['response']['choices'][0]['message']['content']
-                try:
-                    if model_kwargs.get('model', DEFAULT_LLM_MODEL) in json_mode_models:
+                result = await agent(content=agent_input_content,
+                                     **model_kwargs)
+                if result['status'] == 'success':
+                    msg_content = result['output']['response']['choices'][0]['message']['content']
+                    try:
                         parsed_output = json.loads(msg_content)
-                    else:
-                        blocks = extract_block(msg_content, 'json')
-                        if not blocks:
-                            parsed_output = json.loads(msg_content)
+                        if output_model is None:
+                            function_output_model = create_pydantic_model_from_dict(parsed_output)
                         else:
-                            parsed_output = blocks[0]
+                            try:
+                                function_output_model = output_model(**parsed_output)
+                            except:
+                                raise JsonOutputValidationError(
+                                    f"Output does not match the expected model: {output_model}")
 
-                    if output_model is None:
-                        function_output_model = create_pydantic_model_from_dict(parsed_output)
-                    else:
-                        try:
-                            function_output_model = output_model(**parsed_output)
-                        except:
-                            raise JsonOutputValidationException(
-                                f"Output does not match the expected model: {output_model}")
+                        return {
+                            'status': 'success',
+                            'output': function_output_model
+                        }
 
+                    except (ValueError, json.JSONDecodeError) as e:
+                        return {"message": f"Parsing error : {traceback.format_exc()}",
+                                'status': 'error'}
+                else:
                     return {
-                        'status': 'success',
-                        'output': function_output_model
-                    }
-                except (ValueError, json.JSONDecodeError) as e:
-                    return {"message": f"Parsing error : {str(e)}",
-                            'status': 'error'}
-            else:
-                return {
-                    'status': 'error',
-                    "message": "Agent failed", "details": result['response']['status']}
+                        'status': 'error',
+                        "message": "Agent failed", "details": result['response']['status']}
+
+            response = await traced_call(func, *args, **kwargs)
+            return response
 
         return wrapper
 

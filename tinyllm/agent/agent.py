@@ -1,3 +1,4 @@
+import inspect
 import json
 from typing import Optional, Union, List
 
@@ -10,6 +11,7 @@ from tinyllm.memory.memory import Memory, BufferMemory
 from tinyllm.prompt_manager import PromptManager
 from tinyllm.util.helpers import get_openai_message
 from tinyllm.util.message import Content, UserMessage, ToolMessage, AssistantMessage
+from tinyllm.util.parse_util import extract_blocks
 from tinyllm.validator import Validator
 
 
@@ -89,9 +91,11 @@ class Agent(Function):
                 all_contents.append(response_content)
 
                 if response_msg['output']['response']['choices'][0]['finish_reason'] == 'length':
-                    request_kwargs['max_tokens'] = int(request_kwargs['max_tokens'] * 1.1)
+                    #stack = inspect.stack()
+                    #if sum(['tiny_function' in frame_info.filename for frame_info in stack])>0:
+                    request_kwargs['max_tokens'] = int(request_kwargs['max_tokens'] * 1.3)
                     request_kwargs['messages'].append(AssistantMessage(content=response_content))
-                    request_kwargs['messages'].append(UserMessage(content='Continue the previous message without interruption.'))
+                    request_kwargs['messages'].append(UserMessage(content='Your last answer has been cutoff. Continue your answer exactly from where you left off.'))
                 else:
                     break
 

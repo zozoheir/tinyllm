@@ -4,5 +4,5 @@ class InvalidStateTransition(Exception):
 class MissingBlockException(Exception):
     pass
 
-class JsonOutputValidationException(Exception):
+class JsonOutputValidationError(Exception):
     pass

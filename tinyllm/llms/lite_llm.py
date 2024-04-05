@@ -28,22 +28,12 @@ model_parameters = [
     "temperature",
     "top_p"
 ]
-json_mode_models = ['gpt-3.5-turbo-1106','gpt-4-1106-preview']
+json_mode_models = ['gpt-3.5-turbo-1106', 'gpt-4-1106-preview']
 
-DEFAULT_LLM_MODEL = 'gpt-3.5-turbo'
-DEFAULT_CONTEXT_FALLBACK_DICT = {
-    "gpt-3.5-turbo-0125": "gpt-3.5-turbo-1106",
-    "gpt-4-1106-preview": "gpt-4-1106-preview",
-    "gpt-3.5-turbo": "gpt-3.5-turbo-16k",
-    "gpt-3.5-turbo-1106": "gpt-3.5-turbo-16k",
-    "anyscale/Open-Orca/Mistral-7B-OpenOrca": "gpt-3.5-turbo-16k",
-    "anyscale/meta-llama/Llama-2-70b-chat-hf": "gpt-3.5-turbo-16k",
-    "azure/gpt4turbo": "azure/gpt432k",
-    "azure/gpt35turbo0125": "azure/gpt432k",
-    "azure/gpt432k": 32768,
-}
+DEFAULT_LLM_MODEL = 'gpt-3.5-turbo-0125'
 
 LLM_TOKEN_LIMITS = {
+    "gpt-3.5-turbo-0125": 16385,
     "gpt-3.5-turbo-1106": 16385,
     "gpt-3.5-turbo": 4096,
     "gpt-3.5-turbo-16k": 16385,
@@ -66,9 +56,21 @@ LLM_TOKEN_LIMITS = {
     "gpt-4-32k-0314": 32768,
     "anyscale/Open-Orca/Mistral-7B-OpenOrca": 8192,
     "anyscale/meta-llama/Llama-2-70b-chat-hf": 4096,
-    "azure/gpt41106preview": 128000,
+    "azure/gpt41106": 128000,
     "azure/gpt35turbo0125": 16385,
-    "azure/gpt432k": 32768,
+    "azure/gpt35turbo1106": 16385,  # JSON MODE
+}
+
+DEFAULT_CONTEXT_FALLBACK_DICT = {
+    "gpt-3.5-turbo-0125": "gpt-4-turbo-preview",
+    "gpt-4-1106-preview": "gpt-4-1106-preview",
+    "gpt-3.5-turbo": "gpt-3.5-turbo-16k",
+    "gpt-3.5-turbo-1106": "gpt-3.5-turbo-16k",
+    "azure/gpt41106": "azure/gpt41106",
+    "azure/gpt35turbo0125": "azure/gpt41106",
+    "azure/gpt35turbo1106": "azure/gpt41106",
+    "anyscale/Open-Orca/Mistral-7B-OpenOrca": "gpt-3.5-turbo-16k",
+    "anyscale/meta-llama/Llama-2-70b-chat-hf": "gpt-3.5-turbo-16k",
 }
 
 

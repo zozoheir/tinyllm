@@ -7,6 +7,7 @@ import langfuse
 import numpy as np
 
 from tinyllm import langfuse_client
+from tinyllm.constants import MODELS_COSTS_1K_TOKENS
 from tinyllm.util.helpers import count_tokens, num_tokens_from_string
 from tinyllm.util.message import Message
 
@@ -27,6 +28,7 @@ model_parameters = [
     "top_p"
 ]
 
+
 ## I want you to implement an ObservationWrapper class that implements all of the above functions as class methods
 
 class ObservationUtil:
@@ -45,7 +47,8 @@ class ObservationUtil:
             function_input = cls.keep_accepted_types(function_input)
             return {'input': function_input}
 
-        return {langfuse_kwarg: function_input[function_kwarg] for langfuse_kwarg, function_kwarg in input_mapping.items()}
+        return {langfuse_kwarg: function_input[function_kwarg] for langfuse_kwarg, function_kwarg in
+                input_mapping.items()}
 
     @classmethod
     def keep_accepted_types(self, d):
@@ -87,16 +90,32 @@ class ObservationUtil:
             completion_tokens = count_tokens(function_output['message']['content'])
             total_tokens = prompt_tokens + completion_tokens
 
+            usage_info = {
+                'input': prompt_tokens,
+                'output': completion_tokens,
+                'total': total_tokens,
+                "unit": "TOKENS",
+            }
+
+            model = function_kwargs.get('model', None)
+            pricing = MODELS_COSTS_1K_TOKENS.get(model, None)
+            cost = {}
+            if pricing:
+                input_cost = pricing['input'] * (prompt_tokens / 1000)
+                output_cost = pricing['output'] * (completion_tokens / 1000)
+                cost = {
+                    "input_cost": input_cost,
+                    "output_cost": output_cost,
+                    "total_cost": input_cost + output_cost
+                }
+            usage_info.update(cost)
+
             obs.end(
                 end_time=dt.datetime.now(),
                 model=function_kwargs.get('model', None),
                 model_parameters={k: v for k, v in function_kwargs.items() if
                                   k in model_parameters and k not in ['messages']},
-                usage={
-                    'promptTokens': prompt_tokens,
-                    'completionTokens': completion_tokens,
-                    'totalTokens': total_tokens,
-                },
+                usage=usage_info,
                 **mapped_output)
         elif observation_type == 'span':
             obs.end(**mapped_output)
