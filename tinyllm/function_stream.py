@@ -67,8 +67,8 @@ class FunctionStream(Function):
                 await evaluator(**self.processed_output, observation=self.observation)
 
             self.transition(States.CLOSING)
-            await self.close({"status": "success",
-                              "output": self.processed_output})
+            await self.close(**{"status": "success",
+                                "output": self.processed_output})
 
             # Complete
             self.transition(States.COMPLETE)

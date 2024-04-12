@@ -25,16 +25,25 @@ ALLOWED_TRANSITIONS = {
 
     States.RUNNING: [States.OUTPUT_VALIDATION, States.FAILED],
 
-    States.OUTPUT_VALIDATION: [States.COMPLETE, States.OUTPUT_VALIDATION, States.PROCESSING_OUTPUT, States.OUTPUT_EVALUATION, States.FAILED], # Can transition to itself in the case of a streaming function
+    States.OUTPUT_VALIDATION: [States.COMPLETE, States.OUTPUT_VALIDATION, States.PROCESSING_OUTPUT,
+                               States.OUTPUT_EVALUATION, States.FAILED],
+    # Can transition to itself in the case of a streaming function
     States.OUTPUT_EVALUATION: [States.COMPLETE, States.PROCESSING_OUTPUT, States.PROCESSING_OUTPUT, States.FAILED],
 
-    States.PROCESSING_OUTPUT: [States.PROCESSED_OUTPUT_VALIDATION, States.FAILED, States.COMPLETE],
-
-    States.PROCESSED_OUTPUT_VALIDATION: [States.COMPLETE, States.FAILED, States.PROCESSED_OUTPUT_EVALUATION],
+    States.PROCESSING_OUTPUT: [
+        States.PROCESSED_OUTPUT_VALIDATION,
+        States.CLOSING,
+        States.FAILED,
+        States.COMPLETE
+    ],
+    States.PROCESSED_OUTPUT_VALIDATION: [
+        States.PROCESSED_OUTPUT_EVALUATION,
+        States.COMPLETE,
+        States.FAILED,
+    ],
     States.PROCESSED_OUTPUT_EVALUATION: [States.CLOSING, States.COMPLETE, States.FAILED],
     States.CLOSING: [States.COMPLETE, States.FAILED],
 
     States.COMPLETE: [States.INPUT_VALIDATION],
     States.FAILED: [States.INPUT_VALIDATION]
 }
-

@@ -2,6 +2,7 @@ from contextvars import ContextVar
 
 from pydantic import BaseModel
 
+from smartpy.utility.py_util import stringify_values_recursively
 from tinyllm.tracing.helpers import *
 
 current_observation_context = ContextVar('current_observation_context', default=None)
@@ -81,11 +82,12 @@ class ObservationDecoratorFactory:
                     args[0].observation = observation
                 try:
                     result = await func(*args, **function_input)
+                    if type(result) != dict: result = {'result': result}
                     # convert pydantic models to dict
                     for key, value in result.items():
                         if isinstance(value, BaseModel):
                             result[key] = value.dict()
-                    if type(result) != dict: result = {'result': result}
+
                     await ObservationUtil.perform_evaluations(observation, result, evaluators)
                     return result
                 except Exception as e:
