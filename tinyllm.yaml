@@ -1,13 +1,30 @@
-PROJECT_NAME:
-  LLM_PROVIDERS:
-    OPENAI_API_KEY: ""
-  LANGFUSE:
-    PUBLIC_KEY: ""
-    SECRET_KEY: ""
-    HOST: "https://cloud.langfuse.com/"
-  POSTGRES:
-    USERNAME: ""
-    PASSWORD: ""
-    HOST: ""
-    PORT:
-    NAME: ""
+LOGS:
+  LOGGING: true
+  LOG_STATES:
+    - 'RUNNING'
+    - 'COMPLETE'
+    - 'FAILED'
+LLM_PROVIDERS:
+  OPENAI_API_KEY: ""
+  ANYSCALE_API_KEY: ""
+  AZURE_API_KEY: ""
+  AZURE_API_BASE: ""
+  AZURE_API_VERSION: ""
+LANGFUSE:
+  PROJECT_ID: ""
+  PUBLIC_KEY: ""
+  SECRET_KEY: ""
+  HOST: "https://cloud.langfuse.com/"
+
+CLOUD_PROVIDERS:
+  DO:
+    PROJECT_NAME: ""
+    ENDPOINT: ""
+    KEY: ""
+    SECRET: ""
+POSTGRES:
+  USERNAME: ''
+  PASSWORD: ''
+  HOST: ""
+  PORT:
+  NAME: ''

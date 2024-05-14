@@ -20,12 +20,12 @@ class LiteLLMStream(LiteLLM, FunctionStream):
     async def run(self, **kwargs):
         kwargs['messages'] = self._parse_mesages(kwargs['messages'])
         tools_args = self._validate_tool_args(**kwargs)
-        completion_args = {arg: kwargs[arg] for arg in kwargs if arg in model_parameters}
-        completion_args.update(tools_args)
-        completion_args['stream'] = True
+        completion_kwargs = {arg: kwargs[arg] for arg in kwargs if arg in model_parameters}
+        completion_kwargs.update(tools_args)
+        completion_kwargs['stream'] = True
 
         response = await acompletion(
-            **completion_args,
+            **completion_kwargs,
         )
 
         # We need to track 2 things: the response delta and the function_call
@@ -38,7 +38,7 @@ class LiteLLMStream(LiteLLM, FunctionStream):
         finish_delta = None
 
         # OpenAI function call works as follows: function name available at delta.tool_calls[0].function.
-        # It returns a diction where: 'name' is returned only in the first chunk
+        # It returns a dict where: 'name' is returned only in the first chunk
         # tool argument tokens are sent in chunks after so need to keep track of them
 
         async for chunk in response:
@@ -49,12 +49,13 @@ class LiteLLMStream(LiteLLM, FunctionStream):
 
             # When using tools:
             # We need the last response delta as it contains the full function message
-            # The finish message does not contain any delta so we need to keep track of all deltas
+            # The finish message does not contain any delta
 
             # If streaming , we need to store chunks of the completion/function call
             if status == "streaming":
                 if chunk_role == "assistant":
-                    completion += delta['content']
+                    if delta['content']:
+                        completion += delta['content']
                     last_completion_delta = delta
                 elif chunk_role == "tool":
                     if function_call['name'] is None:
@@ -63,7 +64,8 @@ class LiteLLMStream(LiteLLM, FunctionStream):
                         last_completion_delta = delta
 
                     completion = function_call
-                    function_call['arguments'] += delta['tool_calls'][0]['function']['arguments']
+                    if delta['tool_calls'][0]['function']['arguments']:
+                        function_call['arguments'] += delta['tool_calls'][0]['function']['arguments']
 
             elif status == "finished-streaming":
                 finish_delta = delta

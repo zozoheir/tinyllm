@@ -1,6 +1,7 @@
 from typing import Optional, Any
 
 import openai
+import litellm
 from litellm import acompletion
 from openai import OpenAIError
 from tenacity import retry, stop_after_attempt, wait_random_exponential, retry_if_exception_type
@@ -10,6 +11,8 @@ from tinyllm.tracing.langfuse_context import observation
 from tinyllm.util.helpers import *
 from tinyllm.util.message import Content, Message
 from tinyllm.validator import Validator
+
+litellm.set_verbose = False
 
 model_parameters = [
     "messages",
@@ -125,10 +128,10 @@ class LiteLLM(Function):
     async def run(self, **kwargs):
         kwargs['messages'] = self._parse_mesages(kwargs['messages'])
         tools_args = self._validate_tool_args(**kwargs)
-        completion_args = {arg: kwargs[arg] for arg in kwargs if arg in model_parameters}
-        completion_args.update(tools_args)
+        completion_kwargs = {arg: kwargs[arg] for arg in kwargs if arg in model_parameters}
+        completion_kwargs.update(tools_args)
         api_result = await acompletion(
-            **completion_args,
+            **completion_kwargs,
         )
         model_dump = api_result.dict()
         msg_type = 'tool' if model_dump['choices'][0]['finish_reason'] == 'tool_calls' else 'completion'

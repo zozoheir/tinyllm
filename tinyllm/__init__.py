@@ -85,7 +85,7 @@ directories = [
 
 if langfuse_client is None and tinyllm_config is None:
     tinyllm_config_file_path = os.environ.get('TINYLLM_CONFIG_PATH', None)
-    tinyllm_logger.info(f"Tinyllm: config file path from env: {tinyllm_config_file_path}")
+    tinyllm_logger.info(f"TINYLLM_CONFIG_PATH: {tinyllm_config_file_path}")
     if tinyllm_config_file_path is not None and tinyllm_config_file_path != '':
         #tinyllm_logger.info(f"Tinyllm: using config file at {tinyllm_config_file_path}")
         set_config(tinyllm_config_file_path)
