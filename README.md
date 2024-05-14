@@ -1,7 +1,10 @@
 <p align="center">
     <img src="https://github.com/zozoheir/tinyllm/assets/42655961/28d13a6a-8366-497f-b3e8-8be262f5b9fd" alt="tinyllm arc">
 </p>
-![ray-so-export](https://github.com/zozoheir/tinyllm/assets/42655961/03ff4659-5779-4d42-b0cb-78941b876379)
+<p align="center">
+    <img src="https://github.com/zozoheir/tinyllm/assets/42655961/03ff4659-5779-4d42-b0cb-78941b876379" alt="tinyllm arc">
+</p>
+
 
 # 🚀 What is tinyllm?
 tinyllm is a lightweight framework for developing, debugging and monitoring LLM and Agent powered applications at scale. The main goal of the library is to keep code as simple and readable as possible while allowing user to create complex agents or LLM workflows in production.
