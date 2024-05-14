@@ -42,11 +42,12 @@ pip install tinyllm
 - **Logging:** Records detailed logs for debugging and auditing purposes.
 - **Finite State Machine design:** Manages the function's lifecycle through defined states, ensuring controlled and predictable execution.
 
-
+#### Tiny function wrapper
 
 <p align="center">
-    <img src="https://github.com/zozoheir/tinyllm/assets/42655961/0284f94d-7c5d-4abb-900d-3fc3381d61dc" width="70%" height="70%" alt="initialize">
+    <img src="https://github.com/zozoheir/tinyllm/assets/42655961/03ff4659-5779-4d42-b0cb-78941b876379" alt="tinyllm arc">
 </p>
+
 
 
 ## Background and goals
