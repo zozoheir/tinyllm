@@ -44,11 +44,31 @@ pip install tinyllm
 
 #### Tiny function wrapper
 
+```python
+class RiskScoreOutput(BaseModel):
+    risk_score: float
+
+@tiny_function(output_model=RiskScoreOutput)
+async def calculate_risk_score(bank_account_history: str, employment_history: str):
+    """
+    <system>
+    Extract a Risk Score between 0 and 1 for a Credit Card application based on bank account and employment history.
+    </system>
+
+    <prompt>
+    Given the bank account history: {bank_account_history}
+    And the employment history: {employment_history}
+    Calculate the risk score for a credit card application.
+    </prompt>
+    """
+    pass
+```
+
+#### Tracing with Langfuse
+
 <p align="center">
-    <img src="https://github.com/zozoheir/tinyllm/assets/42655961/03ff4659-5779-4d42-b0cb-78941b876379" alt="tinyllm arc">
+    <img src="https://github.com/zozoheir/tinyllm/assets/42655961/0284f94d-7c5d-4abb-900d-3fc3381d61dc" width="70%" height="70%" alt="initialize">
 </p>
-
-
 
 ## Background and goals
 Many of the LLM libraries today (langchain, llama-index, deep pavlov...) have made serious software design commitments which I believe were too early to make given the infancy of the industry.
