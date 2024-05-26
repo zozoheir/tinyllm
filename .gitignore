@@ -1,12 +1,9 @@
-*DS_Store*
-*pytest*
-*.pickle*
-*gradio_cache*
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
-*.egg-info*
+*DS_Store
+*egg-info
 # C extensions
 *.so
 
@@ -88,7 +85,7 @@ ipython_config.py
 
 # pyenv
 #   For a library or package, you might want to ignore these files since the code is
-#   intended to run in multiple environments; otherwise, get_check_results them in:
+#   intended to run in multiple environments; otherwise, check them in:
 # .python-version
 
 # pipenv

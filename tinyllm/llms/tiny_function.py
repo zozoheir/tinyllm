@@ -26,7 +26,7 @@ def model_to_string(model) -> str:
     fields = model.__fields__
     field_defs = []
     for field_name, field in fields.items():
-        field_type = field.annotation.__name__
+        field_type = str(field.annotation).replace('typing.', '')
         description = field.description
         description = f" | Description: {description}" if description else ""
         field_defs.append(

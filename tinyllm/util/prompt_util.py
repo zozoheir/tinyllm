@@ -175,7 +175,7 @@ def preprocess_text(text):
 
 
 
-class Section:
+class PromptBlock:
     def __call__(self, text, title=None):
         self.text = text
         self.title = title.upper() if title else None
