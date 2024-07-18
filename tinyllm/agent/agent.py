@@ -1,7 +1,10 @@
 import inspect
 import json
 from enum import Enum
-from typing import Optional, Union, List
+from textwrap import dedent
+from typing import Optional, Union, List, Type
+
+from pydantic import BaseModel
 
 from tinyllm.agent.tool import Toolkit
 from tinyllm.function import Function
@@ -11,7 +14,9 @@ from tinyllm.llms.lite_llm import LiteLLM
 from tinyllm.memory.memory import Memory, BufferMemory
 from tinyllm.prompt_manager import PromptManager, MaxTokensStrategy
 from tinyllm.util.message import Content, UserMessage, ToolMessage, AssistantMessage
+from tinyllm.util.prompt_util import pydantic_model_to_string
 from tinyllm.validator import Validator
+
 
 
 class AgentInitValidator(Validator):
@@ -22,13 +27,15 @@ class AgentInitValidator(Validator):
     example_manager: Optional[ExampleManager]
     answer_formatting_prompt: Optional[str]
     tool_retries: Optional[int]
+    json_pydantic_model: Optional[Type[BaseModel]]
 
 
 class AgentInputValidator(Validator):
     content: Union[str, list, Content, List[Content]]
-    max_tokens_strategy: Optional[MaxTokensStrategy] = None # Strategy to set max token dynamically
-    allowed_max_tokens: Optional[int] = 4096*0.25 # Max tokens allowed for the response =
+    max_tokens_strategy: Optional[MaxTokensStrategy] = None  # Strategy to set max token dynamically
+    allowed_max_tokens: Optional[int] = 4096 * 0.25  # Max tokens allowed for the response =
     expects_block: Optional[str] = None
+
 
 class Agent(Function):
 
@@ -40,6 +47,7 @@ class Agent(Function):
                  toolkit: Optional[Toolkit] = None,
                  answer_formatting_prompt: Optional[str] = None,
                  tool_retries: int = 3,
+                 json_pydantic_model: Optional[Type[BaseModel]] = None,
                  **kwargs):
         AgentInitValidator(system_role=system_role,
                            llm=llm,
@@ -47,11 +55,23 @@ class Agent(Function):
                            memory=memory,
                            example_manager=example_manager,
                            answer_formatting_prompt=answer_formatting_prompt,
-                           tool_retries=tool_retries)
+                           tool_retries=tool_retries,
+                           json_pydantic_model=json_pydantic_model)
         super().__init__(
             input_validator=AgentInputValidator,
             **kwargs)
         self.system_role = system_role.strip()
+        self.json_pydantic_model = json_pydantic_model
+
+        if self.json_pydantic_model:
+            self.string_model = pydantic_model_to_string(self.json_pydantic_model)
+            self.system_role = self.system_role + '\n' + dedent(f"""
+            OUTPUT FORMAT
+            Your output must be in JSON format in the model above
+
+            {self.string_model}
+        """)
+
         self.llm = llm or LiteLLM()
         self.toolkit = toolkit
         self.example_manager = example_manager
@@ -78,54 +98,14 @@ class Agent(Function):
         input_msg = UserMessage(kwargs['content'])
         session_tool_results = []
 
-        while True: # Loop until agent decides to respond
+        while True:  # Loop until agent decides to respond
 
             request_kwargs = await self.prompt_manager.prepare_llm_request(message=input_msg,
+                                                                           json_model=self.json_pydantic_model,
                                                                            **kwargs)
-            all_contents = []
-            trials = 0
-            while True: # Loop until finish_reason is not 'length'
-                response_msg = await self.llm(tools=self.tools,
-                                              **request_kwargs)
-                trials += 1
-                response_content = response_msg['output']['response']['choices'][0]['message']['content']
-
-                if response_msg['output']['response']['choices'][0]['finish_reason'] == 'length':
-                    expects_block = kwargs.get('expects_block', None)
-                    if expects_block:
-                        cleanedup_response = response_content.replace(f"```{expects_block}", '').replace('```', '')
-                        all_contents.append(cleanedup_response)
-                    else:
-                        all_contents.append(response_content)
-
-                    request_kwargs['max_tokens'] = int(request_kwargs['max_tokens'] * 1.3)
-                    request_kwargs['messages'].append(AssistantMessage(content=response_content))
-                    request_kwargs['messages'].append(UserMessage(content='Your last answer has been cutoff. You must continue your answer EXACTLY from where you left off.'))
-                else:
-
-                    if len(all_contents) > 0:
-                        expects_block = kwargs.get('expects_block', None)
-                        if expects_block:
-                            cleanedup_response = response_content.replace(f"```{expects_block}", '').replace('```', '')
-                            all_contents.append(cleanedup_response)
-                        else:
-                            all_contents.append(response_content)
-
-
-                        final_response = ''.join(all_contents)
-                        if kwargs.get('expects_block', None):
-                            final_response = f"```{expects_block}\n{final_response}\n```"
-                        response_msg['output']['response']['choices'][0]['message']['content'] = final_response
-
-                    break
-
-                if trials == 5:
-                    raise Exception("LLM doesn't have enough tokens to respond")
-
-
+            response_msg = await self.llm(tools=self.tools,
+                                          **request_kwargs)
             await self.prompt_manager.add_memory(message=input_msg)
-
-
 
             if response_msg['status'] == 'success':
                 is_tool_call = response_msg['output']['response']['choices'][0]['finish_reason'] == 'tool_calls'
@@ -136,7 +116,8 @@ class Agent(Function):
                     # Memorize tool call
                     tool_call_msg = response_msg['output']['response']['choices'][0]['message']
                     await self.prompt_manager.add_memory(message=AssistantMessage(content='',
-                                                                                  tool_calls=tool_call_msg['tool_calls']))
+                                                                                  tool_calls=tool_call_msg[
+                                                                                      'tool_calls']))
 
                     # Memorize tool result
                     # TODO When ready, implement parallel function calls
@@ -160,11 +141,20 @@ class Agent(Function):
 
                 else:
                     # Agent decides to respond
-                    msg_content = response_msg['output']['response']['choices'][0]['message']['content']
-                    await self.prompt_manager.add_memory(
-                        message=AssistantMessage(msg_content)
-                    )
-                    return {'response': response_msg['output']['response']}
+                    if self.json_pydantic_model is None:
+                        msg_content = response_msg['output']['response']['choices'][0]['message']['content']
+                        await self.prompt_manager.add_memory(
+                            message=AssistantMessage(msg_content)
+                        )
+                        return {'response': response_msg['output']['response']}
+                    else:
+                        msg_content = response_msg['output']['response']['choices'][0]['message']['content']
+                        parsed_output = json.loads(msg_content)
+                        await self.prompt_manager.add_memory(
+                            message=AssistantMessage(msg_content)
+                        )
+                        return {'response': self.json_pydantic_model(**parsed_output)}
+
             else:
                 raise (Exception(response_msg))
 

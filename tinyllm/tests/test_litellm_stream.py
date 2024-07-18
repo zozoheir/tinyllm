@@ -1,9 +1,6 @@
 import unittest
 
-from tinyllm.eval.evaluator import Evaluator
-from tinyllm.llms.lite_llm import LiteLLM
 from tinyllm.llms.lite_llm_stream import LiteLLMStream
-from tinyllm.util.helpers import get_openai_message
 from tinyllm.tests.base import AsyncioTestCase
 from tinyllm.util.message import UserMessage
 

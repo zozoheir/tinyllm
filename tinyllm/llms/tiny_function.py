@@ -11,7 +11,6 @@ from tinyllm.agent.agent import Agent
 from tinyllm.exceptions import MissingBlockException, LLMJsonValidationError
 from tinyllm.llms.lite_llm import json_mode_models, DEFAULT_LLM_MODEL
 from tinyllm.tracing.langfuse_context import observation
-from tinyllm.util.message import AssistantMessage, Text
 from tinyllm.util.parse_util import *
 
 
@@ -44,7 +43,6 @@ def get_system_role(func,
     
     {data_model}
 
-    You must respect all the requirements above.
 """)
 
 
@@ -57,11 +55,8 @@ def get_system_role(func,
     final_prompt = system_prompt.format(pydantic_model=pydantic_model,
                                         data_model=data_model)
 
-
     return final_prompt
 
-
-default_model_params = {'model': 'gpt-3.5-turbo'}
 
 
 class JsonParsingException(Exception):
@@ -83,15 +78,12 @@ def tiny_function(output_model: Type[BaseModel] = None,
 
             @observation(observation_type='span', name=func.__name__)
             async def traced_call(func, *args, **kwargs):
-                if model_kwargs.get('model', DEFAULT_LLM_MODEL) in json_mode_models:
-                    kwargs['response_format'] = {"type": "json_object"}
-
                 system_role = get_system_role(func=func,
                                               output_model=output_model)
 
                 prompt = extract_html(func.__doc__.strip(), tag='prompt')
                 if len(prompt) == 0:
-                    assert 'content' in kwargs, "tinyllm_function takes content kwarg by default"
+                    assert 'content' in kwargs, "tinyllm_function requires content kwarg"
                     agent_input_content = kwargs['content']
                 else:
                     prompt = prompt[0]
@@ -102,6 +94,7 @@ def tiny_function(output_model: Type[BaseModel] = None,
                     system_role=system_role,
                     example_manager=example_manager
                 )
+                model_kwargs['response_format'] = {"type": "json_object"}
 
                 result = await agent(content=agent_input_content,
                                      **model_kwargs)
@@ -115,8 +108,7 @@ def tiny_function(output_model: Type[BaseModel] = None,
                             try:
                                 function_output_model = output_model(**parsed_output)
                             except:
-                                raise LLMJsonValidationError(
-                                    f"Output does not match the expected model: {output_model}")
+                                raise LLMJsonValidationError(f"Output does not match the expected model: {output_model}")
 
                         return {
                             'status': 'success',
@@ -129,7 +121,8 @@ def tiny_function(output_model: Type[BaseModel] = None,
                 else:
                     return {
                         'status': 'error',
-                        "message": "Agent failed", "details": result['response']['status']}
+                        "message": "Agent failed", "details": result
+                    }
 
             response = await traced_call(func, *args, **kwargs)
             return response

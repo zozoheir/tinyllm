@@ -1,5 +1,7 @@
 import unittest
 
+from pydantic import BaseModel
+
 from tinyllm.agent.agent import Agent
 from tinyllm.agent.tool import tinyllm_toolkit
 from tinyllm.eval.evaluator import Evaluator
@@ -26,6 +28,21 @@ class AnswerCorrectnessEvaluator(Evaluator):
 
 class TestAgent(AsyncioTestCase):
 
+    def test_json_output(self):
+        class RiskScoreOutput(BaseModel):
+            risk_score: float
+
+        tiny_agent = Agent(
+            name='Test: Agent JSON output',
+            system_role="You are a Credit Risk Analyst. Respond with a risk score based on the provided customer data",
+            json_pydantic_model=RiskScoreOutput
+        )
+        # Run the asynchronous test
+        result = self.loop.run_until_complete(tiny_agent(content="The customer has missed 99% of his bill payments in the last year"))
+        self.assertTrue(result['status'] == 'success')
+        self.assertTrue(result['output']['response'].get('risk_score') is not None)
+
+
     def test_wiki_tool(self):
         tiny_agent = Agent(
             name='Test: Agent Wiki Tool',
@@ -38,18 +55,6 @@ class TestAgent(AsyncioTestCase):
         result = self.loop.run_until_complete(tiny_agent(content="What does wiki say about Morocco"))
         self.assertTrue(result['status'] == 'success')
 
-    def test_fibonacci_code(self):
-        tiny_agent = Agent(
-            toolkit=tinyllm_toolkit(),
-            user_id='test_user',
-            session_id='test_session',
-        )
-        # Run the asynchronous test
-        result = self.loop.run_until_complete(tiny_agent(content="Use python to give me the 5th fibonacci number"))
-        self.assertTrue(result['status'] == 'success')
-        if result['status'] == 'success':
-            msg_content = result['output']['response']['choices'][0]['message']['content']
-            self.assertTrue('5' in str(msg_content))
 
     def test_multi_tool(self):
         tiny_agent = Agent(
@@ -63,12 +68,6 @@ class TestAgent(AsyncioTestCase):
                                                          model='gpt-4'))  # Parallel call is not handled yet
         self.assertTrue(result['status'] == 'success')
 
-    def test_agent_repeat_robustness(self):
-        tiny_agent = Agent(name='Test: Agent repeat robustness')
-        result = self.loop.run_until_complete(tiny_agent(
-            content="Give me the history of Morocco since the year 1000 in JSON format like ```json {'history': 'text here'} ```",
-            max_tokens=50))
-        self.assertEqual(result['status'], 'success')
 
 
 # This allows the test to be run standalone

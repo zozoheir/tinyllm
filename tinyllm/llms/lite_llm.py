@@ -31,11 +31,13 @@ model_parameters = [
     "temperature",
     "top_p"
 ]
-json_mode_models = ['gpt-3.5-turbo-1106', 'gpt-4-1106-preview']
+
 
 DEFAULT_LLM_MODEL = 'gpt-3.5-turbo-0125'
-
-LLM_TOKEN_LIMITS = {
+json_mode_models = ['gpt-3.5-turbo-1106',
+                    'gpt-4-1106-preview',
+                    'azure/gpt35turbo1106']
+OPENAI_TOKEN_LIMITS = {
     "gpt-3.5-turbo-0125": 16385,
     "gpt-3.5-turbo-1106": 16385,
     "gpt-3.5-turbo": 4096,
@@ -57,12 +59,23 @@ LLM_TOKEN_LIMITS = {
     "gpt-4-32k-0613": 32768,
     "gpt-4-0314": 8192,
     "gpt-4-32k-0314": 32768,
+}
+
+ANYSCALE_TOKEN_LIMITS = {
     "anyscale/Open-Orca/Mistral-7B-OpenOrca": 8192,
     "anyscale/meta-llama/Llama-2-70b-chat-hf": 4096,
+}
+
+AZURE_TOKEN_LIMITS = {
     "azure/gpt41106": 128000,
     "azure/gpt35turbo0125": 16385,
     "azure/gpt35turbo1106": 16385,  # JSON MODE
+    "azure/gpt4o0513": 128000,
 }
+
+LLM_TOKEN_LIMITS = {**OPENAI_TOKEN_LIMITS, **ANYSCALE_TOKEN_LIMITS, **AZURE_TOKEN_LIMITS}
+
+
 
 DEFAULT_CONTEXT_FALLBACK_DICT = {
     "gpt-3.5-turbo-0125": "gpt-4-turbo-preview",
@@ -86,7 +99,7 @@ class LiteLLMChatInputValidator(Validator):
     messages: List[Union[Dict, Message]]
     model: Optional[str] = 'gpt-3.5-turbo'
     temperature: Optional[float] = 0
-    max_tokens: Optional[int] = 400
+    max_tokens: Optional[int] = 850
     n: Optional[int] = 1
     stream: Optional[bool] = False
     context_window_fallback_dict: Optional[Dict] = DEFAULT_CONTEXT_FALLBACK_DICT

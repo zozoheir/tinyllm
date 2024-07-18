@@ -7,7 +7,7 @@ import langfuse
 import numpy as np
 
 from tinyllm import langfuse_client
-from tinyllm.constants import LLM_MODEL_INFO
+from tinyllm.constants import LLM_PRICING
 from tinyllm.util.helpers import count_tokens, num_tokens_from_string
 from tinyllm.util.message import Message
 
@@ -87,9 +87,12 @@ class ObservationUtil:
         if observation_type == 'generation':
 
             prompt_tokens = count_tokens(function_input)
-            completion_tokens = count_tokens(function_output['message']['content'])
-            total_tokens = prompt_tokens + completion_tokens
+            if function_output['type'] == 'tool':
+                completion_tokens = count_tokens(function_output['message']['tool_calls'])
+            else:
+                completion_tokens = count_tokens(function_output['message']['content'])
 
+            total_tokens = prompt_tokens + completion_tokens
             usage_info = {
                 'input': prompt_tokens,
                 'output': completion_tokens,
@@ -98,7 +101,7 @@ class ObservationUtil:
             }
 
             model = function_kwargs.get('model', None)
-            pricing = LLM_MODEL_INFO.get(model, None)
+            pricing = LLM_PRICING.get(model, None)
             cost = {}
             if pricing:
                 input_cost = pricing['input'] * (prompt_tokens / 1000)
@@ -109,12 +112,15 @@ class ObservationUtil:
                     "total_cost": input_cost + output_cost
                 }
             usage_info.update(cost)
+            model_params = {k: v for k, v in function_kwargs.items() if
+                            k in model_parameters and k not in ['messages']}
+            if 'response_format' in model_params:
+                model_params['response_format'] = model_params['response_format']['type']
 
             obs.end(
                 end_time=dt.datetime.now(),
                 model=function_kwargs.get('model', None),
-                model_parameters={k: v for k, v in function_kwargs.items() if
-                                  k in model_parameters and k not in ['messages']},
+                model_parameters=model_params,
                 usage=usage_info,
                 **mapped_output)
         elif observation_type == 'span':

@@ -1,4 +1,4 @@
-LLM_MODEL_INFO = {
+LLM_PRICING = {
     "azure/gpt35turbo0125": {
         "input": 0.0005,
         "output": 0.0015,

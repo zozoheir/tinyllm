@@ -74,7 +74,7 @@ class TestTinyFunctionDecorator(AsyncioTestCase):
             age: int = Field(..., description="Age")
             occupation: str = Field(..., description="occupation")
 
-        @tiny_function(model_kwargs={'max_tokens': 8}, output_model=CharacterInfo)
+        @tiny_function(model_kwargs={'max_tokens': 80}, output_model=CharacterInfo)
         async def get_character_info(content: str):
             """
             <system>

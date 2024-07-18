@@ -65,6 +65,7 @@ class PromptManager:
 
     async def prepare_llm_request(self,
                                   message,
+                                  json_model=None,
                                   **kwargs):
 
         messages = await self.format_messages(message)
@@ -75,9 +76,11 @@ class PromptManager:
             kwargs['model'] = model
         else:
             kwargs['model'] = kwargs.get('model', DEFAULT_LLM_MODEL)
-            kwargs['max_tokens'] = kwargs.get('max_tokens', 600)
+            kwargs['max_tokens'] = kwargs.get('max_tokens', 800)
 
         kwargs['messages'] = messages
+        if json_model:
+            kwargs['response_format'] = {"type": "json_object"}
         return kwargs
 
     async def add_memory(self,
@@ -104,7 +107,7 @@ class PromptManager:
             leftover_to_use = model_token_limit - all_msg_size
             max_tokens = min(kwargs.get('allowed_max_tokens', 4096), leftover_to_use)
         elif kwargs['max_tokens_strategy'] == MaxTokensStrategy.EXPECTED_RATIO:
-            max_tokens = min(max(600, user_msg_size * kwargs['expected_io_ratio']), 4096)
+            max_tokens = min(max(800, user_msg_size * kwargs['expected_io_ratio']), 4096)
             expected_total_size = all_msg_size + max_tokens
             if expected_total_size / model_token_limit > 1:
                 model = DEFAULT_CONTEXT_FALLBACK_DICT[kwargs['model']]

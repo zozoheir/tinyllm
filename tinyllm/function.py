@@ -173,7 +173,6 @@ class Function:
     @property
     def log_prefix(self):
         base_url = "https://us.cloud.langfuse.com/project/{project_id}/traces/{trace_id}"
-        project_id = "your_project_id_here"
         if getattr(self, 'trace', None) is not None:
             trace_id = self.trace.id
             url = base_url.format(project_id=tinyllm_config['LANGFUSE']['PROJECT_ID'], trace_id=trace_id)
