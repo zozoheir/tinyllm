@@ -108,4 +108,3 @@ tiny_agent = Agent(
     pyperclip.copy(definition)
 
 
-get_agent_code("You are the best")
