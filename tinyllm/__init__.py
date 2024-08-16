@@ -1,7 +1,6 @@
 import yaml
 import os
-import logging
-from pathlib import Path
+import pyperclip
 
 from langfuse import Langfuse
 
@@ -94,3 +93,19 @@ if langfuse_client is None and tinyllm_config is None:
         if found_config_path is None:
             raise FileNotFoundError(f"Please provide a config file for tinyllm")
         set_config(found_config_path)
+
+
+
+
+def get_agent_code(system_role):
+    definition = f"""
+tiny_agent = Agent(
+            name='My Agent',
+            system_role='{system_role}',
+            json_pydantic_model=None
+    )
+    """
+    pyperclip.copy(definition)
+
+
+get_agent_code("You are the best")

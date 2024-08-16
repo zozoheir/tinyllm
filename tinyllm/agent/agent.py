@@ -66,11 +66,10 @@ class Agent(Function):
         if self.json_pydantic_model:
             self.string_model = pydantic_model_to_string(self.json_pydantic_model)
             self.system_role = self.system_role + '\n' + dedent(f"""
-            OUTPUT FORMAT
-            Your output must be in JSON format in the model above
-
-            {self.string_model}
-        """)
+OUTPUT FORMAT
+Your output must be in JSON format in the model above
+{self.string_model}
+""")
 
         self.llm = llm or LiteLLM()
         self.toolkit = toolkit

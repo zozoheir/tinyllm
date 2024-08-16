@@ -1,5 +1,7 @@
 import re
 
+from pydantic import BaseModel
+from pydantic._internal._model_construction import ModelMetaclass
 from fuzzywuzzy import fuzz
 import random
 from typing import List, Dict, Any, Optional
@@ -9,18 +11,33 @@ from tinyllm.util import os_util
 
 # I need a smart function that can detect the type of the input and then do the right thing
 
-
-def pydantic_model_to_string(model) -> str:
+def pydantic_model_to_string(model, indent=0) -> str:
     fields = model.__fields__
+
     field_defs = []
     for field_name, field in fields.items():
-        field_type = str(field.annotation).replace('typing.', '')
+        field_type = field.annotation
+        if 'typing' in str(field_type):
+            field_type_name = str(field_type).split('.')[-1]
+        else:
+            field_type_name = field_type.__name__
         description = field.description
         description = f" | Description: {description}" if description else ""
-        field_defs.append(
-            f"    {field_name}: {field_type}" + description)
-    model_prompt = "Model:\n" + "\n".join(field_defs) if field_defs else ""
+        if 'typing' not in str(field_type):
+            if issubclass(field_type, BaseModel):
+                nested_model_str = pydantic_model_to_string(field_type, indent + 4)
+                field_defs.append(f"{' ' * indent}- {field_name}: {field_type_name}\n{nested_model_str}")
+            else:
+                field_defs.append(f"{' ' * indent}- {field_name}: {field_type_name}{description}")
+        else:
+            field_defs.append(f"{' ' * indent}- {field_name}: {field_type_name}{description}")
+
+    if indent != 0:
+        model_prompt = f"\n{' ' * indent} Pydantic model:\n" + "\n".join(field_defs) if field_defs else ""
+    else:
+        model_prompt = f"Your response model:\n" + "\n".join(field_defs) if field_defs else ""
     return model_prompt
+
 
 def stringify_string_list(paragraphs: List[str],
                           separator="\n") -> str:

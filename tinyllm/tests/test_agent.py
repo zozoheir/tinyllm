@@ -1,6 +1,7 @@
 import unittest
+from typing import Any, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from tinyllm.agent.agent import Agent
 from tinyllm.agent.tool import tinyllm_toolkit
@@ -29,8 +30,14 @@ class AnswerCorrectnessEvaluator(Evaluator):
 class TestAgent(AsyncioTestCase):
 
     def test_json_output(self):
+        class Person(BaseModel):
+            name: str = Field(..., description='Name of the person')
+            age: int = Field(..., description='Age of the person')
+            note: Optional[Any]
+
         class RiskScoreOutput(BaseModel):
-            risk_score: float
+            risk_score: float = Field(..., description='Confidence level of the trade idea between 0 and 100')
+            person: Person
 
         tiny_agent = Agent(
             name='Test: Agent JSON output',
@@ -38,7 +45,7 @@ class TestAgent(AsyncioTestCase):
             json_pydantic_model=RiskScoreOutput
         )
         # Run the asynchronous test
-        result = self.loop.run_until_complete(tiny_agent(content="The customer has missed 99% of his bill payments in the last year"))
+        result = self.loop.run_until_complete(tiny_agent(content="Johny Vargas, 29yo, the customer has missed 99% of his bill payments in the last year"))
         self.assertTrue(result['status'] == 'success')
         self.assertTrue(result['output']['response'].get('risk_score') is not None)
 

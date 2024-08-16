@@ -4,7 +4,7 @@ LLM_PRICING = {
         "output": 0.0015,
         "token_limit": 16385,
     },
-    "azure/gpt41106preview": {
+    "azure/gpt41106": {
         "input": 0.01,
         "output": 0.03,
         "token_limit": 128000,
