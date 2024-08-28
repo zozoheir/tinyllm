@@ -33,7 +33,7 @@ model_parameters = [
 ]
 
 
-DEFAULT_LLM_MODEL = 'gpt-3.5-turbo-0125'
+DEFAULT_LLM_MODEL = 'gpt-4o-mini'
 
 
 OPENAI_TOKEN_LIMITS = {
@@ -68,7 +68,7 @@ ANYSCALE_TOKEN_LIMITS = {
 
 AZURE_TOKEN_LIMITS = {
     "azure/gpt41106": 128000,
-    "azure/gpt35turbo0125": 16385,
+    "azure/gpt-4o-mini": 16385,
     "azure/gpt4o0513": 128000,
 }
 
@@ -82,7 +82,7 @@ DEFAULT_CONTEXT_FALLBACK_DICT = {
     "gpt-3.5-turbo": "gpt-3.5-turbo-16k",
     "gpt-3.5-turbo-1106": "gpt-3.5-turbo-16k",
     "azure/gpt41106": "azure/gpt41106",
-    "azure/gpt35turbo0125": "azure/gpt41106",
+    "azure/gpt-4o-mini": "azure/gpt41106",
     "anyscale/Open-Orca/Mistral-7B-OpenOrca": "gpt-3.5-turbo-16k",
     "anyscale/meta-llama/Llama-2-70b-chat-hf": "gpt-3.5-turbo-16k",
 }
