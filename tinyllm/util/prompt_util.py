@@ -1,13 +1,12 @@
-import re
-
-from pydantic import BaseModel
-from pydantic._internal._model_construction import ModelMetaclass
-from fuzzywuzzy import fuzz
 import random
-from typing import List, Dict, Any, Optional
 import re
+from typing import List, Dict, Any, Optional
+
+from fuzzywuzzy import fuzz
+from pydantic import BaseModel
 
 from tinyllm.util import os_util
+
 
 # I need a smart function that can detect the type of the input and then do the right thing
 
@@ -63,7 +62,7 @@ def stringify_key_value(key: str, value: Any) -> str:
 
 def stringify_dict(header: str,
                    dict: Dict[str, Any],
-                   include_keys: Optional[List[str]] = None) -> str:
+                   include_keys: Optional[List[str]] = []) -> str:
     """
     Formats a dictionary into a string with a specific format.
 
@@ -74,7 +73,7 @@ def stringify_dict(header: str,
     all_strings = []
     for key, value in dict.items():
         # Include the key only if include_keys is None (include all keys) or the key is in include_keys
-        if include_keys==[] or key in include_keys:
+        if include_keys == [] or key in include_keys:
             if value is None:
                 value = ""
 
@@ -86,6 +85,7 @@ def stringify_dict(header: str,
 
     dict_string_representation = stringify_string_list(all_strings, separator="\n")
     return header + "\n" + dict_string_representation
+
 
 def stringify_dict_list(header: str,
                         dict_list: List[Dict[str, Any]],
@@ -104,6 +104,7 @@ def stringify_dict_list(header: str,
 
     dict_list_string_representation = stringify_string_list(all_strings, separator="\n\n")
     return header + "\n" + dict_list_string_representation
+
 
 def remove_imports(code: str) -> str:
     lines = code.split('\n')
@@ -182,13 +183,14 @@ def find_closest_match_char_by_char(source, target):
 
     return best_match
 
+
 def get_smallest_chunk(source, matches):
     # Sort matches by start index
     matches.sort(key=lambda x: x[0])
 
     min_chunk = (0, len(source))
     for i in range(len(matches)):
-        for j in range(i+1, len(matches)):
+        for j in range(i + 1, len(matches)):
             if matches[j][0] > matches[i][1]:  # Ensuring the second element starts after the first
                 chunk_size = matches[j][1] - matches[i][0]
                 if chunk_size < (min_chunk[1] - min_chunk[0]):
@@ -202,16 +204,12 @@ def preprocess_text(text):
     # Convert to lower case and remove special characters
     return re.sub(r'[^a-zA-Z0-9\s]', '', text.lower())
 
-
-
-class PromptBlock:
-    def __call__(self, text, title=None):
-        self.text = text
-        self.title = title.upper() if title else None
-        if self.title:
-            return f"<{self.title}>\n{self.text}\n</{self.title}>\n\n"
-        else:
-            return self.text
+def blockify(text, title=None):
+    title = title.upper() if title else None
+    if title:
+        return f"<{title}>\n{text}\n</{title}>\n\n"
+    else:
+        return text
 
 
 INSTRUCTIONS_BOOSTS = [

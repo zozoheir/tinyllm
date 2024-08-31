@@ -148,6 +148,7 @@ Your output must be in JSON format in the model above
                         return {'response': response_msg['output']['response']}
                     else:
                         msg_content = response_msg['output']['response']['choices'][0]['message']['content']
+                        msg_content = msg_content.replace('```json', '').replace('```', '')
                         parsed_output = json.loads(msg_content)
                         await self.prompt_manager.add_memory(
                             message=AssistantMessage(msg_content)
