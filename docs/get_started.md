@@ -3,13 +3,13 @@
 ## Configs
 
 
-A yaml config file needs to be provided as an environment variable.
+A yaml config file needs to be provided as an environment variable. [**The config file template is is available here**](https://github.com/zozoheir/tinyllm/blob/main/docs/get_started.md)
+
 ```python
 import os
 os.environ['TINYLLM_CONFIG_PATH'] = '/path/to/tinyllm.yaml'
 ```
 
-**An example config file is available in the repo source as tinyllm.yaml**
 
 If the config file is not provided, the library will look for a tinyllm.yaml config file in the following directories:
 - The current working directory
