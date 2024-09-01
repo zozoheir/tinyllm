@@ -3,7 +3,7 @@
 ## Configs
 
 
-A yaml config file needs to be provided as an environment variable. [**The config file template is is available here**](https://github.com/zozoheir/tinyllm/blob/main/docs/get_started.md)
+A yaml config file needs to be provided as an environment variable. [**The config file template is is available here**](https://github.com/zozoheir/tinyllm/blob/main/tinyllm.yaml)
 
 ```python
 import os
