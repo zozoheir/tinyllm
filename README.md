@@ -18,7 +18,7 @@ pip install tinyllm
 ```
 
 ## 🚀 Getting started
-* ####  [Setup](https://github.com/zozoheir/tinyllm/blob/main/docs/setup.md)
+* ####  [Setup](https://github.com/zozoheir/tinyllm/blob/main/docs/get_started.md)
 * ####  [Examples](https://github.com/zozoheir/tinyllm/blob/main/docs/examples/)
 
 

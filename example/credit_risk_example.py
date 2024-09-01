@@ -23,8 +23,8 @@ async def calculate_risk_score(bank_account_history: str, employment_history: st
     pass
 
 # Generate random data for bank account and employment history
-bank_account_history = 'Account balance over the last 12 months: ' + ', '.join([str(random.uniform(-2000, 10000)) for _ in range(12)])
-employment_history = 'Employed for ' + str(random.randint(0, 30)) + ' years in ' + random.choice(['technology', 'education', 'healthcare', 'finance'])
+bank_account_history = 'Account balance over the last 12 months: ' + ', '.join([str(scripts.uniform(-2000, 10000)) for _ in range(12)])
+employment_history = 'Employed for ' + str(random.randint(0, 30)) + ' years in ' + scripts.choice(['technology', 'education', 'healthcare', 'finance'])
 
 # Run the async function
 def main():
