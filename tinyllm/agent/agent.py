@@ -32,8 +32,8 @@ class AgentInitValidator(Validator):
 
 class AgentInputValidator(Validator):
     content: Union[str, list, Content, List[Content]]
-    max_tokens_strategy: Optional[MaxTokensStrategy] = None  # Strategy to set max token dynamically
-    allowed_max_tokens: Optional[int] = 4096 * 0.25  # Max tokens allowed for the response =
+    max_tokens_strategy: Optional[MaxTokensStrategy] = None
+    allowed_max_tokens: Optional[int] = int(4096 * 0.25)
     expects_block: Optional[str] = None
 
 
@@ -63,13 +63,13 @@ class Agent(Function):
         self.system_role = system_role.strip()
         self.json_pydantic_model = json_pydantic_model
 
-        if self.json_pydantic_model:
-            self.string_model = pydantic_model_to_string(self.json_pydantic_model)
-            self.system_role = self.system_role + '\n' + dedent(f"""
-OUTPUT FORMAT
-Your output must be in JSON format in the model above
-{self.string_model}
-""")
+        #if self.json_pydantic_model:
+        #    self.response_model_string = pydantic_model_to_string(self.json_pydantic_model)
+        #    self.system_role = self.system_role + '\n' + dedent(f"""
+#OUTPUT FORMAT
+#Your output must be in JSON format in the model above
+#{self.response_model_string}
+#""")
 
         self.llm = llm or LiteLLM()
         self.toolkit = toolkit

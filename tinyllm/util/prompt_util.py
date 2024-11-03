@@ -1,41 +1,63 @@
 import random
 import re
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, _strip_annotations, get_type_hints
 
 from fuzzywuzzy import fuzz
-from pydantic import BaseModel
-
 from tinyllm.util import os_util
 
+from typing import List, Type, get_args, get_origin
+from pydantic import BaseModel, Field
 
-# I need a smart function that can detect the type of the input and then do the right thing
 
-def pydantic_model_to_string(model, indent=0) -> str:
+def extract_models(model: Type[BaseModel], models_list: List[Type[BaseModel]]) -> None:
+    if model not in models_list:
+        models_list.append(model)
+        fields = model.__fields__
+        for field_name, field in fields.items():
+            field_type = field.annotation
+            origin = get_origin(field_type)
+            args = get_args(field_type)
+
+            if isinstance(field_type, type) and issubclass(field_type, BaseModel):
+                extract_models(field_type, models_list)
+            elif origin is not None:
+                for arg in args:
+                    if isinstance(arg, type) and issubclass(arg, BaseModel):
+                        extract_models(arg, models_list)
+
+
+def model_to_string(model: Type[BaseModel], indent=4) -> str:
     fields = model.__fields__
-
     field_defs = []
     for field_name, field in fields.items():
         field_type = field.annotation
-        if 'typing' in str(field_type):
-            field_type_name = str(field_type).split('.')[-1]
+
+        origin = get_origin(field_type)
+        origin = str(origin).replace("<class '","").replace("'>","").capitalize()
+        if origin:
+            field_type_name = f"{str(origin)}[{str(field_type).split('.')[-1].replace(']', '')}]"
         else:
             field_type_name = field_type.__name__
-        description = field.description
-        description = f" | Description: {description}" if description else ""
-        if 'typing' not in str(field_type):
-            if issubclass(field_type, BaseModel):
-                nested_model_str = pydantic_model_to_string(field_type, indent + 4)
-                field_defs.append(f"{' ' * indent}- {field_name}: {field_type_name}\n{nested_model_str}")
-            else:
-                field_defs.append(f"{' ' * indent}- {field_name}: {field_type_name}{description}")
-        else:
-            field_defs.append(f"{' ' * indent}- {field_name}: {field_type_name}{description}")
 
-    if indent != 0:
-        model_prompt = f"\n{' ' * indent} Pydantic model:\n" + "\n".join(field_defs) if field_defs else ""
-    else:
-        model_prompt = f"Your response model:\n" + "\n".join(field_defs) if field_defs else ""
-    return model_prompt
+        description = field.description
+        description = f" | description: {description}" if description else ""
+        field_defs.append(f"{' ' * indent}- {field_name}: {field_type_name}{description}")
+
+    model_str = f"{model.__name__}:\n" + "\n".join(field_defs)
+    return model_str
+
+
+def pydantic_model_to_string(root_model: Type[BaseModel]) -> str:
+    models_list = []
+    extract_models(root_model, models_list)
+    models_strings = []
+    for model in models_list[1:]:
+        model_str = model_to_string(model)
+        models_strings.append(model_str)
+    original_model_string = f"{model_to_string(models_list[0])}\n\n WHERE \n\n"
+    recurive_models = " AND \n\n".join(models_strings)
+    return  original_model_string + recurive_models
+
 
 
 def stringify_string_list(paragraphs: List[str],
@@ -71,17 +93,16 @@ def stringify_dict(header: str,
     :return: A formatted string.
     """
     all_strings = []
+    # if there are included ids, make sure the dict is filtered and follows the same order
+    dict = {k: dict[k] for k in include_keys} if include_keys else dict
     for key, value in dict.items():
         # Include the key only if include_keys is None (include all keys) or the key is in include_keys
-        if include_keys == [] or key in include_keys:
-            if value is None:
-                value = ""
-
-            if key in ['created_at', 'updated_at', 'timestamp']:
-                value = str(value).split('+')[0] if '+' in str(value) else str(value)
-
-            generated_string = stringify_key_value(key, str(value).split('+')[0])
-            all_strings.append(generated_string)
+        if value is None:
+            value = ""
+        if key in ['created_at', 'updated_at', 'timestamp']:
+            value = str(value).split('+')[0] if '+' in str(value) else str(value)
+        generated_string = stringify_key_value(key, str(value).split('+')[0])
+        all_strings.append(generated_string)
 
     dict_string_representation = stringify_string_list(all_strings, separator="\n")
     return header + "\n" + dict_string_representation

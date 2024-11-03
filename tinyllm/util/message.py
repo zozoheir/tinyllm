@@ -1,5 +1,9 @@
 from typing import List, Union, Dict
 
+from pydantic import BaseModel
+
+from tinyllm.validator import Validator
+
 
 # Base class for content types
 class Content:
@@ -19,11 +23,18 @@ class Image(Content):
         self.image_url = {"url": url}
 
 
+
+class MessageInput(Validator):
+    role: str
+    content: Union[List[Content], str]
+
+
 class Message:
 
     def __init__(self,
                  role: str,
                  content: Union[List[Content], str]):
+        MessageInput(role=role, content=content)
         self.role = role
         self.content = content
         self.raw_content = content

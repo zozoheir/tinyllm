@@ -80,7 +80,7 @@ class PromptManager:
 
         kwargs['messages'] = messages
         if json_model:
-            kwargs['response_format'] = {"type": "json_object"}
+            kwargs['response_format'] = json_model
         return kwargs
 
     async def add_memory(self,

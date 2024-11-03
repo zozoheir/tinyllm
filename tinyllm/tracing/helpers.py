@@ -115,7 +115,7 @@ class ObservationUtil:
             model_params = {k: v for k, v in function_kwargs.items() if
                             k in model_parameters and k not in ['messages']}
             if 'response_format' in model_params:
-                model_params['response_format'] = model_params['response_format']['type']
+                model_params['response_format'] = str(model_params['response_format'])
 
             obs.end(
                 end_time=dt.datetime.now(),
