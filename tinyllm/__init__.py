@@ -102,7 +102,7 @@ def get_agent_code(system_role):
 tiny_agent = Agent(
             name='My Agent',
             system_role='{system_role}',
-            json_pydantic_model=None
+            output_model=None
     )
     """
     pyperclip.copy(definition)

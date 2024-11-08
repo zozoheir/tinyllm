@@ -42,7 +42,7 @@ class TestAgent(AsyncioTestCase):
         tiny_agent = Agent(
             name='Test: Agent JSON output',
             system_role="You are a Credit Risk Analyst. Respond with a risk score based on the provided customer data",
-            json_pydantic_model=RiskScoreOutput
+            output_model=RiskScoreOutput
         )
         # Run the asynchronous test
         result = self.loop.run_until_complete(tiny_agent(content="Johny Vargas, 29yo, the customer has missed 99% of his bill payments in the last year"))

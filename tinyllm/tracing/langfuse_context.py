@@ -86,7 +86,7 @@ class ObservationDecoratorFactory:
                     # convert pydantic models to dict
                     for key, value in result.items():
                         if isinstance(value, BaseModel):
-                            result[key] = value.dict()
+                            result[key] = value.model_dump()
 
                     await ObservationUtil.perform_evaluations(observation, result, evaluators)
                     return result

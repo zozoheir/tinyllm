@@ -188,13 +188,13 @@ class Function:
                 tinyllm_logger.info(self.log_prefix+' '+message)
 
     def validate_input(self, **kwargs):
-        return self.input_validator(**kwargs).dict()
+        return self.input_validator(**kwargs).model_dump()
 
     def validate_output(self, **kwargs):
-        return self.output_validator(**kwargs).dict()
+        return self.output_validator(**kwargs).model_dump()
 
     def validate_processed_output(self, **kwargs):
-        return self.processed_output_validator(**kwargs).dict()
+        return self.processed_output_validator(**kwargs).model_dump()
 
     async def run(self, **kwargs) -> Any:
         return kwargs

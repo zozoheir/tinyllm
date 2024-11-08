@@ -1,6 +1,8 @@
 import inspect
 from typing import Dict, Callable
 
+from langchain_core.utils.function_calling import convert_to_openai_function, convert_to_openai_tool
+
 from tinyllm.function import Function
 from tinyllm.tracing.langfuse_context import observation
 from tinyllm.util.helpers import get_openai_message
@@ -18,6 +20,18 @@ class ToolInputValidator(Validator):
 
 
 class Tool(Function):
+
+    @classmethod
+    def from_pydantic_model(cls, model):
+        dictionary = convert_to_openai_tool(model)
+        return cls(
+            name=dictionary['name'],
+            description=dictionary['description'],
+            python_lambda=model.function,
+            parameters=dictionary['parameters']
+        )
+
+
     def __init__(self,
                  description,
                  parameters,

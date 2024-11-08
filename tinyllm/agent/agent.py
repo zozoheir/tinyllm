@@ -27,7 +27,7 @@ class AgentInitValidator(Validator):
     example_manager: Optional[ExampleManager]
     answer_formatting_prompt: Optional[str]
     tool_retries: Optional[int]
-    json_pydantic_model: Optional[Type[BaseModel]]
+    output_model: Optional[Type[BaseModel]]
 
 
 class AgentInputValidator(Validator):
@@ -47,7 +47,7 @@ class Agent(Function):
                  toolkit: Optional[Toolkit] = None,
                  answer_formatting_prompt: Optional[str] = None,
                  tool_retries: int = 3,
-                 json_pydantic_model: Optional[Type[BaseModel]] = None,
+                 output_model: Optional[Type[BaseModel]] = None,
                  **kwargs):
         AgentInitValidator(system_role=system_role,
                            llm=llm,
@@ -56,15 +56,15 @@ class Agent(Function):
                            example_manager=example_manager,
                            answer_formatting_prompt=answer_formatting_prompt,
                            tool_retries=tool_retries,
-                           json_pydantic_model=json_pydantic_model)
+                           output_model=output_model)
         super().__init__(
             input_validator=AgentInputValidator,
             **kwargs)
         self.system_role = system_role.strip()
-        self.json_pydantic_model = json_pydantic_model
+        self.output_model = output_model
 
-        #if self.json_pydantic_model:
-        #    self.response_model_string = pydantic_model_to_string(self.json_pydantic_model)
+        #if self.output_model:
+        #    self.response_model_string = pydantic_model_to_string(self.output_model)
         #    self.system_role = self.system_role + '\n' + dedent(f"""
 #OUTPUT FORMAT
 #Your output must be in JSON format in the model above
@@ -100,7 +100,7 @@ class Agent(Function):
         while True:  # Loop until agent decides to respond
 
             request_kwargs = await self.prompt_manager.prepare_llm_request(message=input_msg,
-                                                                           json_model=self.json_pydantic_model,
+                                                                           json_model=self.output_model,
                                                                            **kwargs)
             response_msg = await self.llm(tools=self.tools,
                                           **request_kwargs)
@@ -140,7 +140,7 @@ class Agent(Function):
 
                 else:
                     # Agent decides to respond
-                    if self.json_pydantic_model is None:
+                    if self.output_model is None:
                         msg_content = response_msg['output']['response']['choices'][0]['message']['content']
                         await self.prompt_manager.add_memory(
                             message=AssistantMessage(msg_content)
@@ -153,7 +153,7 @@ class Agent(Function):
                         await self.prompt_manager.add_memory(
                             message=AssistantMessage(msg_content)
                         )
-                        return {'response': self.json_pydantic_model(**parsed_output)}
+                        return {'response': self.output_model(**parsed_output)}
 
             else:
                 raise (Exception(response_msg))
