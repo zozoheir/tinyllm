@@ -43,7 +43,7 @@ class Message:
 
     def to_dict(self) -> Dict:
         return {"role": self.role,
-                "content": self.raw_content if type(self.raw_content) == str else [c.dict() for c in self.content]}
+                "content": self.raw_content.strip() if type(self.raw_content) == str else [c.dict() for c in self.content]}
 
 
 class UserMessage(Message):
@@ -63,7 +63,7 @@ class FunctionMessage(Message):
 
 class ToolMessage(Message):
     def __init__(self,
-                 content: List[Content],
+                 content: Union[List[Content], str],
                  name: str = None,
                  tool_calls: List[Dict] = None,
                  tool_call_id: str = None):
@@ -76,6 +76,10 @@ class ToolMessage(Message):
         message = super().to_dict()
         if self.tool_call_id:
             message['tool_call_id'] = self.tool_call_id
+        if self.tool_calls:
+            message['tool_calls'] = self.tool_calls
+        if self.name:
+            message['name'] = self.name
         return message
 
 

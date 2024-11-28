@@ -9,6 +9,13 @@ from tinyllm.tracing.langfuse_context import observation
 from tinyllm.validator import Validator
 
 
+class CallBackHandler:
+
+    async def on_tools(self,
+                       **kwargs):
+        pass
+
+
 class FunctionInitValidator(Validator):
     user_id: Optional[Union[str, int]]
     session_id: Optional[Union[str, int]]
@@ -18,6 +25,8 @@ class FunctionInitValidator(Validator):
     run_evaluators: Optional[list]
     processed_output_evaluators: Optional[list]
     stream: Optional[bool]
+    callback_handler: Optional[Type[CallBackHandler]] = None
+
 
 
 class Function:
@@ -34,6 +43,7 @@ class Function:
             processed_output_evaluators=[],
             required=True,
             stream=False,
+            callback_handler=None
     ):
         FunctionInitValidator(
             user_id=user_id,
@@ -45,7 +55,7 @@ class Function:
             processed_output_evaluators=processed_output_evaluators,
             stream=stream,
         )
-
+        self.callback_handler = callback_handler
         self.user_id = user_id
         self.session_id = str(session_id)
         self.observation = None # For logging

@@ -1,22 +1,18 @@
-import inspect
 import json
-from enum import Enum
-from textwrap import dedent
-from typing import Optional, Union, List, Type
+import pprint
+from abc import abstractmethod
+from typing import Optional, Union, List, Type, Callable
 
 from pydantic import BaseModel
 
 from tinyllm.agent.tool import Toolkit
-from tinyllm.function import Function
-
 from tinyllm.examples.example_manager import ExampleManager
+from tinyllm.function import Function
 from tinyllm.llms.lite_llm import LiteLLM
 from tinyllm.memory.memory import Memory, BufferMemory
 from tinyllm.prompt_manager import PromptManager, MaxTokensStrategy
 from tinyllm.util.message import Content, UserMessage, ToolMessage, AssistantMessage
-from tinyllm.util.prompt_util import pydantic_model_to_string
 from tinyllm.validator import Validator
-
 
 
 class AgentInitValidator(Validator):
@@ -37,6 +33,21 @@ class AgentInputValidator(Validator):
     expects_block: Optional[str] = None
 
 
+class Brain(BaseModel):
+    personality: Optional[str]
+
+    @abstractmethod
+    def update(self, **kwargs):
+        pass
+
+
+class AgentCallBackHandler:
+
+    async def on_tools(self,
+                       **kwargs):
+        pass
+
+
 class Agent(Function):
 
     def __init__(self,
@@ -48,6 +59,7 @@ class Agent(Function):
                  answer_formatting_prompt: Optional[str] = None,
                  tool_retries: int = 3,
                  output_model: Optional[Type[BaseModel]] = None,
+                 brain: Brain = None,
                  **kwargs):
         AgentInitValidator(system_role=system_role,
                            llm=llm,
@@ -62,15 +74,6 @@ class Agent(Function):
             **kwargs)
         self.system_role = system_role.strip()
         self.output_model = output_model
-
-        #if self.output_model:
-        #    self.response_model_string = pydantic_model_to_string(self.output_model)
-        #    self.system_role = self.system_role + '\n' + dedent(f"""
-#OUTPUT FORMAT
-#Your output must be in JSON format in the model above
-#{self.response_model_string}
-#""")
-
         self.llm = llm or LiteLLM()
         self.toolkit = toolkit
         self.example_manager = example_manager
@@ -82,7 +85,8 @@ class Agent(Function):
         )
         self.tool_retries = tool_retries
         self.is_stuck = False
-        self.session_tool_calls = []
+        self.brain = brain
+        self.session_tool_messages = []
 
     @property
     def tools(self):
@@ -94,20 +98,23 @@ class Agent(Function):
     async def run(self,
                   **kwargs):
 
-        input_msg = UserMessage(kwargs['content'])
-        session_tool_results = []
+        input_msgs = [UserMessage(kwargs['content'])]
 
         while True:  # Loop until agent decides to respond
 
-            request_kwargs = await self.prompt_manager.prepare_llm_request(message=input_msg,
+            request_kwargs = await self.prompt_manager.prepare_llm_request(messages=input_msgs,
                                                                            json_model=self.output_model,
                                                                            **kwargs)
             response_msg = await self.llm(tools=self.tools,
                                           **request_kwargs)
-            await self.prompt_manager.add_memory(message=input_msg)
+
+            for msg in input_msgs:
+                await self.prompt_manager.add_memory(message=msg)
 
             if response_msg['status'] == 'success':
-                is_tool_call = response_msg['output']['response']['choices'][0]['finish_reason'] == 'tool_calls'
+                is_tool_call = response_msg['output']['response']['choices'][0]['message'] == 'tool_calls' or \
+                               response_msg['output']['response']['choices'][0]['message'].get('tool_calls',
+                                                                                               None) is not None
 
                 if is_tool_call:
                     # Agent decides to call a tool
@@ -118,27 +125,26 @@ class Agent(Function):
                                                                                   tool_calls=tool_call_msg[
                                                                                       'tool_calls']))
 
-                    # Memorize tool result
-                    # TODO When ready, implement parallel function calls
-                    tool_call = tool_call_msg['tool_calls'][0]
+                    tool_calls = tool_call_msg.get('tool_calls', [])
                     tool_results = await self.toolkit(
                         tool_calls=[{
                             'name': tool_call['function']['name'],
                             'arguments': json.loads(tool_call['function']['arguments'])
-                        }]
+                        } for tool_call in tool_calls]
                     )
-                    session_tool_results.append(tool_results)
-                    self.is_stuck = self.is_tool_stuck(session_tool_results)
 
-                    tool_result = tool_results['output']['tool_results'][0]
-                    function_call_msg = ToolMessage(name=tool_result['name'],
-                                                    content=tool_result['content'],
-                                                    tool_call_id=tool_call['id'])
+
+                    # Format for next openai call
+                    tool_call_messages = [ToolMessage(name=tool_result['name'],
+                                                      content=pprint.pformat(tool_result['content']),
+                                                      tool_call_id=tool_call['id']) for tool_result, tool_call in
+                                          zip(tool_results['output']['tool_results'], tool_calls)]
 
                     # Set next input
-                    input_msg = function_call_msg
+                    input_msgs = tool_call_messages
 
                 else:
+
                     # Agent decides to respond
                     if self.output_model is None:
                         msg_content = response_msg['output']['response']['choices'][0]['message']['content']

@@ -3,7 +3,6 @@ from typing import List, Dict
 
 from tinyllm.agent.tool.tool import Tool
 from tinyllm.function import Function
-
 from tinyllm.tracing.langfuse_context import observation
 from tinyllm.validator import Validator
 
@@ -26,7 +25,6 @@ class Toolkit(Function):
             **kwargs)
         self.tools = tools
 
-
     @observation(observation_type='span', input_mapping={'input': 'tool_calls'})
     async def run(self,
                   **kwargs):
@@ -34,14 +32,13 @@ class Toolkit(Function):
 
         for tool_call in kwargs['tool_calls']:
             name = tool_call['name']
-            arguments = tool_call['arguments']
             tool = [tool for tool in self.tools if tool.name == name][0]
-            tasks.append(tool(arguments=arguments,
-                              **kwargs))
+            tasks.append(tool(**tool_call['arguments']))
 
         results = await asyncio.gather(*tasks)
         tool_results = [result['output']['response'] for result in results]
-        return {'tool_results': tool_results}
+        return {'tool_results': tool_results,
+                'tool_calls': kwargs['tool_calls']}
 
     def as_dict_list(self):
         return [tool.as_dict() for tool in self.tools]

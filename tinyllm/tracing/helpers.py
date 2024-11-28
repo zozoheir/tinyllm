@@ -87,7 +87,8 @@ class ObservationUtil:
         if observation_type == 'generation':
 
             prompt_tokens = count_tokens(function_input)
-            if function_output['type'] == 'tool':
+
+            if function_output['type'] == 'tool' or function_output.get('message',{}).get('tool_calls',[]) != []:
                 completion_tokens = count_tokens(function_output['message']['tool_calls'])
             else:
                 completion_tokens = count_tokens(function_output['message']['content'])

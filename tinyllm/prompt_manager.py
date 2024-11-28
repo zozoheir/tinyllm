@@ -35,7 +35,7 @@ class PromptManager:
         self.answer_formatting_prompt = answer_formatting_prompt.strip() if answer_formatting_prompt is not None else None
         self.is_time_aware = is_time_aware
 
-    async def format_messages(self, message):
+    async def format_messages(self, messages):
 
         current_time = '\n\n\n<Current time: ' + \
                        str(dt.datetime.utcnow()).split('.')[
@@ -51,24 +51,24 @@ class PromptManager:
                 examples.append(example.user_message)
                 examples.append(example.assistant_message)
 
-            if self.example_manager.example_selector is not None and message['role'] == 'user':
+        for message in messages:
+            if self.example_manager and self.example_manager.example_selector and message['role'] == 'user':
                 best_examples = await self.example_manager.example_selector(input=message['content'])
                 for good_example in best_examples['output']['best_examples']:
                     examples.append(UserMessage(good_example['user']))
                     examples.append(AssistantMessage(good_example['assistant']))
 
-        answer_format_msg = [
-            UserMessage(self.answer_formatting_prompt)] if self.answer_formatting_prompt is not None else []
+        answer_format_msg = [UserMessage(self.answer_formatting_prompt)] if self.answer_formatting_prompt is not None else []
 
-        messages = [system_msg] + memories + examples + answer_format_msg + [message]
+        messages = [system_msg] + memories + examples + answer_format_msg + messages
         return messages
 
     async def prepare_llm_request(self,
-                                  message,
+                                  messages,
                                   json_model=None,
                                   **kwargs):
 
-        messages = await self.format_messages(message)
+        messages = await self.format_messages(messages)
 
         if kwargs['max_tokens_strategy']:
             max_tokens, model = self.get_run_config(messages=messages, **kwargs)

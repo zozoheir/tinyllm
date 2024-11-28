@@ -151,7 +151,7 @@ class PDFFormLoader(Loader):
         for count, page in enumerate(pages):
             file_name = base_name + f'_page_{count}.jpg'
             img_path = os.path.join(images_path, file_name)
-            page.save(img_path, 'JPEG')
+            page.update(img_path, 'JPEG')
             image_paths.append(img_path)
         return image_paths
 

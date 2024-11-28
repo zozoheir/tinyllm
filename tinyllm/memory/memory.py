@@ -71,3 +71,28 @@ class BufferMemory(Memory):
                 break
 
         return memories_to_return[::-1]
+
+
+
+class CharacterBufferMemory(BufferMemory):
+
+    async def load_memories(self):
+        pass
+
+
+    async def get_memories(self):
+
+        memories_to_return = []
+        size_count = 0
+        # Make sure we keep complete tool calls msgs
+        for memory in self.memories[::-1]:
+            size_count += len(str(memory.to_dict())) * 0.9
+            if size_count >= self.buffer_size:
+                break
+            memories_to_return.append(memory)
+            if 'tool_calls' in memory.to_dict() or memory.role == 'tool':
+                continue
+            else:
+                size_count += len(str(memory.to_dict()))*0.9
+
+        return memories_to_return[::-1]
