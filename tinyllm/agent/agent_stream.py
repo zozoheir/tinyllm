@@ -21,7 +21,7 @@ class AgentStream(FunctionStream):
                  llm: FunctionStream = None,
                  memory: Memory = None,
                  toolkit: Optional[Toolkit] = None,
-                 answer_formatting_prompt: Optional[str] = None,
+                 initial_user_message_text: Optional[str] = None,
                  tool_retries: int = 3,
                  **kwargs):
         AgentInitValidator(system_role=system_role,
@@ -29,7 +29,7 @@ class AgentStream(FunctionStream):
                            toolkit=toolkit,
                            memory=memory,
                            example_manager=example_manager,
-                           answer_formatting_prompt=answer_formatting_prompt,
+                           initial_user_message_text=initial_user_message_text,
                            tool_retries=tool_retries
                            )
         super().__init__(
@@ -43,7 +43,7 @@ class AgentStream(FunctionStream):
             system_role=system_role,
             example_manager=example_manager,
             memory=memory or BufferMemory(),
-            answer_formatting_prompt=answer_formatting_prompt,
+            initial_user_message_text=initial_user_message_text,
         )
         self.tool_retries = tool_retries
 

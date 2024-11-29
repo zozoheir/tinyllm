@@ -16,5 +16,5 @@ class ExampleManager:
     def __init__(self,
                  example_selector=None,
                  constant_examples: Union[List[Example], Example] = None):
-        self.constant_examples = constant_examples if type(constant_examples) == list else [constant_examples]
+        self.constant_examples = constant_examples if type(constant_examples) == list else ([constant_examples]) if constant_examples else []
         self.example_selector = example_selector

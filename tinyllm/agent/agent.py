@@ -21,9 +21,10 @@ class AgentInitValidator(Validator):
     memory: Optional[Memory]
     toolkit: Optional[Toolkit]
     example_manager: Optional[ExampleManager]
-    answer_formatting_prompt: Optional[str]
+    initial_user_message_text: Optional[str]
     tool_retries: Optional[int]
     output_model: Optional[Type[BaseModel]]
+    prompt_manager: Optional[PromptManager]
 
 
 class AgentInputValidator(Validator):
@@ -56,22 +57,27 @@ class Agent(Function):
                  llm: Function = None,
                  memory: Memory = None,
                  toolkit: Optional[Toolkit] = None,
-                 answer_formatting_prompt: Optional[str] = None,
+                 initial_user_message_text: Optional[str] = None,
+                 prompt_manager: Optional[PromptManager] = None,
                  tool_retries: int = 3,
                  output_model: Optional[Type[BaseModel]] = None,
                  brain: Brain = None,
                  **kwargs):
+
         AgentInitValidator(system_role=system_role,
                            llm=llm,
                            toolkit=toolkit,
                            memory=memory,
                            example_manager=example_manager,
-                           answer_formatting_prompt=answer_formatting_prompt,
+                           initial_user_message_text=initial_user_message_text,
                            tool_retries=tool_retries,
-                           output_model=output_model)
+                           output_model=output_model,
+                           brain=brain,
+                           prompt_manager=None)
         super().__init__(
             input_validator=AgentInputValidator,
-            **kwargs)
+            **kwargs
+        )
         self.system_role = system_role.strip()
         self.output_model = output_model
         self.llm = llm or LiteLLM()
@@ -81,8 +87,8 @@ class Agent(Function):
             system_role=self.system_role,
             example_manager=example_manager,
             memory=memory or BufferMemory() if toolkit else None,
-            answer_formatting_prompt=answer_formatting_prompt,
-        )
+            initial_user_message_text=initial_user_message_text,
+        ) if  prompt_manager is None else prompt_manager
         self.tool_retries = tool_retries
         self.is_stuck = False
         self.brain = brain

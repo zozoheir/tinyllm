@@ -1,6 +1,6 @@
 import random
 import re
-from typing import List, Dict, Any, Optional, _strip_annotations, get_type_hints
+from typing import List, Dict, Any, Optional
 
 from fuzzywuzzy import fuzz
 from tinyllm.util import os_util
@@ -8,6 +8,11 @@ from tinyllm.util import os_util
 from typing import List, Type, get_args, get_origin
 from pydantic import BaseModel, Field
 
+import inspect
+
+def extract_function_signature(function):
+    sig = inspect.signature(function)
+    return {k: str(v.annotation) for k, v in sig.parameters.items() if v.default != inspect.Parameter.empty}
 
 def extract_models(model: Type[BaseModel], models_list: List[Type[BaseModel]]) -> None:
     if model not in models_list:

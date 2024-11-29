@@ -1,14 +1,13 @@
-import os
 from enum import Enum
-from textwrap import dedent
+import datetime as dt
+from enum import Enum
+from typing import Callable
 
 from tinyllm.examples.example_manager import ExampleManager
 from tinyllm.llms.lite_llm import DEFAULT_LLM_MODEL, LLM_TOKEN_LIMITS, DEFAULT_CONTEXT_FALLBACK_DICT
 from tinyllm.memory.memory import Memory
-from tinyllm.util.helpers import get_openai_message, count_tokens, OPENAI_MODELS_CONTEXT_SIZES
-import datetime as dt
-
-from tinyllm.util.message import SystemMessage, UserMessage, Text, AssistantMessage
+from tinyllm.util.helpers import get_openai_message, count_tokens
+from tinyllm.util.message import SystemMessage, UserMessage, AssistantMessage
 
 
 class MaxTokensStrategy(Enum):
@@ -25,14 +24,16 @@ class PromptManager:
 
     def __init__(self,
                  system_role: str,
-                 example_manager: ExampleManager,
-                 memory: Memory,
-                 answer_formatting_prompt: str = None,
+                 example_manager: ExampleManager=ExampleManager(),
+                 memory: Memory = None,
+                 update_system_content: Callable = lambda x: x,
+                 initial_user_message_text: str = None,
                  is_time_aware: bool = True, ):
         self.system_role = system_role
         self.example_manager = example_manager
         self.memory = memory
-        self.answer_formatting_prompt = answer_formatting_prompt.strip() if answer_formatting_prompt is not None else None
+        self.initial_user_message_text = initial_user_message_text.strip() if initial_user_message_text is not None else None
+        self.update_system_content = update_system_content
         self.is_time_aware = is_time_aware
 
     async def format_messages(self, messages):
@@ -41,7 +42,7 @@ class PromptManager:
                        str(dt.datetime.utcnow()).split('.')[
                            0] + '>'
 
-        system_content = self.system_role + '\n\n' + current_time
+        system_content = self.update_system_content(self.system_role) + '\n\n' + current_time
         system_msg = SystemMessage(system_content)
         memories = [] if self.memory is None else await self.memory.get_memories()
         examples = []
@@ -58,7 +59,8 @@ class PromptManager:
                     examples.append(UserMessage(good_example['user']))
                     examples.append(AssistantMessage(good_example['assistant']))
 
-        answer_format_msg = [UserMessage(self.answer_formatting_prompt)] if self.answer_formatting_prompt is not None else []
+        answer_format_msg = [
+            UserMessage(self.initial_user_message_text)] if self.initial_user_message_text is not None else []
 
         messages = [system_msg] + memories + examples + answer_format_msg + messages
         return messages
