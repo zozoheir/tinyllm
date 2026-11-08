@@ -7,7 +7,7 @@ def get_wikipedia_summary(page_title):
     """ Fetch the summary of a Wikipedia page given its title. """
     URL = "https://en.wikipedia.org/api/rest_v1/page/summary/" + page_title
     try:
-        response = requests.get(URL)
+        response = requests.get(URL, timeout=30)
         data = response.json()
         return data.get('extract', 'No summary available.')
     except requests.RequestException as e:
